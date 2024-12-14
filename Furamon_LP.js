@@ -198,6 +198,8 @@ const prmMaxLP = parameters["MaxLP"];
       const lpDamage = 1;
       target._lp -= lpDamage;
       target.result().lpDamage = lpDamage;
+      // 強制的にポップアップを表示
+      target.startDamagePopup();
     }
 
     // <LP_Recover>指定があるなら増減
