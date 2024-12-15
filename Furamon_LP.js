@@ -18,7 +18,9 @@
  * - LPが残っていれば戦闘不能アクターに対して回復スキルを使用できる
  *
  * プラグインパラメータにLPの計算式を入れてください。
- * また、スキルのメモ欄に<LP_Recover:x>を記入すると、使った対象のLPを回復するスキルやアイテムが作れます。
+ *
+ * スキルのメモ欄に<LP_Recover:x>を記入すると、使った対象のLPを回復するスキルやアイテムが作れます。
+ * スキルのメモ欄に<LP_Cost:x>を記入すると、LPを消費するスキルが作れます。身を削る大技かなんかに。
  * プラグインコマンドでLPの増減もできます。
  * -----------------------------------------------------------------------------
  * # あてんしょん #
@@ -68,9 +70,9 @@
  * @param MaxLP
  * @text アクターの最大LP
  * @type string
- * @default 5 + a.level / 8
+ * @default 5 + a.level / 5
  * @desc アクターの最大LPです。
- * 例: 5 + a.level / 8
+ * 例: 5 + a.level / 5
  *
  * @param LPBreakMessage
  * @text LPが削れたときのメッセージ
@@ -258,6 +260,41 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     }
 
     lpUpdate();
+  };
+
+  // LPコストスキル
+
+  // <LP_Cost>指定のスキルのLPコストを払えるか？
+  const _Game_BattlerBase_canPaySkillCost =
+    Game_BattlerBase.prototype.canPaySkillCost;
+  Game_BattlerBase.prototype.canPaySkillCost = function (skill) {
+    // アクターのみ対象
+    if (this.isActor()) {
+      const LPCost = skill.meta["LP_Cost"];
+      if (LPCost) {
+        return (
+          _Game_BattlerBase_canPaySkillCost.apply(this, arguments) &&
+          this._lp > LPCost
+        );
+      }
+    }
+    return _Game_BattlerBase_canPaySkillCost.apply(this, arguments);
+  };
+
+  // LP消費
+  const _Game_BattlerBase_paySkillCost =
+    Game_BattlerBase.prototype.paySkillCost;
+  Game_BattlerBase.prototype.paySkillCost = function (skill) {
+    _Game_BattlerBase_paySkillCost.apply(this, arguments);
+
+    // アクターのみ対象
+    if (this.isActor()) {
+      // 奥義の場合
+      const LPCost = skill.meta["LP_Cost"];
+      if (LPCost) {
+        this._lp -= LPCost;
+      }
+    }
   };
 
   const _BattleManager_startInput = BattleManager.startInput;
