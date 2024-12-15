@@ -211,6 +211,8 @@ const prmMaxLP = parameters["MaxLP"];
       target.result().lpDamage = lpDamage;
       // 強制的にポップアップを表示
       target.startDamagePopup();
+    } else {
+      target.result().lpDamage = 0;
     }
 
     // <LP_Recover>指定があるなら増減
@@ -250,9 +252,6 @@ const prmMaxLP = parameters["MaxLP"];
   Sprite_Battler.prototype.createDamageSprite = function () {
     _Sprite_Battler_createDamageSprite.apply(this);
     const result = this._battler.result();
-    if (typeof result.lpDamage === "undefined") {
-      return;
-    }
     if (result.lpDamage != 0) {
       const last = this._damages[this._damages.length - 1];
       const sprite = new Sprite_Damage();
