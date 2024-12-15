@@ -21,6 +21,7 @@
  *
  * スキルのメモ欄に<LP_Recover:x>を記入すると、使った対象のLPを回復するスキルやアイテムが作れます。
  * スキルのメモ欄に<LP_Cost:x>を記入すると、LPを消費するスキルが作れます。身を削る大技かなんかに。
+ * アクター、職業、装備、ステートのメモ欄に<LP_Bonus:x>を記入すると、最大LPを増減できます。
  * プラグインコマンドでLPの増減もできます。
  * -----------------------------------------------------------------------------
  * # あてんしょん #
@@ -132,6 +133,23 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     actor._lp = Math.min(actor._lp + value, actor.mlp);
   }
 
+  // 最大LPを設定するメソッド
+  // <LP_Bonus>を持ったオブジェクトを持ったアクターはMaxLP増やす
+  function maxLPSet (actor) {
+    const a = this; // 参照用
+    const objects = actor.traitObjects()
+    if (objects.length > 0) {
+      for (const obj of objects) {
+        const bonus = obj.meta["LP_Bonus"];
+        if (bonus) {
+          const value = eval(bonus);
+          actor.mlp = Math.floor(eval(prmMaxLP)) += value;
+        }
+      }
+    } else {
+    actor.mlp = Math.floor(eval(prmMaxLP));}
+  };
+
   // LP監視関数。LPが0なら戦闘不能に
   function lpUpdate() {
     const deadActor = $gameParty
@@ -155,7 +173,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     return this._lp !== undefined ? this._lp : 0;
   };
 
-  // LPの初期化
+  // LPの全回復
   Game_BattlerBase.prototype.recoverLP = function () {
     this._lp = this.mlp;
   };
@@ -163,13 +181,12 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Game_Actor_prototype_setup = Game_Actor.prototype.setup;
   Game_Actor.prototype.setup = function (actorId) {
     _Game_Actor_prototype_setup.call(this, actorId);
-    this.initLP(); // LPの初期化を行う
+    this.initLP() // LPの初期化を行う
   };
 
   // LPの初期化メソッドを追加
   Game_Actor.prototype.initLP = function () {
-    const a = this; // 参照用
-    this.mlp = Math.floor(eval(prmMaxLP));
+    maxLPSet(this)
     this.recoverLP();
   };
 
@@ -183,9 +200,8 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // レベルアップ時必要ならMaxLPを更新
   const _Game_Actor_levelUp = Game_Actor.prototype.levelUp;
   Game_Actor.prototype.levelUp = function () {
-    const a = this; // 参照用
     _Game_Actor_levelUp.call(this);
-    this.mlp = Math.floor(eval(prmMaxLP));
+    this.mlp = maxLPSet(this)
   };
 
   // ターゲット選択にLPを組み込む
