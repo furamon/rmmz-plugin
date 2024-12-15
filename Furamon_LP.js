@@ -168,14 +168,6 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     const objects = this.traitObjects().concat(this.skills());
     let bonusLP = 0;
 
-    // AbilitySystem.jsがあるか？
-    if (
-      PluginManager.parameters("AbilitySystem") &&
-      this._equipAbilitySkills.length > 0
-    ) {
-      objects.concat(this._equipAbilitySkills);
-    }
-
     for (const obj of objects) {
       if (obj.meta["LP_Bonus"]) {
         bonusLP += Number(obj.meta["LP_Bonus"]);
