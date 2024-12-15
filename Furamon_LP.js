@@ -277,6 +277,20 @@ const prmMaxLP = parameters["MaxLP"];
     this.createDigits(result.lpDamage);
   };
 
+  const _Window_BattleLog_prototype_displayDamage =
+    Window_BattleLog.prototype.displayDamage;
+  Window_BattleLog.prototype.addLpBreak = function (target) {
+    _Window_BattleLog_prototype_displayDamage.call(this, target);
+    if (target.result().lpDamage > 0 && target.isActor()) {
+      this.push(
+        "addText",
+        `${target.name()}は${result.lpDamage}のLPを失った！！`
+      );
+    } else if (target.result().lpDamage < 0 && target.isActor()) {
+      this.push("addText", `${target.name()}は${result.lpDamage}LP回復した！`);
+    }
+  };
+
   // LPをウィンドウに描画
 
   // LPゲージタイプの定義
