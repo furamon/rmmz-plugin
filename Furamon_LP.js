@@ -103,7 +103,7 @@ const prmMaxLP = parameters["MaxLP"];
     actor._lp = Math.min(actor._lp + value, actor.mlp);
   }
 
-  // LP監視関数。LPが0なら戦闘不能に、LPが残っているなら生き返す
+  // LP監視関数。LPが0なら戦闘不能に
   function lpUpdate() {
     const deadActor = $gameParty
       .aliveMembers()
@@ -151,6 +151,14 @@ const prmMaxLP = parameters["MaxLP"];
     $gameParty.members().forEach((actor) => actor.initLP());
   };
 
+  // レベルアップ時必要ならMaxLPを更新
+  const _Game_Actor_levelUp = Game_Actor.prototype.levelUp;
+  Game_Actor.prototype.levelUp = function () {
+    const a = this; // 参照用
+    _Game_Actor_levelUp.call(this);
+    this.mlp = Math.floor(eval(prmMaxLP));
+  };
+
   // ターゲット選択にLPを組み込む
   Game_Unit.prototype.smoothTarget = function (index) {
     const member = this.members()[Math.max(0, index)];
@@ -159,7 +167,7 @@ const prmMaxLP = parameters["MaxLP"];
       : this.aliveMembers()[0];
   };
 
-  // 攻撃対象にLPを組み込む
+  // 攻撃対象選択にLPを組み込む
   const _Game_Action_makeTargets = Game_Action.prototype.makeTargets;
   Game_Action.prototype.makeTargets = function () {
     let targets = _Game_Action_makeTargets.call(this);
@@ -180,7 +188,9 @@ const prmMaxLP = parameters["MaxLP"];
   // 戦闘不能時のLP減少処理
   const _Game_Action_apply = Game_Action.prototype.apply;
   Game_Action.prototype.apply = function (target) {
-    let resurrect = false;
+    let resurrect = false; // 蘇生か？
+
+    // LPが残っているなら戦闘不能回復
     if (target.lp() > 0 && this.isHpRecover()) {
       target.removeState(1);
       resurrect = true;
@@ -188,8 +198,9 @@ const prmMaxLP = parameters["MaxLP"];
 
     _Game_Action_apply.call(this, target);
 
-    // 蘇生処理
-    if (resurrect && -1 * this.evalDamageFormula(target) < target.mhp) {
+    // 蘇生時に勝手にHPが1回復するためつじつまを合わせる。
+    // 全回復ならそのまま。
+    if (resurrect && -this.evalDamageFormula(target) < target.mhp) {
       target._hp -= 1;
     }
 
@@ -214,7 +225,7 @@ const prmMaxLP = parameters["MaxLP"];
         return;
       }
       target._lp = Math.min(target._lp + recoverValue, target.mlp);
-      target.result().lpDamage = recoverValue;
+      target.result().lpDamage = -recoverValue;
     }
 
     lpUpdate();
@@ -239,7 +250,10 @@ const prmMaxLP = parameters["MaxLP"];
   Sprite_Battler.prototype.createDamageSprite = function () {
     _Sprite_Battler_createDamageSprite.apply(this);
     const result = this._battler.result();
-    if (result.lpDamage > 0) {
+    if (typeof result.lpDamage === "undefined") {
+      return;
+    }
+    if (result.lpDamage != 0) {
       const last = this._damages[this._damages.length - 1];
       const sprite = new Sprite_Damage();
       sprite.x = last.x;
@@ -260,7 +274,7 @@ const prmMaxLP = parameters["MaxLP"];
   // LP減少の表示
   Sprite_Damage.prototype.setupLpBreak = function (target) {
     const result = target.result();
-    this._colorType = 2;
+    this._colorType = result.lpDamage >= 0 ? 2 : 3;
     this.createDigits(result.lpDamage);
   };
 
