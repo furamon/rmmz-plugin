@@ -68,14 +68,30 @@
  * @param MaxLP
  * @text アクターの最大LP
  * @type string
+ * @default 5 + a.level / 8
  * @desc アクターの最大LPです。
  * 例: 5 + a.level / 8
  *
+ * @param LPBreakMessage
+ * @text LPが削れたときのメッセージ
+ * @type string
+ * @default %1は%2のLPを失った！！
+ * @desc LPが減少したときのバトルメッセージです。
+ * %1にアクターの名前、%2に数値が入ります。
+ *
+ * @param LPGainMessage
+ * @text LPが回復したときのメッセージ
+ * @type string
+ * @default %1は%2LP回復した！
+ * @desc LPが回復したときのバトルメッセージです。
+ * %1にアクターの名前、%2に数値が入ります。
  */
 
 const PLUGIN_NAME = "Furamon_LP";
 const parameters = PluginManager.parameters(PLUGIN_NAME);
 const prmMaxLP = parameters["MaxLP"];
+const prmLPBreakMessage = parameters["LPBreakMessage"];
+const prmLPGainMessage = parameters["LPGainMessage"];
 
 (function () {
   // プラグインコマンド
@@ -97,6 +113,17 @@ const prmMaxLP = parameters["MaxLP"];
       gainLP(actor, value);
     });
   });
+
+  // バトルメッセージ初期化
+  function LPBreakMessage(actor, point) {
+    const message = prmLPBreakMessage || "%1は%2のLPを失った！！";
+    return message.toString().replace("%1", actor).replace("%2", point);
+  }
+
+  function LPGainMessage(actor, point) {
+    const message = prmLPGainMessage || "%1は%2LP回復した！";
+    return message.toString().replace("%1", actor).replace("%2", point);
+  }
 
   // LPを増減させるメソッド
   function gainLP(actor, value) {
@@ -246,6 +273,19 @@ const prmMaxLP = parameters["MaxLP"];
     this._lp = 1;
   };
 
+  // 戦闘終了時にLPが残っていれば復活
+  const _BattleManager_endBattle = BattleManager.endBattle;
+  BattleManager.endBattle = function (result) {
+    _BattleManager_endBattle.call(this, result);
+    if (result === 0 || this._escaped) {
+      $gameParty.members().forEach((member) => {
+        if (member.lp() > 0) {
+          member.revive();
+        }
+      });
+    }
+  };
+
   // ポップアップ処理の調整
   const _Sprite_Battler_createDamageSprite =
     Sprite_Battler.prototype.createDamageSprite;
@@ -279,15 +319,18 @@ const prmMaxLP = parameters["MaxLP"];
 
   const _Window_BattleLog_prototype_displayDamage =
     Window_BattleLog.prototype.displayDamage;
-  Window_BattleLog.prototype.addLpBreak = function (target) {
+  Window_BattleLog.prototype.displayDamage = function (target) {
     _Window_BattleLog_prototype_displayDamage.call(this, target);
     if (target.result().lpDamage > 0 && target.isActor()) {
       this.push(
         "addText",
-        `${target.name()}は${result.lpDamage}のLPを失った！！`
+        LPBreakMessage(target.name(), target.result().lpDamage)
       );
     } else if (target.result().lpDamage < 0 && target.isActor()) {
-      this.push("addText", `${target.name()}は${result.lpDamage}LP回復した！`);
+      this.push(
+        "addText",
+        LPGainMessage(target.name(), target.result().lpDamage)
+      );
     }
   };
 
@@ -399,20 +442,13 @@ const prmMaxLP = parameters["MaxLP"];
   };
 
   // 戦闘ステータスの座標上げ
-  const _Window_BattleStatus_drawItemStatus =
-    Window_BattleStatus.prototype.drawItemStatus;
-  Window_BattleStatus.prototype.drawItemStatus = function (index) {
-    _Window_BattleStatus_drawItemStatus.apply(this, arguments);
-
-    const rect = this.itemRectWithPadding(index);
-    const x = this.nameX(rect);
-    const y = this.nameY(rect);
-
-    const _Window_BattleStatus_basicGaugesY =
-      Window_BattleStatus.prototype.basicGaugesY;
-    Window_BattleStatus.prototype.basicGaugesY = function (rect) {
-      return _Window_BattleStatus_basicGaugesY.apply(this, arguments) - 3;
-    };
+  const _Window_BattleStatus_basicGaugesY =
+    Window_BattleStatus.prototype.basicGaugesY;
+  Window_BattleStatus.prototype.basicGaugesY = function (rect) {
+    return (
+      _Window_BattleStatus_basicGaugesY.apply(this, arguments) -
+      this.gaugeLineHeight()
+    );
   };
 
   // TextManagerにLPの略称を追加
