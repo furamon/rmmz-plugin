@@ -133,23 +133,6 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     actor._lp = Math.min(actor._lp + value, actor.mlp);
   }
 
-  // 最大LPを設定するメソッド
-  // <LP_Bonus>を持ったオブジェクトを持ったアクターはMaxLP増やす
-  function maxLPSet (actor) {
-    const a = this; // 参照用
-    const objects = actor.traitObjects()
-    if (objects.length > 0) {
-      for (const obj of objects) {
-        const bonus = obj.meta["LP_Bonus"];
-        if (bonus) {
-          const value = eval(bonus);
-          actor.mlp = Math.floor(eval(prmMaxLP)) += value;
-        }
-      }
-    } else {
-    actor.mlp = Math.floor(eval(prmMaxLP));}
-  };
-
   // LP監視関数。LPが0なら戦闘不能に
   function lpUpdate() {
     const deadActor = $gameParty
@@ -178,15 +161,41 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     this._lp = this.mlp;
   };
 
+  // 最大LPを設定するメソッド
+  // <LP_Bonus>を持ったオブジェクトを持ったアクターはMaxLP増やす
+  Game_Actor.prototype.maxLPSet = function () {
+    const a = this; // 参照用
+    const objects = this.traitObjects();
+    let bonusLP = 0;
+    for (const obj of objects) {
+      if (obj.meta["LP_Bonus"]) {
+        bonusLP += Number(obj.meta["LP_Bonus"]);
+      }
+    }
+    if (bonusLP > 0) {
+      this.mlp = Math.floor(eval(prmMaxLP)) + bonusLP;
+    } else {
+      this.mlp = Math.floor(eval(prmMaxLP));
+    }
+    this._lp = Math.min(this._lp, this.mlp);
+  };
+
+  // 装備やステートなどの更新時にMaxLPも更新
+  const _Game_Actor_prototype_refresh = Game_Actor.prototype.refresh;
+  Game_Actor.prototype.refresh = function () {
+    _Game_Actor_prototype_refresh.call(this);
+    this.maxLPSet();
+  };
+
   const _Game_Actor_prototype_setup = Game_Actor.prototype.setup;
   Game_Actor.prototype.setup = function (actorId) {
     _Game_Actor_prototype_setup.call(this, actorId);
-    this.initLP() // LPの初期化を行う
+    this.initLP(); // LPの初期化を行う
   };
 
   // LPの初期化メソッドを追加
   Game_Actor.prototype.initLP = function () {
-    maxLPSet(this)
+    this.maxLPSet(); // MaxLPを設定する
     this.recoverLP();
   };
 
@@ -201,7 +210,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Game_Actor_levelUp = Game_Actor.prototype.levelUp;
   Game_Actor.prototype.levelUp = function () {
     _Game_Actor_levelUp.call(this);
-    this.mlp = maxLPSet(this)
+    this.maxLPSet(); // MaxLPを設定する
   };
 
   // ターゲット選択にLPを組み込む
