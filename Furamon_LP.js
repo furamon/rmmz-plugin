@@ -175,7 +175,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       }
     }
     if (bonusLP != 0) {
-      this.mlp = Math.floor(eval(prmMaxLP)) + bonusLP;
+      this.mlp = Math.max(Math.floor(eval(prmMaxLP)) + bonusLP, 0);
     } else {
       this.mlp = Math.floor(eval(prmMaxLP));
     }
