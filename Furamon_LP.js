@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 // 2024/12/14 1.0.0-Beta 非公開作成
 // 2024/12/15 1.0.0 公開！
+// 2024/12/16 1.0.1 <LP_Bonus>が負の値の時の処理を追加。
 
 /*:
  * @target MZ
@@ -173,7 +174,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
         bonusLP += Number(obj.meta["LP_Bonus"]);
       }
     }
-    if (bonusLP > 0) {
+    if (bonusLP != 0) {
       this.mlp = Math.floor(eval(prmMaxLP)) + bonusLP;
     } else {
       this.mlp = Math.floor(eval(prmMaxLP));
