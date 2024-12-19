@@ -6,6 +6,8 @@
 // 2024/12/14 1.0.0-Beta 非公開作成
 // 2024/12/15 1.0.0 公開！
 // 2024/12/16 1.0.1 <LP_Bonus>が負の値の時の処理を追加。
+// 2024/12/19 1.0.2 回復量のつじつま合わせ処理を修正。
+
 
 /*:
  * @target MZ
@@ -175,7 +177,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       }
     }
     if (bonusLP != 0) {
-      this.mlp = Math.max(Math.floor(eval(prmMaxLP)) + bonusLP, 0);
+      this.mlp = Math.max(Math.floor(eval(prmMaxLP)) + bonusLP,0)
     } else {
       this.mlp = Math.floor(eval(prmMaxLP));
     }
@@ -245,18 +247,20 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Game_Action_apply = Game_Action.prototype.apply;
   Game_Action.prototype.apply = function (target) {
     let resurrect = false; // 蘇生か？
+    let recoverValue = 0; // 回復量
 
     // LPが残っているなら戦闘不能回復
     if (target.lp() > 0 && this.isHpRecover()) {
       target.removeState(1);
-      resurrect = true;
+      recoverValue = target.result().hpdamage
+      resurrect = target.result().isStateRemoved(1);
     }
 
     _Game_Action_apply.call(this, target);
 
     // 蘇生時に勝手にHPが1回復するためつじつまを合わせる。
     // 全回復ならそのまま。
-    if (resurrect && -this.evalDamageFormula(target) < target.mhp) {
+    if (resurrect && recoverValue < target.mhp) {
       target._hp -= 1;
     }
 
@@ -288,6 +292,17 @@ const prmLPGainMessage = parameters["LPGainMessage"];
 
     lpUpdate();
   };
+
+  // 負のHP再生で戦闘不能時の処理
+  const _Game_Battler_regenerateHp = Game_Battler.prototype.regenerateHp;
+  Game_Battler.prototype.regenerateHp = function (n) {
+    _Game_Battler_regenerateHp.apply(this, arguments);
+    if (this.isDead()) {
+      const lpDamage = 1;
+      this._lp -= lpDamage;
+      this.result().lpDamage = lpDamage;
+    }
+  }
 
   // LPコストスキル
 
