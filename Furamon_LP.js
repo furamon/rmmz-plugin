@@ -9,7 +9,6 @@
 // 2024/12/19 1.0.2 回復量のつじつま合わせ処理を修正。
 //                  LP減少のポップアップ処理をアクターのみに。
 //                  戦闘不能にされた際（HPダメージと同時）のLP減少ポップアップを遅延させる処理追加。
-//                  NRP_DynamicReturningAction.jsの処理を組み込み。
 
 /*:
  * @target MZ
@@ -403,10 +402,6 @@ const prmLPGainMessage = parameters["LPGainMessage"];
 
   const _Sprite_Damage_update = Sprite_Damage.prototype.update;
   Sprite_Damage.prototype.update = function () {
-    // NRP_DynamicReturningAction.jsがあれば考慮
-    if (this.isReturningWait && this.isReturningWait()) {
-      return;
-    }
     if (this._delay > 0) {
       this._delay--;
       return;
