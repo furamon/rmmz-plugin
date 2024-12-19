@@ -7,7 +7,8 @@
 // 2024/12/15 1.0.0 公開！
 // 2024/12/16 1.0.1 <LP_Bonus>が負の値の時の処理を追加。
 // 2024/12/19 1.0.2 回復量のつじつま合わせ処理を修正。
-
+//                  LP減少のポップアップ処理をアクターのみに。
+//                  戦闘不能にされた際（HPダメージと同時）のLP減少ポップアップを遅延させる処理追加。
 
 /*:
  * @target MZ
@@ -177,7 +178,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       }
     }
     if (bonusLP != 0) {
-      this.mlp = Math.max(Math.floor(eval(prmMaxLP)) + bonusLP,0)
+      this.mlp = Math.max(Math.floor(eval(prmMaxLP)) + bonusLP, 0);
     } else {
       this.mlp = Math.floor(eval(prmMaxLP));
     }
@@ -252,7 +253,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     // LPが残っているなら戦闘不能回復
     if (target.lp() > 0 && this.isHpRecover()) {
       target.removeState(1);
-      recoverValue = target.result().hpdamage
+      recoverValue = target.result().hpdamage;
       resurrect = target.result().isStateRemoved(1);
     }
 
@@ -302,7 +303,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       this._lp -= lpDamage;
       this.result().lpDamage = lpDamage;
     }
-  }
+  };
 
   // LPコストスキル
 
@@ -371,18 +372,11 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   Sprite_Battler.prototype.createDamageSprite = function () {
     _Sprite_Battler_createDamageSprite.apply(this);
     const result = this._battler.result();
-    if (result.lpDamage != 0) {
+    if (result.lpDamage != 0 && this._battler.isActor()) {
       const last = this._damages[this._damages.length - 1];
       const sprite = new Sprite_Damage();
       sprite.x = last.x;
-      sprite.y = last.y - 40;
-      sprite.setupLpBreak(this._battler);
-      this._damages.push(sprite);
-      this.parent.addChild(sprite);
-    } else if (this._battler.isDead()) {
-      const sprite = new Sprite_Damage();
-      sprite.x = this.x;
-      sprite.y = this.y;
+      sprite.y = last.y;
       sprite.setupLpBreak(this._battler);
       this._damages.push(sprite);
       this.parent.addChild(sprite);
@@ -393,7 +387,27 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   Sprite_Damage.prototype.setupLpBreak = function (target) {
     const result = target.result();
     this._colorType = result.lpDamage >= 0 ? 2 : 3;
+    // オーバーキルか？
+    this._delay = result.hpDamage != 0 ? 90 : 0;
+    this.visible = result.hpDamage == 0;
     this.createDigits(result.lpDamage);
+  };
+
+  // LP減少表示の遅延用
+  const _Sprite_Damage_initialize = Sprite_Damage.prototype.initialize;
+  Sprite_Damage.prototype.initialize = function () {
+    _Sprite_Damage_initialize.call(this);
+    this._delay = 0
+  };
+
+  const _Sprite_Damage_update = Sprite_Damage.prototype.update;
+  Sprite_Damage.prototype.update = function () {
+    if (this._delay > 0) {
+      this._delay--;
+      return;
+    }
+    this.visible = true;
+    _Sprite_Damage_update.call(this);
   };
 
   const _Window_BattleLog_prototype_displayDamage =
