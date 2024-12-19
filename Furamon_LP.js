@@ -9,6 +9,7 @@
 // 2024/12/19 1.0.2 回復量のつじつま合わせ処理を修正。
 //                  LP減少のポップアップ処理をアクターのみに。
 //                  戦闘不能にされた際（HPダメージと同時）のLP減少ポップアップを遅延させる処理追加。
+//                  NRP_DynamicReturningAction.jsの処理を組み込み。
 
 /*:
  * @target MZ
@@ -248,20 +249,18 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Game_Action_apply = Game_Action.prototype.apply;
   Game_Action.prototype.apply = function (target) {
     let resurrect = false; // 蘇生か？
-    let recoverValue = 0; // 回復量
 
     // LPが残っているなら戦闘不能回復
-    if (target.lp() > 0 && this.isHpRecover()) {
+    if (target.lp() > 0 && target.isDead() && this.isHpRecover()) {
       target.removeState(1);
-      recoverValue = target.result().hpdamage;
-      resurrect = target.result().isStateRemoved(1);
+      resurrect = true;
     }
 
     _Game_Action_apply.call(this, target);
 
     // 蘇生時に勝手にHPが1回復するためつじつまを合わせる。
     // 全回復ならそのまま。
-    if (resurrect && recoverValue < target.mhp) {
+    if (resurrect && -target.result().hpDamage < target.mhp) {
       target._hp -= 1;
     }
 
@@ -270,8 +269,10 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       const lpDamage = 1;
       target._lp -= lpDamage;
       target.result().lpDamage = lpDamage;
-      // 強制的にポップアップを表示
-      target.startDamagePopup();
+      if (target.result().hpDamage == 0) {
+        // 強制的にポップアップを表示
+        target.startDamagePopup();
+      }
     } else {
       target.result().lpDamage = 0;
     }
@@ -397,11 +398,15 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Sprite_Damage_initialize = Sprite_Damage.prototype.initialize;
   Sprite_Damage.prototype.initialize = function () {
     _Sprite_Damage_initialize.call(this);
-    this._delay = 0
+    this._delay = 0;
   };
 
   const _Sprite_Damage_update = Sprite_Damage.prototype.update;
   Sprite_Damage.prototype.update = function () {
+    // NRP_DynamicReturningAction.jsがあれば考慮
+    if (this.isReturningWait && this.isReturningWait()) {
+      return;
+    }
     if (this._delay > 0) {
       this._delay--;
       return;
