@@ -150,7 +150,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // 新しいプロパティを追加するための前処理
   const _Game_BattlerBase_initMembers = Game_BattlerBase.prototype.initMembers;
   Game_BattlerBase.prototype.initMembers = function () {
-    _Game_BattlerBase_initMembers.call(this);
+    _Game_BattlerBase_initMembers.apply(this, arguments);
     // 独立したライフポイント（LP）を追加
     this._lp = 1;
   };
@@ -188,13 +188,13 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // 装備やステートなどの更新時にMaxLPも更新
   const _Game_Actor_prototype_refresh = Game_Actor.prototype.refresh;
   Game_Actor.prototype.refresh = function () {
-    _Game_Actor_prototype_refresh.call(this);
+    _Game_Actor_prototype_refresh.apply(this, arguments);
     this.maxLPSet();
   };
 
   const _Game_Actor_prototype_setup = Game_Actor.prototype.setup;
   Game_Actor.prototype.setup = function (actorId) {
-    _Game_Actor_prototype_setup.call(this, actorId);
+    _Game_Actor_prototype_setup.apply(this, arguments, actorId);
     this.initLP(); // LPの初期化を行う
   };
 
@@ -207,14 +207,14 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // ゲーム開始時にパーティメンバー全員のLPを初期化
   const _DataManager_setupNewGame = DataManager.setupNewGame;
   DataManager.setupNewGame = function () {
-    _DataManager_setupNewGame.call(this);
+    _DataManager_setupNewGame.apply(this, arguments);
     $gameParty.members().forEach((actor) => actor.initLP());
   };
 
   // レベルアップ時必要ならMaxLPを更新
   const _Game_Actor_levelUp = Game_Actor.prototype.levelUp;
   Game_Actor.prototype.levelUp = function () {
-    _Game_Actor_levelUp.call(this);
+    _Game_Actor_levelUp.apply(this, arguments);
     this.maxLPSet(); // MaxLPを設定する
   };
 
@@ -229,7 +229,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // 攻撃対象選択にLPを組み込む
   const _Game_Action_makeTargets = Game_Action.prototype.makeTargets;
   Game_Action.prototype.makeTargets = function () {
-    let targets = _Game_Action_makeTargets.call(this);
+    let targets = _Game_Action_makeTargets.apply(this, arguments);
 
     // 対象のLPが0ならターゲットから除外
     targets = targets.filter((target) => target.lp() > 0);
@@ -255,7 +255,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       resurrect = true;
     }
 
-    _Game_Action_apply.call(this, target);
+    _Game_Action_apply.apply(this, arguments, target);
 
     // 蘇生時に勝手にHPが1回復するためつじつまを合わせる。
     // 全回復ならそのまま。
@@ -342,21 +342,21 @@ const prmLPGainMessage = parameters["LPGainMessage"];
 
   const _BattleManager_startInput = BattleManager.startInput;
   BattleManager.startInput = function () {
-    _BattleManager_startInput.call(this);
+    _BattleManager_startInput.apply(this, arguments);
     lpUpdate();
   };
 
   // エネミーは最大LP1で固定
   const _Game_Enemy_initMembers = Game_Enemy.prototype.initMembers;
   Game_Enemy.prototype.initMembers = function () {
-    _Game_Enemy_initMembers.call(this);
+    _Game_Enemy_initMembers.apply(this, arguments);
     this._lp = 1;
   };
 
   // 戦闘終了時にLPが残っていれば復活
   const _BattleManager_endBattle = BattleManager.endBattle;
   BattleManager.endBattle = function (result) {
-    _BattleManager_endBattle.call(this, result);
+    _BattleManager_endBattle.apply(this, arguments, result);
     if (result === 0 || this._escaped) {
       $gameParty.members().forEach((member) => {
         if (member.lp() > 0) {
@@ -396,7 +396,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // LP減少表示の遅延用
   const _Sprite_Damage_initialize = Sprite_Damage.prototype.initialize;
   Sprite_Damage.prototype.initialize = function () {
-    _Sprite_Damage_initialize.call(this);
+    _Sprite_Damage_initialize.apply(this, arguments);
     this._delay = 0;
   };
 
@@ -407,13 +407,13 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       return;
     }
     this.visible = true;
-    _Sprite_Damage_update.call(this);
+    _Sprite_Damage_update.apply(this, arguments);
   };
 
   const _Window_BattleLog_prototype_displayDamage =
     Window_BattleLog.prototype.displayDamage;
   Window_BattleLog.prototype.displayDamage = function (target) {
-    _Window_BattleLog_prototype_displayDamage.call(this, target);
+    _Window_BattleLog_prototype_displayDamage.apply(this, arguments, target);
     if (target.result().lpDamage > 0 && target.isActor()) {
       this.push(
         "addText",
@@ -435,14 +435,14 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // Sprite_Gaugeの拡張
   const _Sprite_Gauge_initMembers = Sprite_Gauge.prototype.initMembers;
   Sprite_Gauge.prototype.initMembers = function () {
-    _Sprite_Gauge_initMembers.call(this);
+    _Sprite_Gauge_initMembers.apply(this, arguments);
     this._lpColor1 = ColorManager.textColor(21); // LPゲージの色1（濃い色）
     this._lpColor2 = ColorManager.textColor(22); // LPゲージの色2（薄い色）
   };
 
   const _Sprite_Gauge_setup = Sprite_Gauge.prototype.setup;
   Sprite_Gauge.prototype.setup = function (battler, statusType) {
-    _Sprite_Gauge_setup.call(this, battler, statusType);
+    _Sprite_Gauge_setup.apply(this, arguments, battler, statusType);
     if (statusType === GAUGE_TYPE_LP) {
       this._value = battler.lp();
       this._maxValue = battler.mlp;
@@ -455,7 +455,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (this._statusType === GAUGE_TYPE_LP) {
       return this._battler.lp();
     }
-    return _Sprite_Gauge_currentValue.call(this);
+    return _Sprite_Gauge_currentValue.apply(this, arguments);
   };
 
   const _Sprite_Gauge_currentMaxValue = Sprite_Gauge.prototype.currentMaxValue;
@@ -463,7 +463,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (this._statusType === GAUGE_TYPE_LP) {
       return this._battler.mlp;
     }
-    return _Sprite_Gauge_currentMaxValue.call(this);
+    return _Sprite_Gauge_currentMaxValue.apply(this, arguments);
   };
 
   const _Sprite_Gauge_gaugeColor1 = Sprite_Gauge.prototype.gaugeColor1;
@@ -471,7 +471,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (this._statusType === GAUGE_TYPE_LP) {
       return this._lpColor1;
     }
-    return _Sprite_Gauge_gaugeColor1.call(this);
+    return _Sprite_Gauge_gaugeColor1.apply(this, arguments);
   };
 
   const _Sprite_Gauge_gaugeColor2 = Sprite_Gauge.prototype.gaugeColor2;
@@ -479,7 +479,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (this._statusType === GAUGE_TYPE_LP) {
       return this._lpColor2;
     }
-    return _Sprite_Gauge_gaugeColor2.call(this);
+    return _Sprite_Gauge_gaugeColor2.apply(this, arguments);
   };
 
   const _Sprite_Gauge_label = Sprite_Gauge.prototype.label;
@@ -487,13 +487,13 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (this._statusType === GAUGE_TYPE_LP) {
       return TextManager.lpA;
     }
-    return _Sprite_Gauge_label.call(this);
+    return _Sprite_Gauge_label.apply(this, arguments);
   };
 
   // Window_StatusBaseの拡張
   const _Window_StatusBase_placeGauge = Window_StatusBase.prototype.placeGauge;
   Window_StatusBase.prototype.placeGauge = function (actor, type, x, y) {
-    _Window_StatusBase_placeGauge.call(this, actor, type, x, y);
+    _Window_StatusBase_placeGauge.apply(this, arguments, actor, type, x, y);
     if (type === GAUGE_TYPE_LP) {
       const key = "actor%1-gauge-%2".format(actor.actorId(), type);
       const sprite = this.createInnerSprite(key, Sprite_Gauge);
@@ -509,7 +509,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     const lineHeight = this.lineHeight();
     const gaugeY = y + lineHeight;
     this.placeGauge(this._actor, GAUGE_TYPE_LP, 0, gaugeY);
-    _Window_Status_drawBlock2.call(this, y + lineHeight); // 他のゲージの位置を下にずらす
+    _Window_Status_drawBlock2.apply(this, arguments, y + lineHeight); // 他のゲージの位置を下にずらす
   };
 
   const _Window_StatusBase_prototype_placeBasicGauges =
@@ -531,7 +531,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     ) {
       return true;
     }
-    return Game_Action_prototype_testApply.call(this, target);
+    return Game_Action_prototype_testApply.apply(this, arguments, target);
   };
 
   // 戦闘ステータスの座標上げ
