@@ -9,6 +9,7 @@
 // 2024/12/19 1.0.2 回復量のつじつま合わせ処理を修正。
 //                  LP減少のポップアップ処理をアクターのみに。
 //                  戦闘不能にされた際（HPダメージと同時）のLP減少ポップアップを遅延させる処理追加。
+//                  NRP_DynamicReturningAction.jsとの競合処理を追加。
 
 /*:
  * @target MZ
@@ -141,7 +142,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   function lpUpdate() {
     const deadActor = $gameParty
       .aliveMembers()
-      .filter((member) => member.lp() <= 0);
+      .filter((member) => member._lp <= 0);
     if (deadActor.length > 0) {
       deadActor.map((member) => member.addNewState(1)); // ﾃｰﾚｯﾃｰ
     }
@@ -153,11 +154,6 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     _Game_BattlerBase_initMembers.apply(this, arguments);
     // 独立したライフポイント（LP）を追加
     this._lp = 1;
-  };
-
-  // LPの取得メソッド
-  Game_BattlerBase.prototype.lp = function () {
-    return this._lp !== undefined ? this._lp : 0;
   };
 
   // LPの全回復
@@ -195,20 +191,20 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Game_Actor_prototype_setup = Game_Actor.prototype.setup;
   Game_Actor.prototype.setup = function (actorId) {
     _Game_Actor_prototype_setup.apply(this, arguments, actorId);
-    this.initLP(); // LPの初期化を行う
+    this.init_lp; // LPの初期化を行う
   };
 
   // LPの初期化メソッドを追加
   Game_Actor.prototype.initLP = function () {
     this.maxLPSet(); // MaxLPを設定する
-    this.recoverLP();
+    this.recover_lp;
   };
 
   // ゲーム開始時にパーティメンバー全員のLPを初期化
   const _DataManager_setupNewGame = DataManager.setupNewGame;
   DataManager.setupNewGame = function () {
     _DataManager_setupNewGame.apply(this, arguments);
-    $gameParty.members().forEach((actor) => actor.initLP());
+    $gameParty.members().forEach((actor) => actor.init_lp);
   };
 
   // レベルアップ時必要ならMaxLPを更新
@@ -221,7 +217,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // ターゲット選択にLPを組み込む
   Game_Unit.prototype.smoothTarget = function (index) {
     const member = this.members()[Math.max(0, index)];
-    return member && (member.lp() > 0 || member.isAlive())
+    return member && (member._lp > 0 || member.isAlive())
       ? member
       : this.aliveMembers()[0];
   };
@@ -232,7 +228,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     let targets = _Game_Action_makeTargets.apply(this, arguments);
 
     // 対象のLPが0ならターゲットから除外
-    targets = targets.filter((target) => target.lp() > 0);
+    targets = targets.filter((target) => target._lp > 0);
 
     // 敵側の全体攻撃の場合、戦闘不能アクターも強制的に追加
     if (this.isForAll() && this.subject().isEnemy()) {
@@ -250,7 +246,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     let resurrect = false; // 蘇生か？
 
     // LPが残っているなら戦闘不能回復
-    if (target.lp() > 0 && target.isDead() && this.isHpRecover()) {
+    if (target._lp > 0 && target.isDead() && this.isHpRecover()) {
       target.removeState(1);
       resurrect = true;
     }
@@ -302,6 +298,14 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       const lpDamage = 1;
       this._lp -= lpDamage;
       this.result().lpDamage = lpDamage;
+      // NRP_DynamicReturningAction.jsの再生待ち組み込み
+      if (
+        PluginManager.parameters("NRP_DynamicReturningAction")[
+          "WaitRegeneration"
+        ] === "true"
+      ) {
+        this._regeneDeath = true;
+      }
     }
   };
 
@@ -332,7 +336,6 @@ const prmLPGainMessage = parameters["LPGainMessage"];
 
     // アクターのみ対象
     if (this.isActor()) {
-      // 奥義の場合
       const LPCost = skill.meta["LP_Cost"];
       if (LPCost) {
         this._lp -= LPCost;
@@ -359,7 +362,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     _BattleManager_endBattle.apply(this, arguments, result);
     if (result === 0 || this._escaped) {
       $gameParty.members().forEach((member) => {
-        if (member.lp() > 0) {
+        if (member._lp > 0) {
           member.revive();
         }
       });
@@ -371,15 +374,30 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     Sprite_Battler.prototype.createDamageSprite;
   Sprite_Battler.prototype.createDamageSprite = function () {
     _Sprite_Battler_createDamageSprite.apply(this);
-    const result = this._battler.result();
-    if (result.lpDamage != 0 && this._battler.isActor()) {
+    const battler = this._battler;
+    if (battler.result().lpDamage != 0 && battler.isActor()) {
+      // 負の再生ダメージで死んだ、かつ
+      // NRP_DynamicReturningAction.jsの再生待ちがONの場合の処理。
+      // 苦肉の策として処理を移植。
+      if (battler._regeneDeath) {
+        const hpDamage = this._damages[this._damages.length - 1];
+        hpDamage._isRegenerationWait = true;
+        hpDamage._spriteBattler = this;
+        hpDamage.visible = false;
+        const firstSprite = this._damages[0];
+        hpDamage._diffX = hpDamage.x - firstSprite.x;
+        hpDamage._diffY = hpDamage.y - firstSprite.y;
+      }
       const last = this._damages[this._damages.length - 1];
-      const sprite = new Sprite_Damage();
-      sprite.x = last.x;
-      sprite.y = last.y;
-      sprite.setupLpBreak(this._battler);
-      this._damages.push(sprite);
-      this.parent.addChild(sprite);
+      const lpDamage = new Sprite_Damage();
+      lpDamage.x = last.x;
+      lpDamage.y = last.y;
+      lpDamage.setupLpBreak(battler);
+      if (battler._regeneDeath) {
+        lpDamage._spriteBattler = this;
+      }
+      this._damages.push(lpDamage);
+      this.parent.addChild(lpDamage);
     }
   };
 
@@ -388,16 +406,9 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     const result = target.result();
     this._colorType = result.lpDamage >= 0 ? 2 : 3;
     // オーバーキルか？
-    this._delay = result.hpDamage != 0 ? 90 : 0;
-    this.visible = result.hpDamage == 0;
+    this._delay = result.hpDamage == 0 ? 0 : 90;
+    this.visible = false;
     this.createDigits(result.lpDamage);
-  };
-
-  // LP減少表示の遅延用
-  const _Sprite_Damage_initialize = Sprite_Damage.prototype.initialize;
-  Sprite_Damage.prototype.initialize = function () {
-    _Sprite_Damage_initialize.apply(this, arguments);
-    this._delay = 0;
   };
 
   const _Sprite_Damage_update = Sprite_Damage.prototype.update;
@@ -407,6 +418,11 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       return;
     }
     this.visible = true;
+    if (this._spriteBattler) {
+      const spriteBattler = this._spriteBattler;
+      this.x = spriteBattler.x + spriteBattler.damageOffsetX() + this._diffX;
+      this.y = spriteBattler.y + spriteBattler.damageOffsetY() + this._diffY;
+    }
     _Sprite_Damage_update.apply(this, arguments);
   };
 
@@ -444,7 +460,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   Sprite_Gauge.prototype.setup = function (battler, statusType) {
     _Sprite_Gauge_setup.apply(this, arguments, battler, statusType);
     if (statusType === GAUGE_TYPE_LP) {
-      this._value = battler.lp();
+      this._value = battler._lp;
       this._maxValue = battler.mlp;
       this._statusType = GAUGE_TYPE_LP;
     }
@@ -453,7 +469,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Sprite_Gauge_currentValue = Sprite_Gauge.prototype.currentValue;
   Sprite_Gauge.prototype.currentValue = function () {
     if (this._statusType === GAUGE_TYPE_LP) {
-      return this._battler.lp();
+      return this._battler._lp;
     }
     return _Sprite_Gauge_currentValue.apply(this, arguments);
   };
@@ -526,7 +542,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const Game_Action_prototype_testApply = Game_Action.prototype.testApply;
   Game_Action.prototype.testApply = function (target) {
     if (
-      (this.item().meta["LP_Recover"] > 0 && target.lp() < target.mlp) ||
+      (this.item().meta["LP_Recover"] > 0 && target._lp < target.mlp) ||
       this.item().meta["LP_Recover"] < 0
     ) {
       return true;
