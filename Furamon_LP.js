@@ -299,11 +299,10 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       this._lp -= lpDamage;
       this.result().lpDamage = lpDamage;
       // NRP_DynamicReturningAction.jsの再生待ち組み込み
-      if (
-        PluginManager.parameters("NRP_DynamicReturningAction")[
-          "WaitRegeneration"
-        ] === "true"
-      ) {
+      const _parameters = PluginManager.parameters(
+        "NRP_DynamicReturningAction"
+      );
+      if (_parameters["WaitRegeneration"] === "true" || true) {
         this._regeneDeath = true;
       }
     }
@@ -391,11 +390,9 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       const last = this._damages[this._damages.length - 1];
       const lpDamage = new Sprite_Damage();
       lpDamage.x = last.x;
-      lpDamage.y = last.y;
+      lpDamage.y = battler.result().hpDamage > 0 ? last.y - 60 : last.y;
+      lpDamage._spriteBattler = this;
       lpDamage.setupLpBreak(battler);
-      if (battler._regeneDeath) {
-        lpDamage._spriteBattler = this;
-      }
       this._damages.push(lpDamage);
       this.parent.addChild(lpDamage);
     }
@@ -405,26 +402,23 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   Sprite_Damage.prototype.setupLpBreak = function (target) {
     const result = target.result();
     this._colorType = result.lpDamage >= 0 ? 2 : 3;
-    // オーバーキルか？
-    this._delay = result.hpDamage == 0 ? 0 : 90;
-    this.visible = false;
     this.createDigits(result.lpDamage);
   };
 
-  const _Sprite_Damage_update = Sprite_Damage.prototype.update;
-  Sprite_Damage.prototype.update = function () {
-    if (this._delay > 0) {
-      this._delay--;
-      return;
-    }
-    this.visible = true;
-    if (this._spriteBattler) {
-      const spriteBattler = this._spriteBattler;
-      this.x = spriteBattler.x + spriteBattler.damageOffsetX() + this._diffX;
-      this.y = spriteBattler.y + spriteBattler.damageOffsetY() + this._diffY;
-    }
-    _Sprite_Damage_update.apply(this, arguments);
-  };
+  // const _Sprite_Damage_update = Sprite_Damage.prototype.update;
+  // Sprite_Damage.prototype.update = function () {
+  //   // NRP_DynamicReturningAction.jsの再生待ちか？
+  //   if (this._regeneDeath) {
+  //     if (this._spriteBattler.isReturning()) {
+  //       return;
+  //     }
+  //     const spriteBattler = this._spriteBattler;
+  //     this.x = spriteBattler.x + spriteBattler.damageOffsetX() + this._diffX;
+  //     this.y = spriteBattler.y + spriteBattler.damageOffsetY() + this._diffY;
+  //   }
+  //   this._regeneDeath = false;
+  //   _Sprite_Damage_update.apply(this, arguments);
+  // };
 
   const _Window_BattleLog_prototype_displayDamage =
     Window_BattleLog.prototype.displayDamage;
