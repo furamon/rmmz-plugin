@@ -264,7 +264,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       const lpDamage = 1;
       target._lp -= lpDamage;
       target.result().lpDamage = lpDamage;
-      if (target.result().hpDamage == 0) {
+      if (!target.result().hpAffected) {
         // 強制的にポップアップを表示
         target.startDamagePopup();
       }
@@ -389,10 +389,10 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       }
       const last = this._damages[this._damages.length - 1];
       const lpDamage = new Sprite_Damage();
-      lpDamage.x = last.x;
-      lpDamage.y = battler.result().hpDamage > 0 ? last.y - 60 : last.y;
-      lpDamage._spriteBattler = this;
       lpDamage.setupLpBreak(battler);
+      lpDamage.x = last.x;
+      lpDamage.y = last.y;
+      lpDamage._spriteBattler = this;
       this._damages.push(lpDamage);
       this.parent.addChild(lpDamage);
     }
@@ -401,24 +401,38 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // LP減少の表示
   Sprite_Damage.prototype.setupLpBreak = function (target) {
     const result = target.result();
-    this._colorType = result.lpDamage >= 0 ? 2 : 3;
+    this._lpDamage = result.lpDamage;
+    // HPダメージと同時ならディレイ
+    this._delay = result.hpAffected ? 90 : 0;
+    this.visible = false;
     this.createDigits(result.lpDamage);
   };
 
-  // const _Sprite_Damage_update = Sprite_Damage.prototype.update;
-  // Sprite_Damage.prototype.update = function () {
-  //   // NRP_DynamicReturningAction.jsの再生待ちか？
-  //   if (this._regeneDeath) {
-  //     if (this._spriteBattler.isReturning()) {
-  //       return;
-  //     }
-  //     const spriteBattler = this._spriteBattler;
-  //     this.x = spriteBattler.x + spriteBattler.damageOffsetX() + this._diffX;
-  //     this.y = spriteBattler.y + spriteBattler.damageOffsetY() + this._diffY;
-  //   }
-  //   this._regeneDeath = false;
-  //   _Sprite_Damage_update.apply(this, arguments);
-  // };
+  const _Sprite_Damage_damageColor = Sprite_Damage.prototype.damageColor;
+  Sprite_Damage.prototype.damageColor = function () {
+    if (!this._lpDamage) {
+      return _Sprite_Damage_damageColor.apply(this, arguments);
+    } else {
+      const color = this._lpDamage > 0 ? "#ff2020" : "#2020ff";
+      return color;
+    }
+  };
+
+  const _Sprite_Damage_update = Sprite_Damage.prototype.update;
+  Sprite_Damage.prototype.update = function () {
+    // NRP_DynamicReturningAction.jsとの競合処理。
+    // 帰還後にthis.visibleがtrueになってしまうため、
+    // こちら側で上書きしておく。
+    if (PluginManager.parameters("NRP_DynamicReturningAction")) {
+      this.visible = false;
+    }
+    if (this._delay > 0) {
+      this._delay--;
+      return;
+    }
+    this.visible = true;
+    _Sprite_Damage_update.apply(this, arguments);
+  };
 
   const _Window_BattleLog_prototype_displayDamage =
     Window_BattleLog.prototype.displayDamage;
