@@ -10,6 +10,7 @@
 //                  LP減少のポップアップ処理をアクターのみに。
 //                  戦闘不能にされた際（HPダメージと同時）のLP減少ポップアップを遅延させる処理追加。
 //                  NRP_DynamicReturningAction.jsとの競合処理を追加。
+// 2024/12/21 1.0.3 全体攻撃でオーバーキルされたときにLPがマイナスになってしまうひでえ不具合修正。
 
 /*:
  * @target MZ
@@ -135,7 +136,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
 
   // LPを増減させるメソッド
   function gainLP(actor, value) {
-    actor._lp = Math.min(actor._lp + value, actor.mlp);
+    actor._lp = (actor._lp + value).clamp(0, actor.mlp);
   }
 
   // LP監視関数。LPが0なら戦闘不能に
@@ -261,9 +262,8 @@ const prmLPGainMessage = parameters["LPGainMessage"];
 
     // LP減少処理
     if (target.isDead() && (this.isDamage() || this.isDrain())) {
-      const lpDamage = 1;
-      target._lp -= lpDamage;
-      target.result().lpDamage = lpDamage;
+      target.result().lpDamage = target._lp > 0 ? 1 : 0;
+      gainLP(target, -1);
       if (!target.result().hpAffected) {
         // 強制的にポップアップを表示
         target.startDamagePopup();
@@ -279,11 +279,11 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       // 対象が敵なら即死させる
       if (target.isEnemy()) {
         this.executeHpDamage(target, target._hp);
-        target._lp -= 1;
+        gainLP(target, -1);
         target.result().lpDamage = 1;
         return;
       }
-      target._lp = Math.min(target._lp + recoverValue, target.mlp);
+      gainLP(target, recoverValue);
       target.result().lpDamage = -recoverValue;
     }
 
@@ -295,9 +295,8 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   Game_Battler.prototype.regenerateHp = function (n) {
     _Game_Battler_regenerateHp.apply(this, arguments);
     if (this.isDead()) {
-      const lpDamage = 1;
-      this._lp -= lpDamage;
-      this.result().lpDamage = lpDamage;
+      gainLP(this,-1)
+      this.result().lpDamage = 1;
       // NRP_DynamicReturningAction.jsの再生待ち組み込み
       const _parameters = PluginManager.parameters(
         "NRP_DynamicReturningAction"
@@ -337,7 +336,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (this.isActor()) {
       const LPCost = skill.meta["LP_Cost"];
       if (LPCost) {
-        this._lp -= LPCost;
+        gainLP(this,-LPCost)
       }
     }
   };
