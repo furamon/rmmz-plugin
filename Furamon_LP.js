@@ -27,7 +27,7 @@
  *
  * スキルのメモ欄に<LP_Recover:x>を記入すると、使った対象のLPを回復するスキルやアイテムが作れます。
  * スキルのメモ欄に<LP_Cost:x>を記入すると、LPを消費するスキルが作れます。身を削る大技かなんかに。
- * アクター、職業、装備、ステート、スキルのメモ欄に<LP_Bonus:x>を記入すると、最大LPを増減できます。
+ * アクター、職業、装備、ステートのメモ欄に<LP_Bonus:x>を記入すると、最大LPを増減できます。
  * プラグインコマンドでLPの増減もできます。
  * -----------------------------------------------------------------------------
  * # あてんしょん #
@@ -192,20 +192,20 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Game_Actor_prototype_setup = Game_Actor.prototype.setup;
   Game_Actor.prototype.setup = function (actorId) {
     _Game_Actor_prototype_setup.apply(this, arguments, actorId);
-    this.init_lp; // LPの初期化を行う
+    this.initLP(); // LPの初期化を行う
   };
 
   // LPの初期化メソッドを追加
   Game_Actor.prototype.initLP = function () {
     this.maxLPSet(); // MaxLPを設定する
-    this.recover_lp;
+    this.recoverLP();
   };
 
   // ゲーム開始時にパーティメンバー全員のLPを初期化
   const _DataManager_setupNewGame = DataManager.setupNewGame;
   DataManager.setupNewGame = function () {
     _DataManager_setupNewGame.apply(this, arguments);
-    $gameParty.members().forEach((actor) => actor.init_lp);
+    $gameParty.members().forEach((actor) => actor.initLP());
   };
 
   // レベルアップ時必要ならMaxLPを更新
