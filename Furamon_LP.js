@@ -11,6 +11,7 @@
 //                  戦闘不能にされた際（HPダメージと同時）のLP減少ポップアップを遅延させる処理追加。
 //                  NRP_DynamicReturningAction.jsとの競合処理を追加。
 // 2024/12/21 1.0.3 全体攻撃でオーバーキルされたときにLPがマイナスになってしまうひでえ不具合修正。
+// 2024/12/23 1.0.4 敵に範囲が味方全体（つまり敵が敵グループ自身へ）のスキルを使わせるとアクター側を対象にしてしまうひっどい不具合修正。
 
 /*:
  * @target MZ
@@ -232,7 +233,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     targets = targets.filter((target) => target._lp > 0);
 
     // 敵側の全体攻撃の場合、戦闘不能アクターも強制的に追加
-    if (this.isForAll() && this.subject().isEnemy()) {
+    if (this.subject().isEnemy() && this._item.scope === 2) {
       targets = $gameParty
         .members()
         .filter((member) => member.isAlive() || member.isDead());
