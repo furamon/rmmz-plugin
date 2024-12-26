@@ -240,11 +240,6 @@ const prmLPGainMessage = parameters["LPGainMessage"];
         .filter((member) => member.isAlive() || member.isDead());
     }
 
-    // 味方側の全体回復の場合も同様
-    if (this.subject().isActor() && this._item.scope === 8) {
-      targets = $gameParty.members();
-    }
-
     return targets;
   };
 
