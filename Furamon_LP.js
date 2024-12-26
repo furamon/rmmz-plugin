@@ -12,6 +12,7 @@
 //                  NRP_DynamicReturningAction.jsとの競合処理を追加。
 // 2024/12/21 1.0.3 全体攻撃でオーバーキルされたときにLPがマイナスになってしまうひでえ不具合修正。
 // 2024/12/23 1.0.4 敵に範囲が味方全体（つまり敵が敵グループ自身へ）のスキルを使わせるとアクター側を対象にしてしまうひっどい不具合修正。
+// 2024/12/27 1.0.5 味方側全体回復で戦闘不能メンバーを復活できるよう修正。
 
 /*:
  * @target MZ
@@ -237,6 +238,11 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       targets = $gameParty
         .members()
         .filter((member) => member.isAlive() || member.isDead());
+    }
+
+    // 味方側の全体回復の場合も同様
+    if (this.subject().isActor() && this._item.scope === 8) {
+      targets = $gameParty.members();
     }
 
     return targets;
