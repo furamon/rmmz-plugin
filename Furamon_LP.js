@@ -13,6 +13,7 @@
 // 2024/12/21 1.0.3 全体攻撃でオーバーキルされたときにLPがマイナスになってしまうひでえ不具合修正。
 // 2024/12/23 1.0.4 敵に範囲が味方全体（つまり敵が敵グループ自身へ）のスキルを使わせるとアクター側を対象にしてしまうひっどい不具合修正。
 // 2024/12/27 1.0.5 味方側全体回復で戦闘不能メンバーを復活できるよう修正。
+// 2024/12/29 1.0.6 戦闘開始時にもLPが残っていれば復活するよう修正。
 
 /*:
  * @target MZ
@@ -356,7 +357,18 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     this._lp = 1;
   };
 
-  // 戦闘終了時にLPが残っていれば復活
+  // 戦闘開始時にLPが残っていれば復活
+  const _BattleManager_startBattle = BattleManager.startBattle;
+  BattleManager.startBattle = function () {
+    _BattleManager_startBattle.apply(this, arguments);
+    $gameParty.members().forEach((member) => {
+      if (member._lp > 0) {
+        member.revive();
+      }
+    });
+  };
+
+  // 戦闘終了時にもLPが残っていれば復活
   const _BattleManager_endBattle = BattleManager.endBattle;
   BattleManager.endBattle = function (result) {
     _BattleManager_endBattle.apply(this, arguments, result);
