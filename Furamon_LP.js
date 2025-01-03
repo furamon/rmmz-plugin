@@ -15,6 +15,7 @@
 // 2024/12/27 1.0.5 味方側全体回復で戦闘不能メンバーを復活できるよう修正。
 // 2024/12/29 1.0.6 戦闘開始時にもLPが残っていれば復活するよう修正。
 // 2025/01/03 1.1.0 コンボボックスをテキストモードにして変数をいれる機能を追加。
+//                  競合を起きにくく調整。
 
 /*:
  * @target MZ
@@ -266,7 +267,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     }
 
     // LP減少処理
-    if (target.isDead() && (this.isDamage() || this.isDrain())) {
+    if (target.hp === 0 && (this.isDamage() || this.isDrain())) {
       target.result().lpDamage = target._lp > 0 ? 1 : 0;
       gainLP(target, -1);
       if (!target.result().hpAffected) {
@@ -299,7 +300,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Game_Battler_regenerateHp = Game_Battler.prototype.regenerateHp;
   Game_Battler.prototype.regenerateHp = function (n) {
     _Game_Battler_regenerateHp.apply(this, arguments);
-    if (this.isDead()) {
+    if (this.hp === 0) {
       gainLP(this, -1);
       this.result().lpDamage = 1;
       // NRP_DynamicReturningAction.jsの再生待ち組み込み
