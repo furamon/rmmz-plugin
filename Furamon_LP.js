@@ -14,6 +14,7 @@
 // 2024/12/23 1.0.4 敵に範囲が味方全体（つまり敵が敵グループ自身へ）のスキルを使わせるとアクター側を対象にしてしまうひっどい不具合修正。
 // 2024/12/27 1.0.5 味方側全体回復で戦闘不能メンバーを復活できるよう修正。
 // 2024/12/29 1.0.6 戦闘開始時にもLPが残っていれば復活するよう修正。
+// 2025/01/03 1.1.0 コンボボックスをテキストモードにして変数をいれる機能を追加。
 
 /*:
  * @target MZ
@@ -65,6 +66,7 @@
  * @text アクター
  * @type actor
  * @desc 対象のアクターを指定します。空白なら全員。
+ * テキストで変数($gameVariables)も使えます。
  *
  * @arg value
  * @text 増減量
@@ -110,13 +112,13 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   PluginManager.registerCommand(PLUGIN_NAME, "growLP", function (args) {
     const actorId = eval(args.actor);
     const value = eval(args.value);
+    const actor = $gameActors.actor(actorId);
 
     if (!value) return;
 
     // アクターの指定があれば
-    if (actorId) {
-      const actor = $gameActors.actor(actorId);
-      if (actor) gainLP(actor, value);
+    if (actor) {
+      gainLP(actor, value);
       return;
     }
 
@@ -298,7 +300,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   Game_Battler.prototype.regenerateHp = function (n) {
     _Game_Battler_regenerateHp.apply(this, arguments);
     if (this.isDead()) {
-      gainLP(this,-1)
+      gainLP(this, -1);
       this.result().lpDamage = 1;
       // NRP_DynamicReturningAction.jsの再生待ち組み込み
       const _parameters = PluginManager.parameters(
@@ -339,7 +341,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (this.isActor()) {
       const LPCost = skill.meta["LP_Cost"];
       if (LPCost) {
-        gainLP(this,-LPCost)
+        gainLP(this, -LPCost);
       }
     }
   };
@@ -358,9 +360,9 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   };
 
   // 戦闘開始時にLPが残っていれば復活
-  const _BattleManager_startBattle = BattleManager.startBattle;
-  BattleManager.startBattle = function () {
-    _BattleManager_startBattle.apply(this, arguments);
+  const _BattleManager_setup = BattleManager.setup;
+  BattleManager.setup = function () {
+    _BattleManager_setup.apply(this, arguments);
     $gameParty.members().forEach((member) => {
       if (member._lp > 0) {
         member.revive();
