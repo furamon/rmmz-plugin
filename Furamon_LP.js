@@ -16,7 +16,6 @@
 // 2024/12/29 1.0.6 戦闘開始時にもLPが残っていれば復活するよう修正。
 // 2025/01/03 1.1.0 コンボボックスをテキストモードにして変数をいれる機能を追加。
 //                  競合を起きにくく調整。
-// 2025/01/04 1.1.1 さらに競合を起きにくく調整。
 
 /*:
  * @target MZ
@@ -268,7 +267,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     }
 
     // LP減少処理
-    if (target.hp === 0 && target.result().hpAffected) {
+    if (target.hp === 0 && (this.isDamage() || this.isDrain())) {
       target.result().lpDamage = target._lp > 0 ? 1 : 0;
       gainLP(target, -1);
       if (!target.result().hpAffected) {
