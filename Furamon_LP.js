@@ -16,6 +16,7 @@
 // 2024/12/29 1.0.6 戦闘開始時にもLPが残っていれば復活するよう修正。
 // 2025/01/03 1.1.0 コンボボックスをテキストモードにして変数をいれる機能を追加。
 //                  競合を起きにくく調整。
+// 2025/01/26 1.2.9 かかるとLPが増減するステートを設定可能に。
 
 /*:
  * @target MZ
@@ -32,6 +33,7 @@
  *
  * スキルのメモ欄に<LP_Recover:x>を記入すると、使った対象のLPを回復するスキルやアイテムが作れます。
  * スキルのメモ欄に<LP_Cost:x>を記入すると、LPを消費するスキルが作れます。身を削る大技かなんかに。
+ * ステートのメモ欄に<LP_Gain:x>を記入すると、そのステートにかかるとLPが増減します。
  * アクター、職業、装備、ステートのメモ欄に<LP_Bonus:x>を記入すると、最大LPを増減できます。
  * プラグインコマンドでLPの増減もできます。
  * -----------------------------------------------------------------------------
@@ -83,9 +85,9 @@
  * @param MaxLP
  * @text アクターの最大LP
  * @type string
- * @default 5 + a.level / 5
+ * @default 3 + a.level / 6
  * @desc アクターの最大LPです。
- * 例: 5 + a.level / 5
+ * 例: 3 + a.level / 6
  *
  * @param LPBreakMessage
  * @text LPが削れたときのメッセージ
@@ -295,6 +297,17 @@ const prmLPGainMessage = parameters["LPGainMessage"];
 
     lpUpdate();
   };
+
+  // LP増減ステート
+  const _Game_BattlerBase_addNewState = Game_BattlerBase.prototype.addNewState;
+  Game_BattlerBase.prototype.addNewState = function (stateId) {
+    _Game_BattlerBase_addNewState.apply(this, arguments);
+    const state = $dataStates[stateId];
+    const lpGain = state.meta["LP_Gain"];
+    if (lpGain) {
+      gainLP(this, Number(lpGain));
+    }
+  }
 
   // 負のHP再生で戦闘不能時の処理
   const _Game_Battler_regenerateHp = Game_Battler.prototype.regenerateHp;
