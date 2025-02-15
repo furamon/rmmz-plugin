@@ -28,6 +28,6 @@
 
 (function () {
   Game_Player.prototype.searchLimit = function () {
-    return 3;
+    return 1;
   };
 })();
