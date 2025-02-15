@@ -17,6 +17,7 @@
 // 2025/01/03 1.1.0 コンボボックスをテキストモードにして変数をいれる機能を追加。
 //                  競合を起きにくく調整。
 // 2025/01/26 1.2.0 かかるとLPが増減するステートを設定可能に。
+// 2025/02/16 1.2.1 1行だけリファクタ
 
 /*:
  * @target MZ
@@ -104,7 +105,7 @@
  * %1にアクターの名前、%2に数値が入ります。
  */
 
-const PLUGIN_NAME = "Furamon_LP";
+const PLUGIN_NAME = document.currentScript.src.match(/^.*\/(.*).js$/)[1];
 const parameters = PluginManager.parameters(PLUGIN_NAME);
 const prmMaxLP = parameters["MaxLP"];
 const prmLPBreakMessage = parameters["LPBreakMessage"];
@@ -240,7 +241,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     targets = targets.filter((target) => target._lp > 0);
 
     // 敵側の全体攻撃の場合、戦闘不能アクターも強制的に追加
-    if (this.subject().isEnemy() && this._item.scope === 2) {
+    if (this.subject().isEnemy() && this.item().scope === 2) {
       targets = $gameParty
         .members()
         .filter((member) => member.isAlive() || member.isDead());
