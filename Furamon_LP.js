@@ -18,6 +18,7 @@
 //                  競合を起きにくく調整。
 // 2025/01/26 1.2.0 かかるとLPが増減するステートを設定可能に。
 // 2025/02/16 1.2.1 1行だけリファクタ
+// 2025/02/21 1.3.0 現在値の色をLP値に連動させた。
 
 /*:
  * @target MZ
@@ -308,7 +309,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (lpGain) {
       gainLP(this, Number(lpGain));
     }
-  }
+  };
 
   // 負のHP再生で戦闘不能時の処理
   const _Game_Battler_regenerateHp = Game_Battler.prototype.regenerateHp;
@@ -492,6 +493,9 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     _Sprite_Gauge_initMembers.apply(this, arguments);
     this._lpColor1 = ColorManager.textColor(21); // LPゲージの色1（濃い色）
     this._lpColor2 = ColorManager.textColor(22); // LPゲージの色2（薄い色）
+    this._lpTextColorMax = ColorManager.textColor(0); // 最大LP時のテキスト色
+    this._lpTextColorZero = ColorManager.textColor(18); // LPが0の時のテキスト色
+    this._lpTextColorNormal = ColorManager.textColor(17); // 通常時のテキスト色
   };
 
   const _Sprite_Gauge_setup = Sprite_Gauge.prototype.setup;
@@ -509,6 +513,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (this._statusType === GAUGE_TYPE_LP) {
       return this._battler._lp;
     }
+
     return _Sprite_Gauge_currentValue.apply(this, arguments);
   };
 
@@ -542,6 +547,20 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       return TextManager.lpA;
     }
     return _Sprite_Gauge_label.apply(this, arguments);
+  };
+
+  const _Sprite_Gauge_valueColor = Sprite_Gauge.prototype.valueColor;
+  Sprite_Gauge.prototype.valueColor = function () {
+    if (this._statusType === GAUGE_TYPE_LP) {
+      if (this._value === this._maxValue) {
+        return this._lpTextColorMax; // 最大値の場合
+      } else if (this._value === 0) {
+        return this._lpTextColorZero; // 0の場合
+      } else {
+        return this._lpTextColorNormal; // それ以外の場合
+      }
+    }
+    return _Sprite_Gauge_valueColor.apply(this, arguments);
   };
 
   // Window_StatusBaseの拡張
