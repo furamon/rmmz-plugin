@@ -19,6 +19,8 @@
 // 2025/01/26 1.2.0 かかるとLPが増減するステートを設定可能に。
 // 2025/02/16 1.2.1 1行だけリファクタ
 // 2025/02/21 1.3.0 現在値の色をLP値に連動させた。
+//                  オーバーキル時もダメージ音を鳴らすようにした。
+//                  吸収攻撃時にLPダメージの嘘ポップアップが出る不具合修正。
 
 /*:
  * @target MZ
@@ -274,9 +276,14 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     if (target.hp === 0 && (this.isDamage() || this.isDrain())) {
       target.result().lpDamage = target._lp > 0 ? 1 : 0;
       gainLP(target, -1);
-      if (!target.result().hpAffected) {
+      // なぜかここでもGame_Action.prototype.applyが呼ばれるらしく
+      // 吸収攻撃をした場合「0のダメージと自己回復」と解釈され
+      // LPダメージのポップアップが出てしまう
+      // なのでthis.isDamage()を判定に追加
+      if (!target.result().hpAffected && this.isDamage()) {
         // 強制的にポップアップを表示
         target.startDamagePopup();
+        SoundManager.playActorDamage();
       }
     } else {
       target.result().lpDamage = 0;
