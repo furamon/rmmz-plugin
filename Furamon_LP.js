@@ -25,11 +25,14 @@
 //                  途中セーブへも適用可能に。
 //                  リファクタリング。
 // 2025/02/23 1.4.1 Lvアップ時LPが全快する不具合修正。
+//                  Game_Action.prototype.applyを書き換えることの明記。
+//                  並びにNRP_StateExより前に置くとあちらが動かなくなるので順番明記。
 
 /*:
  * @target MZ
  * @plugindesc 戦闘不能に関わるライフポイントを実装します。
  * @author Furamon
+ * @orderAfter NRP_StateEx
  *
  * @help 戦闘不能に関わるライフポイントを実装します。
  *
@@ -48,6 +51,9 @@
  * -----------------------------------------------------------------------------
  * # あてんしょん #
  * -----------------------------------------------------------------------------
+ * Game_Action.prototype.applyを盛大に書き換えます。可能な限り下の方で運用したほうが競合しないと思います。
+ * 参考までに、例えばNRP_StateExより前においてしまうとあちらのステート拡張が機能しなくなります。
+ *
  * 描画の際はTP欄を潰すため、「TPを表示」をオフにしてください。
  * もしTPを使っている場合はご容赦いただくか、ほかのプラグインでなんとかしてください。（丸投げ）
  * actor._lpで取得できるはずです。
@@ -227,15 +233,15 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
   };
 
   // 装備やステートなどの更新時にMaxLPも更新
-  const _Game_Actor_prototype_refresh = Game_Actor.prototype.refresh;
+  const _Game_Actor_refresh = Game_Actor.prototype.refresh;
   Game_Actor.prototype.refresh = function () {
-    _Game_Actor_prototype_refresh.apply(this, arguments);
+    _Game_Actor_refresh.apply(this, arguments);
     this.maxLPSet();
   };
 
-  const _Game_Actor_prototype_setup = Game_Actor.prototype.setup;
+  const _Game_Actor_setup = Game_Actor.prototype.setup;
   Game_Actor.prototype.setup = function (actorId) {
-    _Game_Actor_prototype_setup.apply(this, arguments, actorId);
+    _Game_Actor_setup.apply(this, arguments, actorId);
   };
 
   // レベルアップ時必要ならMaxLPを更新
@@ -492,10 +498,10 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     _Sprite_Damage_update.apply(this, arguments);
   };
 
-  const _Window_BattleLog_prototype_displayDamage =
+  const _Window_BattleLog_displayDamage =
     Window_BattleLog.prototype.displayDamage;
   Window_BattleLog.prototype.displayDamage = function (target) {
-    _Window_BattleLog_prototype_displayDamage.apply(this, arguments, target);
+    _Window_BattleLog_displayDamage.apply(this, arguments, target);
     if (target.result().lpDamage > 0 && target.isActor()) {
       this.push(
         "addText",
@@ -612,10 +618,10 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     _Window_Status_drawBlock2.apply(this, arguments, y + lineHeight); // 他のゲージの位置を下にずらす
   };
 
-  const _Window_StatusBase_prototype_placeBasicGauges =
+  const _Window_StatusBase_placeBasicGauges =
     Window_StatusBase.prototype.placeBasicGauges;
   Window_StatusBase.prototype.placeBasicGauges = function (actor, x, y) {
-    _Window_StatusBase_prototype_placeBasicGauges.apply(this, arguments);
+    _Window_StatusBase_placeBasicGauges.apply(this, arguments);
     // LP描画を追加
     this.placeGauge(actor, "lp", x, y + this.gaugeLineHeight() * 2);
   };
@@ -623,7 +629,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
   // 移動中のアイテム処理
 
   // LPが減っていればLP回復アイテムを使用可能にする
-  const Game_Action_prototype_testApply = Game_Action.prototype.testApply;
+  const Game_Action_testApply = Game_Action.prototype.testApply;
   Game_Action.prototype.testApply = function (target) {
     if (
       (this.item().meta["LP_Recover"] > 0 && target._lp < target.mlp) ||
@@ -631,7 +637,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     ) {
       return true;
     }
-    return Game_Action_prototype_testApply.apply(this, arguments, target);
+    return Game_Action_testApply.apply(this, arguments, target);
   };
 
   // 戦闘ステータスの座標上げ
