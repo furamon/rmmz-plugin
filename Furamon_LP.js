@@ -21,6 +21,9 @@
 // 2025/02/21 1.3.0 現在値の色をLP値に連動させた。
 //                  オーバーキル時もダメージ音を鳴らすようにした。
 //                  吸収攻撃時にLPダメージの嘘ポップアップが出る不具合修正。
+// 2025/02/16 1.4.0 戦闘後LPが残っていればHP全快処理追加。
+//                  途中セーブへも適用可能に。
+//                  リファクタリング。
 
 /*:
  * @target MZ
@@ -32,6 +35,7 @@
  * - アクターが戦闘不能になった際に、LPが1削れる
  * - 戦闘不能のアクターが複数対象攻撃に巻き込まれた場合もLPが1削れる
  * - LPが残っていれば戦闘不能アクターに対して回復スキルを使用できる
+ * - プラグインパラメータの「戦闘後全快」ONで戦闘終了後LPが残っていればHPが全快する
  *
  * プラグインパラメータにLPの計算式を入れてください。
  *
@@ -106,6 +110,13 @@
  * @default %1は%2LP回復した！
  * @desc LPが回復したときのバトルメッセージです。
  * %1にアクターの名前、%2に数値が入ります。
+ *
+ * @param BattleEndRecover
+ * @text 戦闘後全快？
+ * @type boolean
+ * @default false
+ * @desc 戦闘後LPが残っていればHPが全回復します。
+ *
  */
 
 const PLUGIN_NAME = document.currentScript.src.match(/^.*\/(.*).js$/)[1];
@@ -113,6 +124,7 @@ const parameters = PluginManager.parameters(PLUGIN_NAME);
 const prmMaxLP = parameters["MaxLP"];
 const prmLPBreakMessage = parameters["LPBreakMessage"];
 const prmLPGainMessage = parameters["LPGainMessage"];
+const prmBattleEndRecover = parameters["BattleEndRecover"];
 
 (function () {
   // プラグインコマンド
@@ -135,6 +147,16 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     });
   });
 
+  // パラメータ追加
+  Object.defineProperties(Game_Actor.prototype, {
+    lp: {
+      get: function () {
+        return this._lp;
+      },
+      configurable: true,
+    },
+  });
+
   // バトルメッセージ初期化
   function LPBreakMessage(actor, point) {
     const message = prmLPBreakMessage || "%1は%2のLPを失った！！";
@@ -148,29 +170,36 @@ const prmLPGainMessage = parameters["LPGainMessage"];
 
   // LPを増減させるメソッド
   function gainLP(actor, value) {
-    actor._lp = (actor._lp + value).clamp(0, actor.mlp);
+    actor._lp = (actor.lp + value).clamp(0, actor.mlp);
   }
 
   // LP監視関数。LPが0なら戦闘不能に
   function lpUpdate() {
     const deadActor = $gameParty
       .aliveMembers()
-      .filter((member) => member._lp <= 0);
+      .filter((member) => member.lp <= 0);
     if (deadActor.length > 0) {
       deadActor.map((member) => member.addNewState(1)); // ﾃｰﾚｯﾃｰ
     }
   }
 
-  // 新しいプロパティを追加するための前処理
-  const _Game_BattlerBase_initMembers = Game_BattlerBase.prototype.initMembers;
-  Game_BattlerBase.prototype.initMembers = function () {
-    _Game_BattlerBase_initMembers.apply(this, arguments);
-    // 独立したライフポイント（LP）を追加
+  // LPの初期化メソッドを追加
+  Game_Actor.prototype.initLP = function () {
     this._lp = 1;
+    if (this.mlp === null) {
+      this.maxLPSet(); // MaxLPを設定する
+    }
+    this.recoverLP();
+  };
+
+  const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
+  Game_Actor.prototype.initMembers = function () {
+    _Game_Actor_initMembers.apply(this, arguments);
+    this.initLP();
   };
 
   // LPの全回復
-  Game_BattlerBase.prototype.recoverLP = function () {
+  Game_Actor.prototype.recoverLP = function () {
     this._lp = this.mlp;
   };
 
@@ -180,6 +209,8 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     const a = this; // 参照用
     const objects = this.traitObjects().concat(this.skills());
     let bonusLP = 0;
+
+    this.initLP();
 
     for (const obj of objects) {
       if (obj.meta["LP_Bonus"]) {
@@ -191,7 +222,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     } else {
       this.mlp = Math.floor(eval(prmMaxLP));
     }
-    this._lp = Math.min(this._lp, this.mlp);
+    this._lp = Math.min(this.lp, this.mlp);
   };
 
   // 装備やステートなどの更新時にMaxLPも更新
@@ -204,20 +235,6 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Game_Actor_prototype_setup = Game_Actor.prototype.setup;
   Game_Actor.prototype.setup = function (actorId) {
     _Game_Actor_prototype_setup.apply(this, arguments, actorId);
-    this.initLP(); // LPの初期化を行う
-  };
-
-  // LPの初期化メソッドを追加
-  Game_Actor.prototype.initLP = function () {
-    this.maxLPSet(); // MaxLPを設定する
-    this.recoverLP();
-  };
-
-  // ゲーム開始時にパーティメンバー全員のLPを初期化
-  const _DataManager_setupNewGame = DataManager.setupNewGame;
-  DataManager.setupNewGame = function () {
-    _DataManager_setupNewGame.apply(this, arguments);
-    $gameParty.members().forEach((actor) => actor.initLP());
   };
 
   // レベルアップ時必要ならMaxLPを更新
@@ -240,8 +257,8 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   Game_Action.prototype.makeTargets = function () {
     let targets = _Game_Action_makeTargets.apply(this, arguments);
 
-    // 対象のLPが0ならターゲットから除外
-    targets = targets.filter((target) => target._lp > 0);
+    // 対象がアクターでLPが0ならターゲットから除外
+    targets = targets.filter((target) => target.isEnemy() || target.lp > 0);
 
     // 敵側の全体攻撃の場合、戦闘不能アクターも強制的に追加
     if (this.subject().isEnemy() && this.item().scope === 2) {
@@ -259,7 +276,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
     let resurrect = false; // 蘇生か？
 
     // LPが残っているなら戦闘不能回復
-    if (target._lp > 0 && target.isDead() && this.isHpRecover()) {
+    if (target.lp > 0 && target.isDead() && this.isHpRecover()) {
       target.removeState(1);
       resurrect = true;
     }
@@ -274,7 +291,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
 
     // LP減少処理
     if (target.hp === 0 && (this.isDamage() || this.isDrain())) {
-      target.result().lpDamage = target._lp > 0 ? 1 : 0;
+      target.result().lpDamage = target.lp > 0 ? 1 : 0;
       gainLP(target, -1);
       // なぜかここでもGame_Action.prototype.applyが呼ばれるらしく
       // 吸収攻撃をした場合「0のダメージと自己回復」と解釈され
@@ -295,7 +312,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       const recoverValue = Math.floor(eval(lpRecover));
       // 対象が敵なら即死させる
       if (target.isEnemy()) {
-        this.executeHpDamage(target, target._hp);
+        this.executeHpDamage(target, target.hp);
         gainLP(target, -1);
         target.result().lpDamage = 1;
         return;
@@ -308,9 +325,9 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   };
 
   // LP増減ステート
-  const _Game_BattlerBase_addNewState = Game_BattlerBase.prototype.addNewState;
-  Game_BattlerBase.prototype.addNewState = function (stateId) {
-    _Game_BattlerBase_addNewState.apply(this, arguments);
+  const _Game_Actor_addNewState = Game_Actor.prototype.addNewState;
+  Game_Actor.prototype.addNewState = function (stateId) {
+    _Game_Actor_addNewState.apply(this, arguments);
     const state = $dataStates[stateId];
     const lpGain = state.meta["LP_Gain"];
     if (lpGain) {
@@ -338,27 +355,25 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   // LPコストスキル
 
   // <LP_Cost>指定のスキルのLPコストを払えるか？
-  const _Game_BattlerBase_canPaySkillCost =
-    Game_BattlerBase.prototype.canPaySkillCost;
-  Game_BattlerBase.prototype.canPaySkillCost = function (skill) {
+  const _Game_Actor_canPaySkillCost = Game_Actor.prototype.canPaySkillCost;
+  Game_Actor.prototype.canPaySkillCost = function (skill) {
     // アクターのみ対象
     if (this.isActor()) {
       const LPCost = skill.meta["LP_Cost"];
       if (LPCost) {
         return (
-          _Game_BattlerBase_canPaySkillCost.apply(this, arguments) &&
+          _Game_Actor_canPaySkillCost.apply(this, arguments) &&
           this._lp > LPCost
         );
       }
     }
-    return _Game_BattlerBase_canPaySkillCost.apply(this, arguments);
+    return _Game_Actor_canPaySkillCost.apply(this, arguments);
   };
 
   // LP消費
-  const _Game_BattlerBase_paySkillCost =
-    Game_BattlerBase.prototype.paySkillCost;
-  Game_BattlerBase.prototype.paySkillCost = function (skill) {
-    _Game_BattlerBase_paySkillCost.apply(this, arguments);
+  const _Game_Actor_paySkillCost = Game_Actor.prototype.paySkillCost;
+  Game_Actor.prototype.paySkillCost = function (skill) {
+    _Game_Actor_paySkillCost.apply(this, arguments);
 
     // アクターのみ対象
     if (this.isActor()) {
@@ -379,7 +394,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   const _Game_Enemy_initMembers = Game_Enemy.prototype.initMembers;
   Game_Enemy.prototype.initMembers = function () {
     _Game_Enemy_initMembers.apply(this, arguments);
-    this._lp = 1;
+    this.lp = 1;
   };
 
   // 戦闘開始時にLPが残っていれば復活
@@ -394,6 +409,7 @@ const prmLPGainMessage = parameters["LPGainMessage"];
   };
 
   // 戦闘終了時にもLPが残っていれば復活
+  // 設定に応じてHP全回復
   const _BattleManager_endBattle = BattleManager.endBattle;
   BattleManager.endBattle = function (result) {
     _BattleManager_endBattle.apply(this, arguments, result);
@@ -401,6 +417,9 @@ const prmLPGainMessage = parameters["LPGainMessage"];
       $gameParty.members().forEach((member) => {
         if (member._lp > 0) {
           member.revive();
+          if (prmBattleEndRecover) {
+            member.setHp(member.mhp);
+          }
         }
       });
     }
