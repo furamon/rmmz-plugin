@@ -21,9 +21,10 @@
 // 2025/02/21 1.3.0 現在値の色をLP値に連動させた。
 //                  オーバーキル時もダメージ音を鳴らすようにした。
 //                  吸収攻撃時にLPダメージの嘘ポップアップが出る不具合修正。
-// 2025/02/16 1.4.0 戦闘後LPが残っていればHP全快処理追加。
+// 2025/02/22 1.4.0 戦闘後LPが残っていればHP全快処理追加。
 //                  途中セーブへも適用可能に。
 //                  リファクタリング。
+// 2025/02/23 1.4.1 Lvアップ時LPが全快する不具合修正。
 
 /*:
  * @target MZ
@@ -210,7 +211,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     const objects = this.traitObjects().concat(this.skills());
     let bonusLP = 0;
 
-    this.initLP();
+    // this.initLP();
 
     for (const obj of objects) {
       if (obj.meta["LP_Bonus"]) {
