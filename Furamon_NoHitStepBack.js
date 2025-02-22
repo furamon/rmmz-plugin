@@ -1,3 +1,10 @@
+//------------------------------------------------------------------------------
+// Furamon_NoHitStepBack.js
+// This software is released under the MIT License.
+// http://opensource.org/licenses/mit-license.php
+//------------------------------------------------------------------------------
+// 2025/2/2 1.0.0 公開！(厳密には数日前からリポジトリにはあった)
+
 /*:
  * @target MZ
  * @plugindesc 相手の行動をかわした・外された際、バックステップさせてかわしてるっぽくする
@@ -8,9 +15,7 @@
  *
  */
 
-(() => {
-  ("use strict");
-
+(function () {
   // バトラーのミス・回避・魔法回避に処理追加
   const _Game_Battler_performMiss = Game_Battler.prototype.performMiss;
   Game_Battler.prototype.performMiss = async function () {
@@ -39,7 +44,7 @@
     if (scene instanceof Scene_Battle) {
       let sprite;
       if (this.isEnemy()) {
-       sprite = scene._spriteset._enemySprites.find(
+        sprite = scene._spriteset._enemySprites.find(
           (s) => s._battler === this
         );
       }
@@ -52,7 +57,7 @@
         const duration = 6;
 
         sprite.startMove(this.isEnemy() ? -192 : 192, 0, duration);
-        await delay((duration + duration/2) * 16); // フレームレートを考慮してウェイト
+        await delay((duration + duration / 2) * 16); // フレームレートを考慮してウェイト
         sprite.startMove(0, 0, duration);
       }
     }
