@@ -337,9 +337,9 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
   };
 
   // 負のHP再生で戦闘不能時の処理
-  const _Game_Battler_regenerateHp = Game_Battler.prototype.regenerateHp;
-  Game_Battler.prototype.regenerateHp = function (n) {
-    _Game_Battler_regenerateHp.apply(this, arguments);
+  const _Game_Actor_regenerateHp = Game_Actor.prototype.regenerateHp;
+  Game_Actor.prototype.regenerateHp = function (n) {
+    _Game_Actor_regenerateHp.apply(this, arguments);
     if (this.hp === 0) {
       gainLP(this, -1);
       this.result().lpDamage = 1;
@@ -391,12 +391,12 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     lpUpdate();
   };
 
-  // エネミーは最大LP1で固定
-  const _Game_Enemy_initMembers = Game_Enemy.prototype.initMembers;
-  Game_Enemy.prototype.initMembers = function () {
-    _Game_Enemy_initMembers.apply(this, arguments);
-    this.lp = 1;
-  };
+  // // エネミーは最大LP1で固定
+  // const _Game_Enemy_initMembers = Game_Enemy.prototype.initMembers;
+  // Game_Enemy.prototype.initMembers = function () {
+  //   _Game_Enemy_initMembers.apply(this, arguments);
+  //   this.lp = 1;
+  // };
 
   // 戦闘開始時にLPが残っていれば復活
   const _BattleManager_setup = BattleManager.setup;
