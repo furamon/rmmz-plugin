@@ -190,24 +190,16 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     }
   }
 
-  // LPの初期化メソッドを追加
-  Game_Actor.prototype.initLP = function () {
-    this._lp = 1;
-    if (this.mlp === null) {
-      this.maxLPSet(); // MaxLPを設定する
-    }
-    this.recoverLP();
-  };
-
-  const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
-  Game_Actor.prototype.initMembers = function () {
-    _Game_Actor_initMembers.apply(this, arguments);
-    this.initLP();
-  };
-
-  // LPの全回復
-  Game_Actor.prototype.recoverLP = function () {
-    this._lp = this.mlp;
+  // ロード時に必要ならLPを初期化
+  const _Game_System_onAfterLoad = Game_System.prototype.onAfterLoad;
+  Game_System.prototype.onAfterLoad = function () {
+    _Game_System_onAfterLoad.apply(this, arguments);
+    $gameParty.members().forEach((member) => {
+      if (!member._lp) {
+        member.maxLPSet();
+        member.recoverLP();
+      }
+    });
   };
 
   // 最大LPを設定するメソッド
@@ -216,8 +208,6 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     const a = this; // 参照用
     const objects = this.traitObjects().concat(this.skills());
     let bonusLP = 0;
-
-    // this.initLP();
 
     for (const obj of objects) {
       if (obj.meta["LP_Bonus"]) {
@@ -232,16 +222,19 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     this._lp = Math.min(this.lp, this.mlp);
   };
 
+  // LPの全回復
+  Game_Actor.prototype.recoverLP = function () {
+    this._lp = this.mlp;
+  };
+
   // 装備やステートなどの更新時にMaxLPも更新
   const _Game_Actor_refresh = Game_Actor.prototype.refresh;
   Game_Actor.prototype.refresh = function () {
     _Game_Actor_refresh.apply(this, arguments);
     this.maxLPSet();
-  };
-
-  const _Game_Actor_setup = Game_Actor.prototype.setup;
-  Game_Actor.prototype.setup = function (actorId) {
-    _Game_Actor_setup.apply(this, arguments, actorId);
+    if (!this.lp) {
+      this.recoverLP();
+    }
   };
 
   // レベルアップ時必要ならMaxLPを更新
