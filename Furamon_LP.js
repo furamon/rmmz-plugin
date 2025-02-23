@@ -27,6 +27,7 @@
 // 2025/02/23 1.4.1 Lvアップ時LPが全快する不具合修正。
 //                  Game_Action.prototype.applyを書き換えることの明記。
 //                  並びにNRP_StateExより前に置くとあちらが動かなくなるので順番明記。
+//                  NRP_SkillRangeEX.jsとの競合処理を追加。
 
 /*:
  * @target MZ
@@ -257,14 +258,17 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
   Game_Action.prototype.makeTargets = function () {
     let targets = _Game_Action_makeTargets.apply(this, arguments);
 
+    // NRP_SkillRangeEX.js考慮処理
+    if (PluginManager._scripts.includes("NRP_SkillRangeEX")) {
+      targets = BattleManager.rangeEx(this, targets); // スキル範囲を拡張したターゲットの配列を取得
+    }
+
     // 対象がアクターでLPが0ならターゲットから除外
     targets = targets.filter((target) => target.isEnemy() || target.lp > 0);
 
     // 敵側の全体攻撃の場合、戦闘不能アクターも強制的に追加
     if (this.subject().isEnemy() && this.item().scope === 2) {
-      targets = $gameParty
-        .members()
-        .filter((member) => member.isAlive() || member.isDead());
+      targets = targets.filter((member) => member.isAlive() || member.isDead());
     }
 
     return targets;
@@ -295,8 +299,8 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
       gainLP(target, -1);
       // なぜかここでもGame_Action.prototype.applyが呼ばれるらしく
       // 吸収攻撃をした場合「0のダメージと自己回復」と解釈され
-      // LPダメージのポップアップが出てしまう
-      // なのでthis.isDamage()を判定に追加
+      // LPダメージのポップアップが出てしまう。
+      // なのでthis.isDamage()を判定に追加。
       if (!target.result().hpAffected && this.isDamage()) {
         // 強制的にポップアップを表示
         target.startDamagePopup();
@@ -389,13 +393,6 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     _BattleManager_startInput.apply(this, arguments);
     lpUpdate();
   };
-
-  // // エネミーは最大LP1で固定
-  // const _Game_Enemy_initMembers = Game_Enemy.prototype.initMembers;
-  // Game_Enemy.prototype.initMembers = function () {
-  //   _Game_Enemy_initMembers.apply(this, arguments);
-  //   this.lp = 1;
-  // };
 
   // 戦闘開始時にLPが残っていれば復活
   const _BattleManager_setup = BattleManager.setup;
