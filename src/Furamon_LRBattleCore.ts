@@ -290,17 +290,15 @@
 
   // NRP_BattleTargetCursorが開いている間はスキルウィンドウを閉じる
   const _Scene_Battle_update = Scene_Battle.prototype.update;
-
   Scene_Battle.prototype.update = function () {
     _Scene_Battle_update.call(this);
-
     if (BattleManager.isInputting()) {
       if (this._skillWindow) {
         // 敵選択ウィンドウが開いているなら
         if (this._enemyWindow || this._enemyNameWindow) {
-          this._skillWindow.hide();
+          this._skillWindow.visible = false;
         } else {
-          this._skillWindow.show();
+          this._skillWindow.visible = true;
         }
       }
     }

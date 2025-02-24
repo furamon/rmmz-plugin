@@ -71,4 +71,5 @@
   function delay(wait: any) {
     return new Promise((resolve: any) => setTimeout(resolve, wait));
   }
+
 })();

@@ -59,10 +59,6 @@
  * 描画の際はTP欄を潰すため、「TPを表示」をオフにしてください。
  * もしTPを使っている場合はご容赦いただくか、ほかのプラグインでなんとかしてください。（丸投げ）
  * actor._lpで取得できるはずです。
- *
- * <LP_Recover:x>付きスキルを敵に使うと特殊処理で即死させます。
- * 回復だろうが戦闘不能になりますが仕様です。
- *
  * -----------------------------------------------------------------------------
  * # 謝辞 #
  * -----------------------------------------------------------------------------
@@ -290,13 +286,11 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
         const lpRecover = String(this.item()?.meta["LP_Recover"] || null);
         if (lpRecover != null) {
             const recoverValue = Math.floor(eval(lpRecover));
-            // 対象が敵なら即死させる
-            if (target.isEnemy()) {
-                this.executeHpDamage(target, target.hp);
-                gainLP(target, -1);
-                target.result().lpDamage = 1;
-                return;
-            }
+            // // 対象が敵なら即死させる
+            // if (target.isEnemy()) {
+            //   this.executeHpDamage(target, target.hp);
+            //   return;
+            // }
             gainLP(target, recoverValue);
             target.result().lpDamage = -recoverValue;
         }
