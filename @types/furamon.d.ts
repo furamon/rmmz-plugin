@@ -1,46 +1,49 @@
-declare interface BattleManager {
-  rangeEx(action: Game_Action, targets: Game_Battler[]): Game_Battler[];
+declare const PluginManager: any;
+
+interface BattleManager {
+  rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
 }
 
-declare interface Game_BattlerBase {
+interface Scene_Battle {
+  _enemyNameWindow: Window_EnemyName;
+}
+
+interface Game_BattlerBase{
   isDummyEnemy(): boolean;
 }
 
-declare interface Game_Battler extends Game_BattlerBase {
-  stepBack(): Promise<void>;
-  // isActor(): this is Game_Actor;
+interface Game_Battler{
+  stepBack(): void;
 }
 
-declare interface Game_Actor extends Game_Battler {
-  lp: number;
-  _lp: number;
+interface Game_Actor {
   mlp: number;
-
-  maxLPSet: () => void;
-  recoverLP: () => void;
+  _lp: number;
+  lp: number;
   _regeneDeath: boolean;
+  maxLPSet(): void;
+  recoverLP(): void;
 }
 
-declare interface Game_ActionResult {
+interface Game_Action {
+  lpRecover: number;
+}
+
+interface Game_ActionResult {
   lpDamage: number;
-  _isHitConfirm: boolean;
 }
 
-declare interface Sprite_Damage extends Sprite {
+interface Sprite_Damage {
   _isRegenerationWait: boolean;
   _spriteBattler: Sprite_Battler;
   _diffX: number;
   _diffY: number;
-  setupLpBreak(battler: Game_Battler & Game_Actor): void;
+  setupLpBreak(target: Game_Battler): void;
   _lpDamage: number;
   _delay: number;
 }
 
-declare interface Sprite extends PIXI.Sprite {
-  setup: (target: Game_Actor, type: string) => void;
-}
-
-declare interface Sprite_Gauge extends Sprite {
+interface Sprite_Gauge {
   _lpColor1: string;
   _lpColor2: string;
   _lpTextColorMax: string;
@@ -48,24 +51,15 @@ declare interface Sprite_Gauge extends Sprite {
   _lpTextColorNormal: string;
 }
 
-declare interface TextManager {
-  lpA: string;
+interface TextManager {
+  lpA: () => string;
 }
 
-declare interface Scene_Battle {
-  _enemyNameWindow: Window_EnemyName;
+interface ConfigManager {
+  tauriWindowSize: number;
+  readTauriWindowSize(): void;
 }
 
-declare interface TraitObject {
-  meta: { [key: string]: any };
-}
-
-declare interface Skill {
-  meta: { [key: string]: any };
-}
-
-declare interface Trait {
-  code: number;
-  dataId: number;
-  value: number;
+interface Window {
+  __TAURI__: any;
 }
