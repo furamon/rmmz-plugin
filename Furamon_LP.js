@@ -28,6 +28,7 @@
 //                  Game_Action.prototype.applyを書き換えることの明記。
 //                  並びにNRP_StateExより前に置くとあちらが動かなくなるので順番明記。
 //                  NRP_SkillRangeEX.jsとの競合処理を追加。
+// 2025/02/23 1.4.2 LP増減ステートでLPが0になるとLPが最大値になってしまうひっどい不具合修正。
 
 /*:
  * @target MZ
@@ -178,7 +179,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
 
   // LPを増減させるメソッド
   function gainLP(actor, value) {
-    actor._lp = (actor.lp + value).clamp(0, actor.mlp);
+    actor._lp = (actor._lp + value).Math.min(Math.max(actor._lp, 0), actor.mlp)
   }
 
   // LP監視関数。LPが0なら戦闘不能に
@@ -233,7 +234,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
   Game_Actor.prototype.refresh = function () {
     _Game_Actor_refresh.apply(this, arguments);
     this.maxLPSet();
-    if (!this.lp) {
+    if (this.lp == null) {
       this.recoverLP();
     }
   };
