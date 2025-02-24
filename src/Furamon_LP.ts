@@ -157,7 +157,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     });
   });
 
-  // パラメータ追
+  // パラメータ追加
   Object.defineProperties(Game_Actor.prototype, {
     lp: {
       get: function () {
