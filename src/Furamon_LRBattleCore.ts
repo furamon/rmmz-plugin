@@ -293,9 +293,9 @@
   Scene_Battle.prototype.update = function () {
     _Scene_Battle_update.call(this);
     if (BattleManager.isInputting()) {
-      if (this._skillWindow) {
+      if (this._skillWindow.visible) {
         // 敵選択ウィンドウが開いているなら
-        if (this._enemyWindow || this._enemyNameWindow) {
+        if (this._enemyWindow.visible || this._enemyNameWindow.visible) {
           this._skillWindow.visible = false;
         } else {
           this._skillWindow.visible = true;
