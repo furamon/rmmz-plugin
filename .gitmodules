@@ -1,0 +1,3 @@
+[submodule "rmmz_plugin"]
+	path = _dist
+	url = git@github.com:furamon/rmmz_plugin.git
