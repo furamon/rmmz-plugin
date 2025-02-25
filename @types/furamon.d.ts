@@ -1,17 +1,24 @@
+function convertSkillToTraitObject(skill: MZ.Skill): DataManager.TraitObject {
+  // SkillからTraitObjectへの変換ロジックを実装
+  return {
+    meta: skill.meta,
+  };
+}
+
+declare namespace ConfigManager {
+  let tauriWindowSize: number;
+  function readTauriWindowSize(config: Config);
+  interface Config {
+    tauriWindowSize: number;
+  }
+}
+
 interface PluginManager {
   public static checkErrors(): void;
 }
 
 interface DataManager {
   public static loadGlobalInfo(): object[];
-}
-
-declare namespace ConfigManager {
-  let tauriWindowSize: number;
-  function readTauriWindowSize(config:Config)
-  interface Config {
-    tauriWindowSize:number;
-  }
 }
 
 interface BattleManager {
