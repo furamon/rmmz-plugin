@@ -52,9 +52,9 @@
 
   const TAURI_WINDOW_SIZE_SYMBOL = "tauriWindowSize";
 
-  let tauri: any = null; // Tauriが利用可能かどうか
-  let emit: any = null; // Tauriのemit関数
-  let platform: any = null; // Tauriを動かしているOSを取得
+  let tauri: any; // Tauriが利用可能かどうか
+  let emit:any; // Tauriのemit関数
+  let platform: string; // Tauriを動かしているOSを取得
 
   // NW.jsの場合はここで終了
   if (Utils.isNwjs()) {
@@ -63,18 +63,16 @@
   }
 
   // Tauriの初期化を待つPromise
-  const tauriReady = new Promise((resolve: any) => {
+  const tauriReady = new Promise<void>((resolve) => {
     const checkTauri = function () {
-      if (typeof window.__TAURI__ !== "undefined") {
+      if (window.__TAURI__) {
         // Tauri が利用可能な場合の処理
-
         tauri = window.__TAURI__;
         emit = tauri.event.emit;
         platform = tauri.os.platform(); // OS取得
         resolve(); // Promiseをresolve
       } else {
         // Tauriがまだ利用できない場合は、少し待って再試行
-
         setTimeout(checkTauri, 50); // 50msごとにチェック
       }
     };
@@ -86,31 +84,20 @@
     try {
       await Promise.race([
         tauriReady,
-        new Promise((_: any, reject: any) =>
+        new Promise((_, reject) =>
           setTimeout(
             () => reject(new Error("Tauri initialization timeout")),
             5000
           )
         ),
       ]); // Tauriの初期化を待つ, 5秒タイムアウト
-
-      const globalInfo = DataManager.loadGlobalInfo();
-      if (
-        platform !== "android" &&
-        platform !== "ios"
-      ) {
-        ConfigManager.applyData(globalInfo[0]);
+      DataManager.loadGlobalInfo();
+      if (platform !== "android" && platform !== "ios") {
         changeWindowSize();
       }
     } catch (error) {
       console.error("Failed to initialize Tauri or load window size:", error);
     }
-  }
-
-  // スマホ起動の際はここで終了
-  if (platform === "android" || platform === "ios") {
-    console.log("This is not PC. Aborted.");
-    return;
   }
 
   // 起動時
@@ -163,7 +150,7 @@
    * ブラウザ検索は不要なので無効化
    */
 
-  document.addEventListener("keydown", (event: any) => {
+  document.addEventListener("keydown", (event) => {
     if (event.key === "F3") {
       event.preventDefault();
     }
@@ -174,7 +161,7 @@
    */
 
   // フルスクリーン切り替え
-  document.addEventListener("keydown", (event: any) => {
+  document.addEventListener("keydown", (event) => {
     if (event.key === fullscreenKey) {
       // "toggle_fullscreen" イベントを Tauri に送信
       emit("toggle_fullscreen");
@@ -198,18 +185,17 @@
   };
 
   const _ConfigManager_applyData = ConfigManager.applyData;
-  ConfigManager.applyData = function (config: any) {
-    _ConfigManager_applyData.apply(this, config);
+  ConfigManager.applyData = function (config) {
+    _ConfigManager_applyData.apply(this, [config]);
     this.tauriWindowSize = this.readTauriWindowSize(
       config,
-      TAURI_WINDOW_SIZE_SYMBOL
     );
   };
 
   // ウィンドウサイズ選択ナンバーをコンフィグから読込
-  ConfigManager.readTauriWindowSize = function (config: any, name: any) {
-    const value = config[name];
-    if (value !== undefined) {
+  ConfigManager.readTauriWindowSize = function (config) {
+    const value = config.tauriWindowSize;
+    if (value != null) {
       return Number(value).clamp(1, 4);
     } else {
       return 1;
@@ -218,17 +204,17 @@
 
   // 表示状態
   var _Window_Options_statusText = Window_Options.prototype.statusText;
-  Window_Options.prototype.statusText = function (index: any) {
+  Window_Options.prototype.statusText = function (index: number) {
     const symbol = this.commandSymbol(index);
     const value = this.getConfigValue(symbol);
     if (symbol === TAURI_WINDOW_SIZE_SYMBOL) {
       return currentWindowSizeText(value);
     }
-    return _Window_Options_statusText.apply(this, arguments);
+    return _Window_Options_statusText.apply(this, [index]);
   };
 
   // 表示名
-  function currentWindowSizeText(value: any) {
+  function currentWindowSizeText(value:number) {
     // ハードコーディングでゴリ押す。
     // どのみちTauriの仕様上プラグインパラメータから選ばせるような実装は難しい
     if (tauri) {
@@ -247,7 +233,7 @@
 
   // カーソル右
   const _Window_Options_cursorRight = Window_Options.prototype.cursorRight;
-  Window_Options.prototype.cursorRight = function (wrap: any) {
+  Window_Options.prototype.cursorRight = function () {
     const index = this.index();
     const symbol = this.commandSymbol(index);
     let value = this.getConfigValue(symbol);
@@ -261,12 +247,12 @@
         return;
       }
     }
-    _Window_Options_cursorRight.apply(this, arguments);
+    _Window_Options_cursorRight.apply(this, []);
   };
 
   // カーソル左
   const _Window_Options_cursorLeft = Window_Options.prototype.cursorLeft;
-  Window_Options.prototype.cursorLeft = function (wrap: any) {
+  Window_Options.prototype.cursorLeft = function () {
     const index = this.index();
     const symbol = this.commandSymbol(index);
     let value = this.getConfigValue(symbol);
@@ -280,7 +266,7 @@
         return;
       }
     }
-    _Window_Options_cursorLeft.apply(this, arguments);
+    _Window_Options_cursorLeft.apply(this, []);
   };
 
   // 決定ボタン
@@ -299,14 +285,11 @@
         return;
       }
     }
-    _Window_Options_processOk.apply(this, arguments);
+    _Window_Options_processOk.apply(this, []);
   };
 
   // 項目に応じてウィンドウサイズを変更
-  Window_Options.prototype.changeWindowSizeValue = function (
-    symbol: any,
-    value: any
-  ) {
+  Window_Options.prototype.changeWindowSizeValue = function (symbol, value) {
     value = value.clamp(1, 4);
     this.changeValue(symbol, value);
     this._noTouchSelect = true; // ウィンドウサイズ変更で選択状態が変わらないようタッチ選択禁止
@@ -314,17 +297,16 @@
 
   // こっちでもタッチ選択禁止
   const _Window_Options_onTouchSelect = Window_Options.prototype.onTouchSelect;
-  Window_Options.prototype.onTouchSelect = function (trigger: any) {
+  Window_Options.prototype.onTouchSelect = function (trigger) {
     this._noTouchSelect = true;
-    _Window_Options_onTouchSelect.apply(this, arguments);
+    _Window_Options_onTouchSelect.apply(this, [trigger]);
   };
 
   // ウィンドウサイズ項目追加
   const _Window_Options_makeCommandList =
-
     Window_Options.prototype.makeCommandList;
   Window_Options.prototype.makeCommandList = function () {
-    _Window_Options_makeCommandList.apply(this, arguments);
+    _Window_Options_makeCommandList.apply(this, []);
 
     this._list.splice(optionPosition, 0, {
       name: optionName,
@@ -343,13 +325,9 @@
 
   // 設定値反映
   const _Window_Options_setConfigValue =
-
     Window_Options.prototype.setConfigValue;
-  Window_Options.prototype.setConfigValue = function (
-    symbol: any,
-    volume: any
-  ) {
-    _Window_Options_setConfigValue.apply(this, arguments);
+  Window_Options.prototype.setConfigValue = function (symbol, volume) {
+    _Window_Options_setConfigValue.apply(this, [symbol, volume]);
 
     if (symbol === TAURI_WINDOW_SIZE_SYMBOL) {
       // ウィンドウサイズを反映
@@ -360,7 +338,6 @@
   // ウィンドウサイズ変更
   // 項目に応じてlib.rsを発火させる
   function changeWindowSize() {
-
     const value = ConfigManager.tauriWindowSize;
     if (value === 1) {
       emit("resize_window", 1);
@@ -376,8 +353,8 @@
   }
 
   // コマンド数加算
-  const _Window_Options_maxCommands = Window_Options.prototype.maxCommands;
-  Window_Options.prototype.maxCommands = function () {
-    return _Window_Options_maxCommands.apply(this, arguments) + 1;
+  const _Scene_Options_maxCommands = Scene_Options.prototype.maxCommands;
+  Scene_Options.prototype.maxCommands = function () {
+    return _Scene_Options_maxCommands.apply(this, []) + 1;
   };
 })();

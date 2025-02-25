@@ -1,4 +1,18 @@
-declare const PluginManager: any;
+interface PluginManager {
+  public static checkErrors(): void;
+}
+
+interface DataManager {
+  public static loadGlobalInfo(): object[];
+}
+
+declare namespace ConfigManager {
+  let tauriWindowSize: number;
+  function readTauriWindowSize(config:Config)
+  interface Config {
+    tauriWindowSize:number;
+  }
+}
 
 interface BattleManager {
   rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
@@ -8,11 +22,11 @@ interface Scene_Battle {
   _enemyNameWindow: Window_EnemyName;
 }
 
-interface Game_BattlerBase{
+interface Game_BattlerBase {
   isDummyEnemy(): boolean;
 }
 
-interface Game_Battler{
+interface Game_Battler {
   stepBack(): void;
 }
 
@@ -55,11 +69,13 @@ interface TextManager {
   lpA: () => string;
 }
 
-interface ConfigManager {
-  tauriWindowSize: number;
-  readTauriWindowSize(): void;
+interface _Window {
+  __TAURI__: any;
 }
 
-interface Window {
-  __TAURI__: any;
+interface Window_Options {
+  _noTouchSelect: boolean;
+  _gamepadOptionIndex: number;
+  _keyboardConfigIndex: number;
+  changeWindowSizeValue(symbol: string, value: number): void;
 }

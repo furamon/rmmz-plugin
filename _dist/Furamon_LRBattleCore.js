@@ -229,13 +229,11 @@
         if (BattleManager.isInputting()) {
             if (this._skillWindow.visible) {
                 // 敵選択ウィンドウが開いているなら
-                if (
-                  this._enemyWindow.visible ||
-                  this._enemyNameWindow.visible
-                ) {
-                  this._skillWindow.visible = false;
-                } else {
-                  this._skillWindow.visible = true;
+                if (this._enemyWindow.visible || this._enemyNameWindow.visible) {
+                    this._skillWindow.visible = false;
+                }
+                else {
+                    this._skillWindow.visible = true;
                 }
             }
         }
