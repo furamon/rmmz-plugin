@@ -204,7 +204,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     _Game_System_onAfterLoad.call(this);
 
     $gameParty.members().forEach((member: any) => {
-      if (member.lp == 0) {
+      if (member.lp == null) {
         member.maxLPSet();
         member.recoverLP();
       }
@@ -215,9 +215,16 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
   // <LP_Bonus>を持ったオブジェクトを持ったアクターはMaxLP増やす
   Game_Actor.prototype.maxLPSet = function () {
     const a = this; // 参照用
-    const objects: DataManager.TraitObject[] = this.traitObjects().concat(
-      this.skills().map(convertSkillToTraitObject)
+
+    // 特徴を持つオブジェクトのmetaデータを抽出
+    const skillMetas: TraitObjects[] = this.skills().map((skill) => ({
+      meta: skill.meta,
+    }));
+    const traitObjectMetas: TraitObjects[] = this.traitObjects().map(
+      (traitObject) => ({ meta: traitObject.meta })
     );
+    const objects: TraitObjects[] = traitObjectMetas.concat(skillMetas);
+
     let bonusLP = 0;
 
     for (const obj of objects) {

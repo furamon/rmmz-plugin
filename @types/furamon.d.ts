@@ -1,8 +1,5 @@
-function convertSkillToTraitObject(skill: MZ.Skill): DataManager.TraitObject {
-  // SkillからTraitObjectへの変換ロジックを実装
-  return {
-    meta: skill.meta,
-  };
+interface TraitObjects {
+  meta: MZ.Metadata;
 }
 
 declare namespace ConfigManager {
