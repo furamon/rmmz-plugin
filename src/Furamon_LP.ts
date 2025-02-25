@@ -194,7 +194,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     _Game_System_onAfterLoad.call(this);
 
     $gameParty.members().forEach((member: any) => {
-      if (!member._lp) {
+      if (member.lp == 0) {
         member.maxLPSet();
         member.recoverLP();
       }
