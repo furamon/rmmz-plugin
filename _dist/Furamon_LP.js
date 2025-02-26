@@ -200,13 +200,11 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     Game_Actor.prototype.maxLPSet = function () {
         const a = this; // 参照用
         // 特徴を持つオブジェクトのmetaデータを抽出
-        const skillMetas = this.skills().map((skill) => ({
+        const objects = this.skills()
+            .map((skill) => ({
             meta: skill.meta,
-        }));
-        const traitObjectMetas = this.traitObjects().map((traitObject) => ({
-            meta: traitObject.meta,
-        }));
-        const objects = traitObjectMetas.concat(skillMetas);
+        }))
+            .concat(this.traitObjects().map((obj) => ({ meta: obj.meta })));
         let bonusLP = 0;
         for (const obj of objects) {
             if (obj.meta["LP_Bonus"]) {

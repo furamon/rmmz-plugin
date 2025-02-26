@@ -1,11 +1,6 @@
-interface TraitObject {
-  meta: MZ.Metadata;
-  code?: number;
-  dataId?: number;
-  value?: number;
+interface MetaObject {
+  meta: Metadata; // metaプロパティの型をMetadata型で定義
 }
-
-type TraitObjects = TraitObject[];
 
 declare namespace ConfigManager {
   let tauriWindowSize: number;
@@ -17,10 +12,6 @@ declare namespace ConfigManager {
 
 interface PluginManager {
   public static checkErrors(): void;
-}
-
-interface DataManager {
-  public static loadGlobalInfo(): object[];
 }
 
 interface BattleManager {
@@ -73,10 +64,6 @@ interface Sprite_Gauge {
   _lpTextColorMax: string;
   _lpTextColorZero: string;
   _lpTextColorNormal: string;
-}
-
-interface TextManager {
-  lpA: () => string;
 }
 
 interface _Window {

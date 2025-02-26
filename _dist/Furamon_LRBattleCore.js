@@ -126,22 +126,20 @@
     Game_Enemy.prototype.exp = function () {
         // パーティの特徴を持つオブジェクトのmetaデータを抽出
         const party = $gameParty.allMembers();
-        let allTraits = [];
+        let allTraitsMeta = []; // 初期化
         party.forEach((actor) => {
-            const skillMetas = actor.skills().map((skill) => ({
+            const objects = actor
+                .skills()
+                .map((skill) => ({
                 meta: skill.meta,
-            }));
-            const traitObjectMetas = actor
-                .traitObjects()
-                .map((traitObject) => ({
-                meta: traitObject.meta,
-            }));
-            allTraits = traitObjectMetas.concat(skillMetas);
+            }))
+                .concat(this.traitObjects().map((obj) => ({ meta: obj.meta })));
+            allTraitsMeta = allTraitsMeta.concat(objects);
         });
-        if (allTraits.some((trait) => trait.meta && trait.meta.hasOwnProperty("IgnoreEXP"))) {
+        if (allTraitsMeta.some((trait) => trait.meta && trait.meta.hasOwnProperty("IgnoreEXP"))) {
             return 0;
         }
-        if (allTraits.some((trait) => trait.meta && trait.meta.hasOwnProperty("DoubleEXP"))) {
+        if (allTraitsMeta.some((trait) => trait.meta && trait.meta.hasOwnProperty("DoubleEXP"))) {
             return Math.floor(_Game_Enemy_exp.call(this) * (prmExpRate || 1));
         }
         return _Game_Enemy_exp.call(this);
@@ -167,26 +165,21 @@
     };
     Game_Actor.prototype.paramRate = function (paramId) {
         // 全ての特徴を持つオブジェクトから特徴を収集（装備は除外）
-        // 特徴を持つオブジェクトのmetaデータを抽出
-        const skillMetas = this.skills().map((skill) => ({
-            meta: skill.meta,
-        }));
-        const traitObjectMetas = this.traitObjects()
-            .filter((trait) => trait.code === Game_BattlerBase.TRAIT_PARAM &&
-            trait.dataId === paramId)
-            .map((traitObject) => ({ meta: traitObject.meta }));
-        const objects = traitObjectMetas.concat(skillMetas);
+        const traits = this.traitObjects().reduce((acc, actor) => {
+            if (actor && actor.traits && !(actor instanceof Game_Item)) {
+                const paramTraits = actor.traits.filter((trait) => trait.code === Game_BattlerBase.TRAIT_PARAM &&
+                    trait.dataId === paramId);
+                return acc.concat(paramTraits);
+            }
+            return acc;
+        }, []);
         // ステートとそれ以外の特徴に分離
-        const stateTraits = objects
-            .filter((trait) => trait.code != null) // code が undefined の要素を除外
-            .filter((trait) => this.states().some((state) => state.traits.some((stateTrait) => stateTrait.code === trait.code)));
-        const otherTraits = objects
-            .filter((trait) => trait.code != null)
-            .filter((trait) => !this.states().some((state) => state.traits.some((stateTrait) => stateTrait.code === trait.code)));
+        const stateTraits = traits.filter((trait) => this.states().some((state) => state.traits.includes(trait)));
+        const otherTraits = traits.filter((trait) => !this.states().some((state) => state.traits.includes(trait)));
         // ステートの効果は乗算で計算
         const stateRate = stateTraits
-            .filter((trait) => trait.value != null)
-            .reduce((rate, trait) => rate * trait.value, 1);
+            .map((trait) => trait.value)
+            .reduce((acc, cur) => acc * cur, 1);
         // その他の特徴の計算
         let otherRate;
         if (otherTraits.length === 0) {
@@ -194,9 +187,7 @@
         }
         else if (paramId === 0) {
             // 最大HPの場合
-            otherRate = otherTraits
-                .filter((trait) => trait.value != null)
-                .reduce((total, trait) => total + (trait.value - 1), 1);
+            otherRate = otherTraits.reduce((total, trait) => total + (trait.value - 1), 1);
         }
         else {
             otherRate = Math.max(...otherTraits.map((trait) => trait.value));

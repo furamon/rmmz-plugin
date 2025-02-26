@@ -144,29 +144,27 @@
   Game_Enemy.prototype.exp = function () {
     // パーティの特徴を持つオブジェクトのmetaデータを抽出
     const party = $gameParty.allMembers();
-    let allTraits: TraitObjects = [];
+    let allTraitsMeta: MetaObject[] = []; // 初期化
 
     party.forEach((actor) => {
-      const skillMetas: TraitObjects = actor.skills().map((skill) => ({
-        meta: skill.meta,
-      }));
-      const traitObjectMetas: TraitObjects = actor
-        .traitObjects()
-        .map((traitObject) => ({
-          meta: traitObject.meta,
-        }));
-      allTraits = traitObjectMetas.concat(skillMetas);
+      const objects: MetaObject[] = actor
+        .skills()
+        .map((skill) => ({
+          meta: skill.meta,
+        }))
+        .concat(this.traitObjects().map((obj) => ({ meta: obj.meta })));
+      allTraitsMeta = allTraitsMeta.concat(objects);
     });
 
     if (
-      allTraits.some(
+      allTraitsMeta.some(
         (trait) => trait.meta && trait.meta.hasOwnProperty("IgnoreEXP")
       )
     ) {
       return 0;
     }
     if (
-      allTraits.some(
+      allTraitsMeta.some(
         (trait) => trait.meta && trait.meta.hasOwnProperty("DoubleEXP")
       )
     ) {
@@ -201,45 +199,30 @@
 
   Game_Actor.prototype.paramRate = function (paramId: number) {
     // 全ての特徴を持つオブジェクトから特徴を収集（装備は除外）
-    // 特徴を持つオブジェクトのmetaデータを抽出
-    const skillMetas: TraitObjects = this.skills().map((skill) => ({
-      meta: skill.meta,
-    }));
-    const traitObjectMetas: TraitObjects = this.traitObjects()
-      .filter(
-        (trait: TraitObject) =>
-          trait.code === Game_BattlerBase.TRAIT_PARAM &&
-          trait.dataId === paramId
-      )
-      .map((traitObject) => ({ meta: traitObject.meta }));
-    const objects: TraitObjects = traitObjectMetas.concat(skillMetas);
+    const traits = this.traitObjects().reduce((acc, actor) => {
+      if (actor && actor.traits && !(actor instanceof Game_Item)) {
+        const paramTraits = actor.traits.filter(
+          (trait) =>
+            trait.code === Game_BattlerBase.TRAIT_PARAM &&
+            trait.dataId === paramId
+        );
+        return acc.concat(paramTraits);
+      }
+      return acc;
+    }, [] as MZ.Trait[]);
 
     // ステートとそれ以外の特徴に分離
-    const stateTraits = objects
-      .filter((trait: TraitObject) => trait.code != null) // code が undefined の要素を除外
-      .filter((trait: TraitObject) =>
-        this.states().some((state: MZ.State) =>
-          state.traits.some(
-            (stateTrait: MZ.Trait) => stateTrait.code === trait.code
-          )
-        )
-      );
-
-    const otherTraits = objects
-      .filter((trait: TraitObject) => trait.code != null)
-      .filter(
-        (trait: TraitObject) =>
-          !this.states().some((state: MZ.State) =>
-            state.traits.some(
-              (stateTrait: MZ.Trait) => stateTrait.code === trait.code
-            )
-          )
-      );
+    const stateTraits = traits.filter((trait) =>
+      this.states().some((state) => state.traits.includes(trait))
+    );
+    const otherTraits = traits.filter(
+      (trait) => !this.states().some((state) => state.traits.includes(trait))
+    );
 
     // ステートの効果は乗算で計算
     const stateRate = stateTraits
-      .filter((trait: TraitObject) => trait.value != null)
-      .reduce((rate: number, trait: TraitObject) => rate * trait.value!, 1);
+      .map((trait) => trait.value)
+      .reduce((acc: number, cur: number) => acc * cur, 1);
 
     // その他の特徴の計算
     let otherRate;
@@ -247,16 +230,12 @@
       otherRate = 1;
     } else if (paramId === 0) {
       // 最大HPの場合
-      otherRate = otherTraits
-        .filter((trait: TraitObject) => trait.value != null)
-        .reduce(
-          (total: number, trait: TraitObject) => total + (trait.value! - 1),
-          1
-        );
-    } else {
-      otherRate = Math.max(
-        ...otherTraits.map((trait: TraitObject) => trait.value!)
+      otherRate = otherTraits.reduce(
+        (total, trait) => total + (trait.value - 1),
+        1
       );
+    } else {
+      otherRate = Math.max(...otherTraits.map((trait) => trait.value));
     }
 
     // 両方の効果を乗算して返す
