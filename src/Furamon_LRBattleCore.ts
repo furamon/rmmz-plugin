@@ -53,7 +53,7 @@
       this.setTp(eval(prmInitialTP));
       return;
     }
-    _Game_Battler_initTp.apply(this);
+    _Game_Battler_initTp.call(this);
   };
 
   // 被ダメージ時のTP回復
@@ -271,7 +271,6 @@
 
   // ダミーターゲット処理。スキル効果を全て無効化する
   const _Game_Action_apply = Game_Action.prototype.apply;
-
   Game_Action.prototype.apply = function (target: Game_Battler) {
     if (target.isDummyEnemy()) {
       const result = target.result();
@@ -286,9 +285,7 @@
   };
 
   Game_BattlerBase.prototype.isDummyEnemy = function () {
-    return this.traitObjects().some((traitObject) => ({
-      meta: traitObject.meta,
-    }));
+    return this.traitObjects().some((object) => object.meta.DummyEnemy);
   };
 
   // NRP_BattleTargetCursorが開いている間はスキルウィンドウを閉じる
