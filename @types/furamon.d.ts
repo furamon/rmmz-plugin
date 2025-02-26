@@ -1,6 +1,11 @@
-interface TraitObjects {
+interface TraitObject {
   meta: MZ.Metadata;
+  code?: number;
+  dataId?: number;
+  value?: number;
 }
+
+type TraitObjects = TraitObject[];
 
 declare namespace ConfigManager {
   let tauriWindowSize: number;
@@ -49,6 +54,7 @@ interface Game_Action {
 
 interface Game_ActionResult {
   lpDamage: number;
+  _isHitConfirm: boolean;
 }
 
 interface Sprite_Damage {

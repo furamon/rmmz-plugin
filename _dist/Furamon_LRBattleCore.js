@@ -54,7 +54,7 @@
     };
     // 被ダメージ時のTP回復
     if (prmNoChargeTpByDamage) {
-        Game_Battler.prototype.chargeTpByDamage = function (damageRate) { };
+        Game_Battler.prototype.chargeTpByDamage = function () { };
     }
     // デフォの運の影響廃止
     // そもそもlukEffectRateがある場所を潰したが他プラグインのことも考えて念の為
@@ -109,7 +109,7 @@
     // 速度補正が負の行動なら魔法防御で割合相殺
     const _Game_Action_speed = Game_Action.prototype.speed;
     Game_Action.prototype.speed = function () {
-        const speed = _Game_Action_speed.apply(this);
+        const speed = _Game_Action_speed.call(this);
         if (this.item().speed < 0) {
             return (speed +
                 (-this.item().speed * this.subject().agi * this.subject().mdf) / 10000);
@@ -124,26 +124,34 @@
     // 戦闘勝利時の獲得経験値を倍増
     const _Game_Enemy_exp = Game_Enemy.prototype.exp;
     Game_Enemy.prototype.exp = function () {
-        if ($gameParty.allMembers().some((actor) => actor
-            .traitObjects()
-            .concat(actor.skills())
-            .some((item) => item.meta.IgnoreExp))) {
+        // パーティの特徴を持つオブジェクトのmetaデータを抽出
+        const party = $gameParty.allMembers();
+        let allTraits = [];
+        party.forEach((actor) => {
+            const skillMetas = actor.skills().map((skill) => ({
+                meta: skill.meta,
+            }));
+            const traitObjectMetas = actor
+                .traitObjects()
+                .map((traitObject) => ({
+                meta: traitObject.meta,
+            }));
+            allTraits = traitObjectMetas.concat(skillMetas);
+        });
+        if (allTraits.some((trait) => trait.meta && trait.meta.hasOwnProperty("IgnoreEXP"))) {
             return 0;
         }
-        if ($gameParty.allMembers().some((actor) => actor
-            .traitObjects()
-            .concat(actor.skills())
-            .some((item) => item.meta.DoubleExp))) {
-            return Math.floor(_Game_Enemy_exp.apply(this) * (prmExpRate || 1));
+        if (allTraits.some((trait) => trait.meta && trait.meta.hasOwnProperty("DoubleEXP"))) {
+            return Math.floor(_Game_Enemy_exp.call(this) * (prmExpRate || 1));
         }
-        return _Game_Enemy_exp.apply(this);
+        return _Game_Enemy_exp.call(this);
     };
     // 能力値乗算特徴がアクターや職業、装備などに複数ついている場合、
     // 一番高いものを返すよう挙動を改変
     // 最大HPだけは加算処理(130%と120%なら150%になる)
     // また、装備能力上昇値がアクター側の補正を受けないよう改変
     // (ステートは普通に乗算)
-    Game_BattlerBase.prototype.param = function (paramId) {
+    Game_Actor.prototype.param = function (paramId) {
         // 基本値の取得
         let value = this.paramBase(paramId);
         // 特徴による乗算補正を適用
@@ -157,22 +165,28 @@
         const minValue = this.paramMin(paramId);
         return Math.round(value.clamp(minValue, maxValue));
     };
-    Game_BattlerBase.prototype.paramRate = function (paramId) {
+    Game_Actor.prototype.paramRate = function (paramId) {
         // 全ての特徴を持つオブジェクトから特徴を収集（装備は除外）
-        const traits = this.traitObjects().reduce((acc, actor) => {
-            // 装備品の場合はスキップ
-            if (actor && actor.traits && !(actor instanceof Game_Item)) {
-                const paramTraits = actor.traits.filter((trait) => trait.code === Game_BattlerBase.TRAIT_PARAM &&
-                    trait.dataId === paramId);
-                return acc.concat(paramTraits);
-            }
-            return acc;
-        }, []);
+        // 特徴を持つオブジェクトのmetaデータを抽出
+        const skillMetas = this.skills().map((skill) => ({
+            meta: skill.meta,
+        }));
+        const traitObjectMetas = this.traitObjects()
+            .filter((trait) => trait.code === Game_BattlerBase.TRAIT_PARAM &&
+            trait.dataId === paramId)
+            .map((traitObject) => ({ meta: traitObject.meta }));
+        const objects = traitObjectMetas.concat(skillMetas);
         // ステートとそれ以外の特徴に分離
-        const stateTraits = traits.filter((trait) => this.states().some((state) => state.traits.includes(trait)));
-        const otherTraits = traits.filter((trait) => !this.states().some((state) => state.traits.includes(trait)));
+        const stateTraits = objects
+            .filter((trait) => trait.code != null) // code が undefined の要素を除外
+            .filter((trait) => this.states().some((state) => state.traits.some((stateTrait) => stateTrait.code === trait.code)));
+        const otherTraits = objects
+            .filter((trait) => trait.code != null)
+            .filter((trait) => !this.states().some((state) => state.traits.some((stateTrait) => stateTrait.code === trait.code)));
         // ステートの効果は乗算で計算
-        const stateRate = stateTraits.reduce((rate, trait) => rate * trait.value, 1);
+        const stateRate = stateTraits
+            .filter((trait) => trait.value != null)
+            .reduce((rate, trait) => rate * trait.value, 1);
         // その他の特徴の計算
         let otherRate;
         if (otherTraits.length === 0) {
@@ -180,7 +194,9 @@
         }
         else if (paramId === 0) {
             // 最大HPの場合
-            otherRate = otherTraits.reduce((total, trait) => total + (trait.value - 1), 1);
+            otherRate = otherTraits
+                .filter((trait) => trait.value != null)
+                .reduce((total, trait) => total + (trait.value - 1), 1);
         }
         else {
             otherRate = Math.max(...otherTraits.map((trait) => trait.value));
@@ -191,12 +207,12 @@
     // アクターコマンドから逃げられるようにする
     const _Scene_Battle_createActorCommandWindow = Scene_Battle.prototype.createActorCommandWindow;
     Scene_Battle.prototype.createActorCommandWindow = function () {
-        _Scene_Battle_createActorCommandWindow.apply(this);
+        _Scene_Battle_createActorCommandWindow.call(this);
         this._actorCommandWindow.setHandler("escape", this.commandEscape.bind(this));
     };
     const _Window_ActorCommand_makeCommandList = Window_ActorCommand.prototype.makeCommandList;
     Window_ActorCommand.prototype.makeCommandList = function () {
-        _Window_ActorCommand_makeCommandList.apply(this);
+        _Window_ActorCommand_makeCommandList.call(this);
         if (this._actor)
             this._list.splice(5, 0, {
                 name: "逃げる",
@@ -217,10 +233,12 @@
             }
             return;
         }
-        _Game_Action_apply.apply(this, [target]);
+        _Game_Action_apply.call(this, target);
     };
     Game_BattlerBase.prototype.isDummyEnemy = function () {
-        return this.traitObjects().some((actor) => actor.meta.DummyEnemy);
+        return this.traitObjects().some((traitObject) => ({
+            meta: traitObject.meta,
+        }));
     };
     // NRP_BattleTargetCursorが開いている間はスキルウィンドウを閉じる
     const _Scene_Battle_update = Scene_Battle.prototype.update;

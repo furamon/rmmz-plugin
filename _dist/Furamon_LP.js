@@ -203,7 +203,9 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
         const skillMetas = this.skills().map((skill) => ({
             meta: skill.meta,
         }));
-        const traitObjectMetas = this.traitObjects().map((traitObject) => ({ meta: traitObject.meta }));
+        const traitObjectMetas = this.traitObjects().map((traitObject) => ({
+            meta: traitObject.meta,
+        }));
         const objects = traitObjectMetas.concat(skillMetas);
         let bonusLP = 0;
         for (const obj of objects) {

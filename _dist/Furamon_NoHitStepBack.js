@@ -18,19 +18,19 @@
     // バトラーのミス・回避・魔法回避に処理追加
     const _Game_Battler_performMiss = Game_Battler.prototype.performMiss;
     Game_Battler.prototype.performMiss = async function () {
-        _Game_Battler_performMiss.apply(this, []);
+        _Game_Battler_performMiss.call(this);
         await delay(16); // ポップアップ処理の時間のため1フレームウェイト
         this.stepBack();
     };
     const _Game_Battler_performEvasion = Game_Battler.prototype.performEvasion;
     Game_Battler.prototype.performEvasion = async function () {
-        _Game_Battler_performEvasion.apply(this, []);
+        _Game_Battler_performEvasion.call(this);
         await delay(16);
         this.stepBack();
     };
     const _Game_Battler_performMagicEvasion = Game_Battler.prototype.performMagicEvasion;
     Game_Battler.prototype.performMagicEvasion = async function () {
-        _Game_Battler_performMagicEvasion.apply(this, []);
+        _Game_Battler_performMagicEvasion.call(this);
         await delay(16);
         this.stepBack();
     };

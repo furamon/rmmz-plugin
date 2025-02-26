@@ -203,7 +203,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
   Game_System.prototype.onAfterLoad = function () {
     _Game_System_onAfterLoad.call(this);
 
-    $gameParty.members().forEach((member: any) => {
+    $gameParty.members().forEach((member: Game_Actor) => {
       if (member.lp == null) {
         member.maxLPSet();
         member.recoverLP();
@@ -217,13 +217,15 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     const a = this; // 参照用
 
     // 特徴を持つオブジェクトのmetaデータを抽出
-    const skillMetas: TraitObjects[] = this.skills().map((skill) => ({
+    const skillMetas: TraitObjects = this.skills().map((skill) => ({
       meta: skill.meta,
     }));
-    const traitObjectMetas: TraitObjects[] = this.traitObjects().map(
-      (traitObject) => ({ meta: traitObject.meta })
+    const traitObjectMetas: TraitObjects = this.traitObjects().map(
+      (traitObject) => ({
+        meta: traitObject.meta,
+      })
     );
-    const objects: TraitObjects[] = traitObjectMetas.concat(skillMetas);
+    const objects: TraitObjects = traitObjectMetas.concat(skillMetas);
 
     let bonusLP = 0;
 
