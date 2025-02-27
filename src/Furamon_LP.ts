@@ -30,6 +30,8 @@
 //                  NRP_SkillRangeEX.jsとの競合処理を追加。
 // 2025/02/23 1.4.2 LP増減ステートでLPが0になるとLPが最大値になってしまうひっどい不具合修正。
 // 2025/02/25 1.5.0 TypeScriptに移行。
+// 2025/02/27 1.5.1 LPダメージ時のポップアップが出なくなっていた不具合修正。
+//                  LP回復でエラー落ちするひどい不具合を修正。
 
 /*:
  * @target MZ
@@ -167,20 +169,20 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
   });
 
   // バトルメッセージ初期化
-  function LPBreakMessage(actor: Game_Actor, point: number) {
+  function LPBreakMessage(actor: Game_Actor, point: string) {
     const message = prmLPBreakMessage || "%1は%2のLPを失った！！";
     return message
       .toString()
-      .replace("%1", actor.name)
-      .replace("%2", String(point));
+      .replace("%1", actor.name())
+      .replace("%2", point);
   }
 
-  function LPGainMessage(actor: Game_Actor, point: number) {
+  function LPGainMessage(actor: Game_Actor, point: string) {
     const message = prmLPGainMessage || "%1は%2LP回復した！";
     return message
       .toString()
-      .replace("%1", actor.name)
-      .replace("%2", String(point));
+      .replace("%1", actor.name())
+      .replace("%2", point);
   }
 
   // LPを増減させるメソッド
@@ -300,6 +302,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     let resurrect = false; // 蘇生か？
     // アクターか？
     if (target.isActor()) {
+      target.result().lpDamage = 0;
       // LPが残っているなら戦闘不能回復
       if (target.lp > 0 && target.isDead() && this.isHpRecover()) {
         target.removeState(1);
@@ -316,7 +319,7 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
 
       // LP減少処理
       if (target.hp === 0 && (this.isDamage() || this.isDrain())) {
-        target.result().lpDamage = target.lp > 0 ? 1 : 0;
+        target.result().lpDamage += target.lp > 0 ? 1 : 0;
         gainLP(target, -1);
         // なぜかここでもGame_Action.prototype.applyが呼ばれるらしく
         // 吸収攻撃をした場合「0のダメージと自己回復」と解釈され
@@ -327,16 +330,13 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
           target.startDamagePopup();
           SoundManager.playActorDamage();
         }
-      } else {
-        target.result().lpDamage = 0;
       }
-
       // <LP_Recover>指定があるなら増減
       const lpRecover = String(this.item()?.meta["LP_Recover"] || null);
       if (lpRecover != null) {
         const recoverValue = Math.floor(eval(lpRecover));
         gainLP(target, recoverValue);
-        target.result().lpDamage = -recoverValue;
+        target.result().lpDamage -= recoverValue;
       }
 
       lpUpdate();
@@ -518,10 +518,20 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
 
   Window_BattleLog.prototype.displayDamage = function (target: Game_Battler) {
     _Window_BattleLog_displayDamage.call(this, target);
-    if (target.result().lpDamage > 0 && target.isActor()) {
-      this.push("addText", LPBreakMessage(target, target.result().lpDamage));
-    } else if (target.result().lpDamage < 0 && target.isActor()) {
-      this.push("addText", LPGainMessage(target, target.result().lpDamage));
+    if (target.isActor()) {
+      if (target.result().lpDamage === 0) {
+        return;
+      } else if (target.result().lpDamage > 0) {
+        this.push(
+          "addText",
+          LPBreakMessage(target, String(target.result().lpDamage))
+        );
+      } else if (target.result().lpDamage < 0) {
+        this.push(
+          "addText",
+          LPGainMessage(target, String(-target.result().lpDamage))
+        );
+      }
     }
   };
 
