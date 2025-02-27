@@ -32,6 +32,7 @@
 // 2025/02/25 1.5.0 TypeScriptに移行。
 // 2025/02/27 1.5.1 LPダメージ時のポップアップが出なくなっていた不具合修正。
 //                  LP回復でエラー落ちするひどい不具合を修正。
+// 2025/02/28 1.5.2 ニューゲーム時にLP初期化がされないひどい不具合修正。
 /*:
  * @target MZ
  * @plugindesc 戦闘不能に関わるライフポイントを実装します。
@@ -161,17 +162,11 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
     // バトルメッセージ初期化
     function LPBreakMessage(actor, point) {
         const message = prmLPBreakMessage || "%1は%2のLPを失った！！";
-        return message
-            .toString()
-            .replace("%1", actor.name())
-            .replace("%2", point);
+        return message.toString().replace("%1", actor.name()).replace("%2", point);
     }
     function LPGainMessage(actor, point) {
         const message = prmLPGainMessage || "%1は%2LP回復した！";
-        return message
-            .toString()
-            .replace("%1", actor.name())
-            .replace("%2", point);
+        return message.toString().replace("%1", actor.name()).replace("%2", point);
     }
     // LPを増減させるメソッド
     function gainLP(actor, value) {
@@ -219,11 +214,13 @@ const prmBattleEndRecover = parameters["BattleEndRecover"];
         else {
             this.mlp = Math.floor(eval(prmMaxLP));
         }
-        this._lp = Math.min(this.lp, this.mlp);
+        if (this.lp != null)
+            this._lp = Math.min(this.lp, this.mlp);
     };
     // LPの全回復
     Game_Actor.prototype.recoverLP = function () {
-        this._lp = this.mlp;
+        // this._lp = this.mlp;
+        this._lp = 3;
     };
     // 装備やステートなどの更新時にMaxLPも更新
     const _Game_Actor_refresh = Game_Actor.prototype.refresh;
