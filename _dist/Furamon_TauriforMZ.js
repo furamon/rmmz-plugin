@@ -40,20 +40,20 @@
  *
  */
 (function () {
-    const pluginName = 'Furamon_TauriforMZ';
+    const pluginName = "Furamon_TauriforMZ";
     const parameters = PluginManager.parameters(pluginName);
     // フルスクリーン
-    const fullscreenKey = parameters['Fullscreen Key'] || 'F4';
+    const fullscreenKey = parameters["Fullscreen Key"] || "F4";
     // ウィンドウサイズ
-    const optionPosition = Number(parameters['optionPosition'] || 2);
-    const optionName = parameters['optionName'] || 'ウィンドウサイズ';
-    const TAURI_WINDOW_SIZE_SYMBOL = 'tauriWindowSize';
+    const optionPosition = Number(parameters["optionPosition"] || 2);
+    const optionName = parameters["optionName"] || "ウィンドウサイズ";
+    const TAURI_WINDOW_SIZE_SYMBOL = "tauriWindowSize";
     let tauri; // Tauriが利用可能かどうか
     let emit; // Tauriのemit関数
     let platform; // Tauriを動かしているOSを取得
     // NW.jsの場合はここで終了
     if (Utils.isNwjs()) {
-        console.log('This is NW.js. Aborted.');
+        console.log("This is NW.js. Aborted.");
         return;
     }
     // Tauriの初期化を待つPromise
@@ -78,15 +78,15 @@
         try {
             await Promise.race([
                 tauriReady,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Tauri initialization timeout')), 5000)),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Tauri initialization timeout")), 5000)),
             ]); // Tauriの初期化を待つ, 5秒タイムアウト
             DataManager.loadGlobalInfo();
-            if (platform !== 'android' && platform !== 'ios') {
+            if (platform !== "android" && platform !== "ios") {
                 changeWindowSize();
             }
         }
         catch (error) {
-            console.error('Failed to initialize Tauri or load window size:', error);
+            console.error("Failed to initialize Tauri or load window size:", error);
         }
     }
     // 起動時
@@ -117,7 +117,7 @@
             }
             this._canvas.style.width = `${targetWidth}px`;
             this._canvas.style.height = `${targetHeight}px`;
-            this._canvas.style.imageRendering = 'pixelated';
+            this._canvas.style.imageRendering = "pixelated";
             // クリック座標のずれを解決
             this._realScale = targetWidth / this._width;
         }
@@ -133,8 +133,8 @@
     /**
      * ブラウザ検索は不要なので無効化
      */
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'F3') {
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "F3") {
             event.preventDefault();
         }
     });
@@ -142,10 +142,10 @@
      * F4 or Alt + Enterキーでフルスクリーンを切り替える
      */
     // フルスクリーン切り替え
-    document.addEventListener('keydown', (event) => {
+    document.addEventListener("keydown", (event) => {
         if (event.key === fullscreenKey) {
             // "toggle_fullscreen" イベントを Tauri に送信
-            emit('toggle_fullscreen');
+            emit("toggle_fullscreen");
         }
     });
     /**
@@ -191,19 +191,19 @@
         // どのみちTauriの仕様上プラグインパラメータから選ばせるような実装は難しい
         if (tauri) {
             if (value === 1) {
-                return '1280x720';
+                return "1280x720";
             }
             else if (value === 2) {
-                return '1600x900';
+                return "1600x900";
             }
             else if (value === 3) {
-                return '1920x1080';
+                return "1920x1080";
             }
             else if (value === 4) {
-                return '2560x1440';
+                return "2560x1440";
             }
         }
-        return 'Error!';
+        return "Error!";
     }
     // カーソル右
     const _Window_Options_cursorRight = Window_Options.prototype.cursorRight;
@@ -303,16 +303,16 @@
     function changeWindowSize() {
         const value = ConfigManager.tauriWindowSize;
         if (value === 1) {
-            emit('resize_window', 1);
+            emit("resize_window", 1);
         }
         else if (value === 2) {
-            emit('resize_window', 2);
+            emit("resize_window", 2);
         }
         else if (value === 3) {
-            emit('resize_window', 3);
+            emit("resize_window", 3);
         }
         else if (value === 4) {
-            emit('resize_window', 4);
+            emit("resize_window", 4);
         }
         Graphics._updateCanvas(); // ここでも念の為Canvasをリサイズ
     }
