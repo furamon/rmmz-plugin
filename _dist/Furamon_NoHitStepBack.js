@@ -50,9 +50,9 @@
                 sprite = scene._spriteset._actorSprites.find((s) => s._battler === this);
             }
             if (sprite) {
-                const duration = 6;
+                const duration = 4;
                 sprite.startMove(this.isEnemy() ? -192 : 192, 0, duration);
-                await delay(duration * 16); // フレームレートを考慮してウェイト
+                await delay(duration * 16 * 2); // フレームレートを考慮してウェイト
                 sprite.startMove(0, 0, duration);
             }
         }
@@ -82,7 +82,7 @@
             return pos;
         }
         else {
-            return _Sprite_Animation_targetPosition.call(this, renderer); // 呼び出し方修正
+            return _Sprite_Animation_targetPosition.call(this, renderer);
         }
     };
 })();
