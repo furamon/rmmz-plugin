@@ -33,6 +33,7 @@
 // 2025/02/27 1.5.1 LPダメージ時のポップアップが出なくなっていた不具合修正。
 //                  LP回復でエラー落ちするひどい不具合を修正。
 // 2025/02/28 1.5.2 ニューゲーム時にLP初期化がされないひどい不具合修正。
+// 2025/03/15 1.5.3 NRP_CalcResultFirstとの競合対応。
 
 /*:
  * @target MZ
@@ -301,6 +302,16 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
     // 戦闘不能時のLP減少処理
     const _Game_Action_apply = Game_Action.prototype.apply;
     Game_Action.prototype.apply = function (target: Game_Battler) {
+        let damageVal = 0
+        let isDeadReserved = false;
+        // NRP_CalcResultFirst考慮
+        if (PluginManager._scripts.includes('NRP_CalcResultFirst')) {
+            damageVal = target.shiftReservedResult().reservedValue;
+            isDeadReserved = target._isDeadReserved;
+        } else{
+            damageVal = target.result().hpDamage;
+        }
+
         let resurrect = false; // 蘇生か？
         // アクターか？
         if (target.isActor()) {
@@ -315,12 +326,12 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
 
             // 蘇生時に勝手にHPが1回復するためつじつまを合わせる。
             // 全回復ならそのまま。
-            if (resurrect && -target.result().hpDamage < target.mhp) {
+            if (resurrect && -damageVal < target.mhp) {
                 target._hp -= 1;
             }
 
             // LP減少処理
-            if (target.hp === 0 && (this.isDamage() || this.isDrain())) {
+            if ((target.hp === 0 || isDeadReserved) && (this.isDamage() || this.isDrain())) {
                 target.result().lpDamage += target.lp > 0 ? 1 : 0;
                 gainLP(target, -1);
                 // なぜかここでもGame_Action.prototype.applyが呼ばれるらしく
@@ -452,7 +463,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
     Sprite_Battler.prototype.createDamageSprite = function () {
         _Sprite_Battler_createDamageSprite.call(this);
         const battler = this._battler;
-        if (battler.result().lpDamage != 0 && battler.isActor()) {
+        if (battler?.result().lpDamage != 0 && battler?.isActor()) {
             // 負の再生ダメージで死んだ、かつ
             // NRP_DynamicReturningAction.jsの再生待ちがONの場合の処理。
             // 苦肉の策として処理を移植。

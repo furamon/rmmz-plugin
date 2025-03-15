@@ -27,14 +27,14 @@
  * @default 3
  */
 (() => {
-    "use strict";
-    const pluginName = "Furamon_MenuHeight";
+    'use strict';
+    const pluginName = 'Furamon_MenuHeight';
     const params = PluginManager.parameters(pluginName);
     Window_Base.prototype.lineHeight = function () {
-        return $gameSystem.mainFontSize() + 10 + parseFloat(params.commandSpacing);
+        return ($gameSystem.mainFontSize() + 10 + parseFloat(params.commandSpacing));
     };
     Window_Selectable.prototype.lineHeight = function () {
-        return $gameSystem.mainFontSize() + 10 + parseFloat(params.commandSpacing);
+        return ($gameSystem.mainFontSize() + 10 + parseFloat(params.commandSpacing));
     };
     Scene_MenuBase.prototype.helpAreaHeight = function () {
         return this.calcWindowHeight(parseInt(params.helpAreaRow), false);
