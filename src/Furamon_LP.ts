@@ -452,7 +452,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
     Sprite_Battler.prototype.createDamageSprite = function () {
         _Sprite_Battler_createDamageSprite.call(this);
         const battler = this._battler;
-        if (battler.result().lpDamage != 0 && battler.isActor()) {
+        if (battler?.result().lpDamage != 0 && battler?.isActor()) {
             // 負の再生ダメージで死んだ、かつ
             // NRP_DynamicReturningAction.jsの再生待ちがONの場合の処理。
             // 苦肉の策として処理を移植。
