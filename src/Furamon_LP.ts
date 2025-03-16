@@ -33,6 +33,8 @@
 // 2025/02/27 1.5.1 LPダメージ時のポップアップが出なくなっていた不具合修正。
 //                  LP回復でエラー落ちするひどい不具合を修正。
 // 2025/02/28 1.5.2 ニューゲーム時にLP初期化がされないひどい不具合修正。
+// 2025/03/16 1.5.3 1.5.2の修正に残念なミスが合ったので再修正。
+//                  NRP_CalcResultFirst.jsとの競合処理を追加。
 
 /*:
  * @target MZ
@@ -243,8 +245,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
 
     // LPの全回復
     Game_Actor.prototype.recoverLP = function () {
-        // this._lp = this.mlp;
-        this._lp = 3;
+        this._lp = this.mlp;
     };
 
     // 装備やステートなどの更新時にMaxLPも更新
@@ -304,7 +305,6 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
         let resurrect = false; // 蘇生か？
         // アクターか？
         if (target.isActor()) {
-            target.result().lpDamage = 0;
             // LPが残っているなら戦闘不能回復
             if (target.lp > 0 && target.isDead() && this.isHpRecover()) {
                 target.removeState(1);
@@ -312,6 +312,10 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
             }
 
             _Game_Action_apply.call(this, target);
+
+            // result()がクリアされないよう避難
+            target._result = target.result();
+            target._result.lpDamage = 0;
 
             // 蘇生時に勝手にHPが1回復するためつじつまを合わせる。
             // 全回復ならそのまま。
@@ -321,7 +325,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
 
             // LP減少処理
             if (target.hp === 0 && (this.isDamage() || this.isDrain())) {
-                target.result().lpDamage += target.lp > 0 ? 1 : 0;
+                target._result.lpDamage += target.lp > 0 ? 1 : 0;
                 gainLP(target, -1);
                 // なぜかここでもGame_Action.prototype.applyが呼ばれるらしく
                 // 吸収攻撃をした場合「0のダメージと自己回復」と解釈され
@@ -338,7 +342,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
             if (lpRecover != null) {
                 const recoverValue = Math.floor(eval(lpRecover));
                 gainLP(target, recoverValue);
-                target.result().lpDamage -= recoverValue;
+                target._result.lpDamage -= recoverValue;
             }
 
             lpUpdate();
@@ -520,17 +524,17 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
     Window_BattleLog.prototype.displayDamage = function (target: Game_Battler) {
         _Window_BattleLog_displayDamage.call(this, target);
         if (target.isActor()) {
-            if (target.result().lpDamage === 0) {
+            if (target._result.lpDamage === 0) {
                 return;
-            } else if (target.result().lpDamage > 0) {
+            } else if (target._result.lpDamage > 0) {
                 this.push(
                     'addText',
-                    LPBreakMessage(target, String(target.result().lpDamage))
+                    LPBreakMessage(target, String(target._result.lpDamage))
                 );
-            } else if (target.result().lpDamage < 0) {
+            } else if (target._result.lpDamage < 0) {
                 this.push(
                     'addText',
-                    LPGainMessage(target, String(-target.result().lpDamage))
+                    LPGainMessage(target, String(-target._result.lpDamage))
                 );
             }
         }
