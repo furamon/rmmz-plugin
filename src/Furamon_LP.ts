@@ -313,8 +313,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
 
             _Game_Action_apply.call(this, target);
 
-            // result()がクリアされないよう避難
-            target._result = target.result();
+            // result()だとクリアされてしまう。
             target._result.lpDamage = 0;
 
             // 蘇生時に勝手にHPが1回復するためつじつまを合わせる。
