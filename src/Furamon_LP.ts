@@ -35,6 +35,7 @@
 // 2025/02/28 1.5.2 ニューゲーム時にLP初期化がされないひどい不具合修正。
 // 2025/03/16 1.5.3 1.5.2の修正に残念なミスが合ったので再修正。
 //                  NRP_CalcResultFirst.jsとの競合処理を追加。
+//                  HP全快処理を戦闘前にも挟んだ。
 
 /*:
  * @target MZ
@@ -279,22 +280,21 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
         let targets = _Game_Action_makeTargets.call(this);
 
         // NRP_SkillRangeEX.js考慮処理
-        if (PluginManager._scripts.includes('NRP_SkillRangeEX')) {
+        if (
+            PluginManager._scripts.includes('NRP_SkillRangeEX') &&
+            this.item()?.meta.RangeEx
+        ) {
             targets = BattleManager.rangeEx(this, targets); // スキル範囲を拡張したターゲットの配列を取得
         }
-
+        // 敵側の全体攻撃の場合、戦闘不能アクターも強制的に追加
+        else if (this.subject().isEnemy() && this.item()?.scope === 2) {
+            targets = this.targetsForDeadAndAlive(this.opponentsUnit());
+        }
         // 対象がアクターでLPが0ならターゲットから除外
         targets = targets.filter(
             (target: Game_Battler) =>
                 target.isEnemy() || (target.isActor() && target.lp > 0)
         );
-
-        // 敵側の全体攻撃の場合、戦闘不能アクターも強制的に追加
-        if (this.subject().isEnemy() && this.item()?.scope === 2) {
-            targets = targets.filter(
-                (member: Game_Battler) => member.isAlive() || member.isDead()
-            );
-        }
 
         return targets;
     };
@@ -417,6 +417,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
     };
 
     // 戦闘開始時にLPが残っていれば復活
+    // 設定に応じてHP全回復
     const _BattleManager_setup = BattleManager.setup;
     BattleManager.setup = function (
         troopId: number,
@@ -428,6 +429,9 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
         $gameParty.members().forEach((member: Game_Actor) => {
             if (member.lp > 0) {
                 member.revive();
+                if (prmBattleEndRecover) {
+                    member.setHp(member.mhp);
+                }
             }
         });
     };
