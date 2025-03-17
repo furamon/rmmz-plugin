@@ -35,6 +35,7 @@ interface Game_Actor {
   _lp: number;
   lp: number;
   _regeneDeath: boolean;
+  _resurrect: boolean;
   maxLPSet(): void;
   recoverLP(): void;
 }

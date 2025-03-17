@@ -36,6 +36,7 @@
 // 2025/03/16 1.5.3 1.5.2の修正に残念なミスが合ったので再修正。
 //                  NRP_CalcResultFirst.jsとの競合処理を追加。
 //                  HP全快処理を戦闘前にも挟んだ。
+// 2025/03/16 1.5.4 競合処理を微修正。
 
 /*:
  * @target MZ
@@ -299,28 +300,45 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
         return targets;
     };
 
+    // 戦闘不能でもLPがあるなら回復アイテムを使用可能にする
+    // LP回復アイテムの使用判定もここで行う
+    const Game_Action_testApply = Game_Action.prototype.testApply;
+    Game_Action.prototype.testApply = function (target: Game_Battler) {
+        const lpRecover = Number(this.item()?.meta['LP_Recover']);
+        if (
+            target.isActor() &&
+            target.lp > 0 &&
+            target.isDead() &&
+            this.isHpRecover()
+        ) {
+            // 蘇生フラグ
+            target._resurrect = true;
+            return true;
+        }
+        if (
+            (target.isActor() && lpRecover > 0 && target.lp < target.mlp) ||
+            lpRecover < 0
+        ) {
+            return true;
+        }
+        return Game_Action_testApply.call(this, target);
+    };
+
     // 戦闘不能時のLP減少処理
     const _Game_Action_apply = Game_Action.prototype.apply;
     Game_Action.prototype.apply = function (target: Game_Battler) {
-        let resurrect = false; // 蘇生か？
+        // 蘇生
+        if (target.isActor() && target._resurrect) {
+            target._resurrect = false;
+            target.removeState(1);
+            // 蘇生時に勝手にHPが1回復するためつじつまを合わせる。
+            target._hp -= 1
+        }
+        _Game_Action_apply.call(this, target);
         // アクターか？
         if (target.isActor()) {
-            // LPが残っているなら戦闘不能回復
-            if (target.lp > 0 && target.isDead() && this.isHpRecover()) {
-                target.removeState(1);
-                resurrect = true;
-            }
-
-            _Game_Action_apply.call(this, target);
-
-            // result()だとクリアされてしまう。
+            // result()だとNRP_CalcResultFirstでクリアされてしまう。
             target._result.lpDamage = 0;
-
-            // 蘇生時に勝手にHPが1回復するためつじつまを合わせる。
-            // 全回復ならそのまま。
-            if (resurrect && -target.result().hpDamage < target.mhp) {
-                target._hp -= 1;
-            }
 
             // LP減少処理
             if (target.hp === 0 && (this.isDamage() || this.isDrain())) {
@@ -330,7 +348,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
                 // 吸収攻撃をした場合「0のダメージと自己回復」と解釈され
                 // LPダメージのポップアップが出てしまう。
                 // なのでthis.isDamage()を判定に追加。
-                if (!target.result().hpAffected && this.isDamage()) {
+                if (!target._result.hpAffected && this.isDamage()) {
                     // 強制的にポップアップを表示
                     target.startDamagePopup();
                     SoundManager.playActorDamage();
@@ -345,8 +363,6 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
             }
 
             lpUpdate();
-        } else {
-            _Game_Action_apply.call(this, target);
         }
     };
 
@@ -367,7 +383,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
         _Game_Actor_regenerateHp.call(this);
         if (this.hp === 0) {
             gainLP(this, -1);
-            this.result().lpDamage = 1;
+            this._result.lpDamage = 1;
             // NRP_DynamicReturningAction.jsの再生待ち組み込み
             const _parameters = PluginManager.parameters(
                 'NRP_DynamicReturningAction'
@@ -459,7 +475,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
     Sprite_Battler.prototype.createDamageSprite = function () {
         _Sprite_Battler_createDamageSprite.call(this);
         const battler = this._battler;
-        if (battler?.result().lpDamage != 0 && battler?.isActor()) {
+        if (battler?._result.lpDamage != 0 && battler?.isActor()) {
             // 負の再生ダメージで死んだ、かつ
             // NRP_DynamicReturningAction.jsの再生待ちがONの場合の処理。
             // 苦肉の策として処理を移植。
@@ -485,7 +501,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
 
     // LP減少の表示
     Sprite_Damage.prototype.setupLpBreak = function (target: Game_Battler) {
-        const result = target.result();
+        const result = target._result;
         this._lpDamage = result.lpDamage;
         // HPダメージと同時ならディレイ
         this._delay = result.hpAffected ? 90 : 0;
@@ -676,21 +692,6 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
         _Window_StatusBase_placeBasicGauges.call(this, actor, x, y);
         // LP描画を追加
         this.placeGauge(actor, 'lp', x, y + this.gaugeLineHeight() * 2);
-    };
-
-    // 移動中のアイテム処理
-
-    // LPが減っていればLP回復アイテムを使用可能にする
-    const Game_Action_testApply = Game_Action.prototype.testApply;
-    Game_Action.prototype.testApply = function (target: Game_Battler) {
-        const lpRecover = Number(this.item()?.meta['LP_Recover']);
-        if (
-            (target.isActor() && lpRecover > 0 && target.lp < target.mlp) ||
-            lpRecover < 0
-        ) {
-            return true;
-        }
-        return Game_Action_testApply.call(this, target);
     };
 
     // 戦闘ステータスの座標上げ
