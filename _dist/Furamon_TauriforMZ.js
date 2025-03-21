@@ -50,7 +50,7 @@
     const TAURI_WINDOW_SIZE_SYMBOL = 'tauriWindowSize';
     let tauri; // Tauriが利用可能かどうか
     let emit; // Tauriのemit関数
-    let platform = ""; // Tauriを動かしているOSを取得
+    let platform = ''; // Tauriを動かしているOSを取得
     // NW.jsの場合はここで終了
     if (Utils.isNwjs()) {
         console.log('This is NW.js. Aborted.');
@@ -65,34 +65,40 @@
                 emit = tauri.event.emit;
                 platform = tauri.os.platform(); // OS取得
                 resolve(); // Promiseをresolve
-            }
-            else {
+            } else {
                 // Tauriがまだ利用できない場合は、少し待って再試行
                 setTimeout(checkTauri, 50); // 50msごとにチェック
             }
         };
         checkTauri(); // 初回チェック
     });
-    // モバイルOSの場合はここで終了
-    if (platform === 'android' || platform === 'ios') {
-        console.log('This is a mobile device. Aborted.');
-        return;
-    }
     // 初期ウィンドウサイズ変更処理
     async function applyInitialWindowSize() {
         try {
             await Promise.race([
                 tauriReady,
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Tauri initialization timeout')), 5000)),
+                new Promise((_, reject) =>
+                    setTimeout(
+                        () => reject(new Error('Tauri initialization timeout')),
+                        5000
+                    )
+                ),
             ]); // Tauriの初期化を待つ, 5秒タイムアウト
             DataManager.loadGlobalInfo();
             if (platform !== 'android' && platform !== 'ios') {
                 changeWindowSize();
             }
+        } catch (error) {
+            console.error(
+                'Failed to initialize Tauri or load window size:',
+                error
+            );
         }
-        catch (error) {
-            console.error('Failed to initialize Tauri or load window size:', error);
-        }
+    }
+    // モバイルOSの場合はここで終了
+    if (platform === 'android' || platform === 'ios') {
+        console.log('This is a mobile device. Aborted.');
+        return;
     }
     // 起動時
     const _Scene_Boot_start = Scene_Boot.prototype.start;
@@ -115,8 +121,7 @@
             if (aspect >= targetAspect) {
                 targetWidth = height * targetAspect;
                 targetHeight = height;
-            }
-            else {
+            } else {
                 targetWidth = width;
                 targetHeight = width / targetAspect;
             }
@@ -175,8 +180,7 @@
         const value = config.tauriWindowSize;
         if (value != null) {
             return Number(value).clamp(1, 4);
-        }
-        else {
+        } else {
             return 1;
         }
     };
@@ -197,14 +201,11 @@
         if (tauri) {
             if (value === 1) {
                 return '1280x720';
-            }
-            else if (value === 2) {
+            } else if (value === 2) {
                 return '1600x900';
-            }
-            else if (value === 3) {
+            } else if (value === 3) {
                 return '1920x1080';
-            }
-            else if (value === 4) {
+            } else if (value === 4) {
                 return '2560x1440';
             }
         }
@@ -271,13 +272,15 @@
         this._noTouchSelect = true; // ウィンドウサイズ変更で選択状態が変わらないようタッチ選択禁止
     };
     // こっちでもタッチ選択禁止
-    const _Window_Options_onTouchSelect = Window_Options.prototype.onTouchSelect;
+    const _Window_Options_onTouchSelect =
+        Window_Options.prototype.onTouchSelect;
     Window_Options.prototype.onTouchSelect = function (trigger) {
         this._noTouchSelect = true;
         _Window_Options_onTouchSelect.apply(this, [trigger]);
     };
     // ウィンドウサイズ項目追加
-    const _Window_Options_makeCommandList = Window_Options.prototype.makeCommandList;
+    const _Window_Options_makeCommandList =
+        Window_Options.prototype.makeCommandList;
     Window_Options.prototype.makeCommandList = function () {
         _Window_Options_makeCommandList.apply(this, []);
         this._list.splice(optionPosition, 0, {
@@ -295,7 +298,8 @@
         }
     };
     // 設定値反映
-    const _Window_Options_setConfigValue = Window_Options.prototype.setConfigValue;
+    const _Window_Options_setConfigValue =
+        Window_Options.prototype.setConfigValue;
     Window_Options.prototype.setConfigValue = function (symbol, volume) {
         _Window_Options_setConfigValue.apply(this, [symbol, volume]);
         if (symbol === TAURI_WINDOW_SIZE_SYMBOL) {
@@ -309,14 +313,11 @@
         const value = ConfigManager.tauriWindowSize;
         if (value === 1) {
             emit('resize_window', 1);
-        }
-        else if (value === 2) {
+        } else if (value === 2) {
             emit('resize_window', 2);
-        }
-        else if (value === 3) {
+        } else if (value === 3) {
             emit('resize_window', 3);
-        }
-        else if (value === 4) {
+        } else if (value === 4) {
             emit('resize_window', 4);
         }
         Graphics._updateCanvas(); // ここでも念の為Canvasをリサイズ
