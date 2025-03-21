@@ -54,7 +54,7 @@
 
     let tauri: any; // Tauriが利用可能かどうか
     let emit: any; // Tauriのemit関数
-    let platform: string; // Tauriを動かしているOSを取得
+    let platform = ""; // Tauriを動かしているOSを取得
 
     // NW.jsの場合はここで終了
     if (Utils.isNwjs()) {
@@ -75,14 +75,15 @@
                 // Tauriがまだ利用できない場合は、少し待って再試行
                 setTimeout(checkTauri, 50); // 50msごとにチェック
             }
-            // モバイルOSの場合はここで終了
-            if (platform === 'android' || platform === 'ios') {
-                console.log('This is a mobile device. Aborted.');
-                return;
-            }
         };
         checkTauri(); // 初回チェック
     });
+
+    // モバイルOSの場合はここで終了
+    if (platform === 'android' || platform === 'ios') {
+        console.log('This is a mobile device. Aborted.');
+        return;
+    }
 
     // 初期ウィンドウサイズ変更処理
     async function applyInitialWindowSize() {
