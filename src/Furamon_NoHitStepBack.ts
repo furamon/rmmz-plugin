@@ -5,7 +5,8 @@
 //------------------------------------------------------------------------------
 // 2025/2/2 1.0.0 公開！(厳密には数日前からリポジトリにはあった)
 // 2025/2/25 1.1.0 TypeScriptに移行。
-// 2525/3/15 1.1.1 アニメーションつきスキルを外した際、アニメーションごとバックステップする不具合修正。
+// 2025/3/15 1.1.1 アニメーションつきスキルを外した際、アニメーションごとバックステップする不具合修正。
+// 2025/4/2 1.1.2 NRP_DynamicReturningAction考慮処理追加。
 
 /*:
  * @target MZ
@@ -62,6 +63,7 @@
                 const duration = 3;
 
                 sprite.startMove(this.isEnemy() ? -192 : 192, 0, duration);
+                sprite._dynamicMotionDuration = duration; // NRP_DynamicReturningAction用
                 await delay(duration * 48); // フレームレートを考慮してウェイト
                 sprite.startMove(0, 0, duration);
             }

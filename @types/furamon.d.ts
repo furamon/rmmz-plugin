@@ -67,6 +67,10 @@ interface Sprite_Gauge {
   _lpTextColorNormal: string;
 }
 
+interface Sprite_Battler {
+  _dynamicMotionDuration: number;
+}
+
 interface _Window {
   __TAURI__: any;
 }
