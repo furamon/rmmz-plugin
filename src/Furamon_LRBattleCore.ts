@@ -75,11 +75,11 @@
     ) {
         for (const stateId of this.subject().attackStates()) {
             let chance = effect.value1;
-            chance *= target.stateRate(stateId);
             chance *= this.subject().attackStatesRate(stateId);
             chance +=
                 (this.subject().luk - target.luk) * 0.03 +
                 (this.subject().tp - target.tp) * 0.01;
+            chance *= target.stateRate(stateId);
 
             chance = Math.max(chance, 0);
             if (target.isStateResist(stateId)) {
@@ -102,10 +102,10 @@
     ) {
         let chance = effect.value1;
         if (!this.isCertainHit()) {
-            chance *= target.stateRate(effect.dataId);
             chance +=
                 (this.subject().luk - target.luk) * 0.03 +
                 (this.subject().tp - target.tp) * 0.01;
+            chance *= target.stateRate(effect.dataId);
 
             chance = Math.max(chance, 0);
         }
@@ -113,7 +113,6 @@
             target.addState(4);
             return;
         }
-
         if (Math.random() < chance) {
             target.addState(effect.dataId);
             this.makeSuccess(target);

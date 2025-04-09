@@ -37,6 +37,7 @@
 //                  NRP_CalcResultFirst.jsとの競合処理を追加。
 //                  HP全快処理を戦闘前にも挟んだ。
 // 2025/03/16 1.5.4 競合処理を微修正。
+// 2025/04/09 1.5.6 戦闘不能時のポップアップ間隔を縮めた。
 /*:
  * @target MZ
  * @plugindesc 戦闘不能に関わるライフポイントを実装します。
@@ -446,7 +447,7 @@ const prmBattleEndRecover = parameters['BattleEndRecover'];
         const result = target._result;
         this._lpDamage = result.lpDamage;
         // HPダメージと同時ならディレイ
-        this._delay = result.hpAffected ? 90 : 0;
+        this._delay = result.hpAffected ? 30 : 0;
         this.visible = false;
         this.createDigits(result.lpDamage);
     };
