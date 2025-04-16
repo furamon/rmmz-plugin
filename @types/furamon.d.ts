@@ -28,6 +28,7 @@ interface Game_BattlerBase {
 
 interface Game_Battler {
   stepBack(): void;
+  _reservedResults: Game_ActionResult;
 }
 
 interface Game_Actor {
