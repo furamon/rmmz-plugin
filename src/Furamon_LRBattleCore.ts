@@ -139,7 +139,6 @@
         const isNrpPreCalc =
             Array.isArray(target._reservedResults) && target.result();
         const result = target.result();
-        console.log(isNrpPreCalc);
         if (isNrpPreCalc) {
             const initialSuccess = result.success; // StateResistToFailure 用
             let chance = effect.value1;
