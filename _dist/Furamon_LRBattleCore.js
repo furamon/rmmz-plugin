@@ -11,7 +11,6 @@
  * - 負の速度補正を魔法防御で相殺
  * - メモ欄に<IgnoreExp>のついた特徴を持つアクターがいる場合は戦闘勝利時の獲得経験値を0
  * - メモ欄に<DoubleExp>のついた特徴を持つアクターがいる場合は戦闘勝利時の獲得経験値を倍増
- * - 能力値乗算特徴を一番高いもののみ反映するようにする。要は底上げ方式にする
  * - メモ欄に<DummyEnemy>をつけた敵はダミーターゲット（完全無敵の敵）になる
  * - ショップ画面のレイアウト調整
  *
@@ -253,57 +252,6 @@
         }
         return _Game_Enemy_exp.call(this);
     };
-    // 能力値乗算特徴がアクターや職業、装備などに複数ついている場合、
-    // 一番高いものを返すよう挙動を改変
-    // 最大HPだけは加算処理(130%と120%なら150%になる)
-    // また、装備能力上昇値がアクター側の補正を受けないよう改変
-    // (ステートは普通に乗算)
-    Game_Actor.prototype.param = function (paramId) {
-        // 基本値の取得
-        let value = this.paramBase(paramId);
-        // 特徴による乗算補正を適用
-        value *= this.paramRate(paramId);
-        // 装備やその他の加算値をそのあとから追加（乗算補正の影響を受けない）
-        value += this.paramPlus(paramId);
-        // バフ/デバフの効果を適用
-        value *= this.paramBuffRate(paramId);
-        // 最小値の処理
-        const maxValue = this.paramMax(paramId);
-        const minValue = this.paramMin(paramId);
-        return Math.round(value.clamp(minValue, maxValue));
-    };
-    Game_Actor.prototype.paramRate = function (paramId) {
-        // 全ての特徴を持つオブジェクトから特徴を収集（装備は除外）
-        const traits = this.traitObjects().reduce((acc, actor) => {
-            if (actor && actor.traits && !(actor instanceof Game_Item)) {
-                const paramTraits = actor.traits.filter((trait) => trait.code === Game_BattlerBase.TRAIT_PARAM &&
-                    trait.dataId === paramId);
-                return acc.concat(paramTraits);
-            }
-            return acc;
-        }, []);
-        // ステートとそれ以外の特徴に分離
-        const stateTraits = traits.filter((trait) => this.states().some((state) => state.traits.includes(trait)));
-        const otherTraits = traits.filter((trait) => !this.states().some((state) => state.traits.includes(trait)));
-        // ステートの効果は乗算で計算
-        const stateRate = stateTraits
-            .map((trait) => trait.value)
-            .reduce((acc, cur) => acc * cur, 1);
-        // その他の特徴の計算
-        let otherRate;
-        if (otherTraits.length === 0) {
-            otherRate = 1;
-        }
-        else if (paramId === 0) {
-            // 最大HPの場合
-            otherRate = otherTraits.reduce((total, trait) => total + (trait.value - 1), 1);
-        }
-        else {
-            otherRate = Math.max(...otherTraits.map((trait) => trait.value));
-        }
-        // 両方の効果を乗算して返す
-        return stateRate * otherRate;
-    };
     // アクターコマンドから逃げられるようにする
     const _Scene_Battle_createActorCommandWindow = Scene_Battle.prototype.createActorCommandWindow;
     Scene_Battle.prototype.createActorCommandWindow = function () {
@@ -365,4 +313,16 @@
     Window_ShopSell.prototype.maxCols = function () {
         return 3;
     };
+    // コマンド背景薄く（Thanks to MNKR!）
+    const _Window_Base_initialize = Window_Base.prototype.initialize;
+    Window_Base.prototype.initialize = function (rect) {
+        _Window_Base_initialize.call(this, rect);
+        this._contentsBackSprite.alpha = 0.5;
+    };
+    // WASD移動デフォ
+    Input.keyMapper[87] = 'up'; //Wキー
+    Input.keyMapper[65] = 'left'; //Aキー
+    Input.keyMapper[83] = 'down'; //Sキー
+    Input.keyMapper[68] = 'right'; //Dキー
+    Input.keyMapper[69] = 'pagedown'; //Eキ
 })();

@@ -12,7 +12,14 @@ declare namespace ConfigManager {
 
 interface PluginManager {
   public static checkErrors(): void;
+  public static isLoaded(name: string): boolean;
 }
+
+declare let Imported: {
+    [key: string]: boolean | undefined;
+    NUUN_PassiveSkill?: boolean; // 例: NUUN_PassiveSkill のフラグ
+    // 他のプラグインのフラグもここに追加可能
+};
 
 interface BattleManager {
   rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
@@ -39,6 +46,11 @@ interface Game_Actor {
   _resurrect: boolean;
   maxLPSet(): void;
   recoverLP(): void;
+  getActorClass(): (MZ.Actor | MZ.Class)[];
+  getActorClassParamRate(paramId: number): number;
+  getStateParamRate(paramId: number): number;
+  getEquipParamRate(paramId: number): number;
+  passiveObject(): any[];
 }
 
 interface Game_Action {
