@@ -38,7 +38,7 @@
  * @option 中 @value 1
  * @option 下 @value 2
  * @option カスタム @value -1
- * @default 下
+ * @default 2
  * @text 表示位置
  * @desc テキストの表示位置を選択します。「カスタム」を選ぶとX,Y座標で指定できます。
  *
@@ -73,9 +73,9 @@
  *
  * @arg textAlign
  * @type select
- * @option 左揃え
- * @option 中央揃え
- * @default 中央揃え
+ * @option 左揃え @value left
+ * @option 中央揃え @value center
+ * @default center
  * @text 文字揃え
  * @desc ウィンドウ内でのテキストの水平揃えを指定します。
  *
@@ -141,7 +141,7 @@
             this.contents.clear(); // 前の内容をクリア
             this.contents.fontSize = this._fontSize; // フォントサイズ設定
             this.drawText(this._text, 0, 0, this.contentsWidth(), 'left'); // テキスト描画
-            const align = this._textAlign === '左揃え' ? 'left' : 'center'; // 揃え位置を決定
+            const align = this._textAlign // 揃え位置を決定
             this.drawText(this._text, 0, 0, this.contentsWidth(), align); // テキスト描画
 
             // 位置調整 (refreshの最後に移動)
@@ -179,7 +179,7 @@
         const position = Number(args.position || 0);
         const fontSize = Number(args.fontSize || $gameSystem.mainFontSize());
         const fullWidth = args.fullWidth === 'true'; // boolean引数は文字列で渡される
-        const textAlign = String(args.textAlign || '中央揃え');
+        const textAlign = String(args.textAlign || 'center');
 
         const wait = args.wait !== 'false'; // デフォルトtrue。"false"が指定された時だけfalseに
         let x = 0;
