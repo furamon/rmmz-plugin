@@ -3,6 +3,7 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
+// 2025/05/01 1.0.0 公開！
 
 /*:
  * @target MZ
@@ -111,8 +112,10 @@
             this._fullWidth = fullWidth; // 画面幅フラグを保存
             this._textAlign = textAlign; // 文字揃えを保存
             this.opacity = 255; // ウィンドウ背景透明度
+            this.openness = 0; // 初期状態を閉じた状態にする
             this.contentsOpacity = 255; // 文字透明度
             this.refresh(); // テキストを描画し、ウィンドウサイズを調整
+            this.open(); // オープンアニメーションを開始
         }
 
         // ウィンドウの幅を内容に合わせて計算
@@ -213,8 +216,8 @@
     const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
     Game_Interpreter.prototype.updateWaitMode = function(this: Game_Interpreter_TemporaryText): boolean {
         if (this._waitMode === 'temporaryText') {
-            // _temporaryWindow が存在し、まだ開いている（表示中）かチェック
-            if (this._temporaryWindow && this._temporaryWindow.isOpen()) {
+            // _temporaryWindow が存在し、かつ閉じ始めていない（開いている途中か表示中）かチェック
+            if (this._temporaryWindow && !this._temporaryWindow.isClosing()) {
                 return true; // まだ待機
             } else {
                 this._waitMode = ''; // 待機モード解除
