@@ -317,12 +317,12 @@
     const _Window_Base_initialize = Window_Base.prototype.initialize;
     Window_Base.prototype.initialize = function (rect) {
         _Window_Base_initialize.call(this, rect);
-        this._contentsBackSprite.alpha = 0.5;
+        this._contentsBackSprite.alpha = 0.2;
     };
     // WASD移動デフォ
     Input.keyMapper[87] = 'up'; //Wキー
     Input.keyMapper[65] = 'left'; //Aキー
     Input.keyMapper[83] = 'down'; //Sキー
     Input.keyMapper[68] = 'right'; //Dキー
-    Input.keyMapper[69] = 'pagedown'; //Eキ
+    Input.keyMapper[69] = 'pagedown'; //Eキー
 })();
