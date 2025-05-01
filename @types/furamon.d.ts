@@ -94,3 +94,14 @@ interface Window_Options {
   _keyboardConfigIndex: number;
   changeWindowSizeValue(symbol: string, value: number): void;
 }
+
+declare class Scene_KeyConfig{
+    /** Smoothly select an item by index */
+    smoothSelect(index: number): void;
+    /** Draw background for an item */
+    drawItemBackground(): void;
+    /** Number of visible items */
+    maxVisibleItems(): number;
+    /** Item rectangle with padding */
+    itemRectWithPadding(): Rectangle;
+}

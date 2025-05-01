@@ -317,7 +317,11 @@
     const _Window_Base_initialize = Window_Base.prototype.initialize;
     Window_Base.prototype.initialize = function (rect) {
         _Window_Base_initialize.call(this, rect);
-        this._contentsBackSprite.alpha = 0.2;
+        // Mano_InputConfig以外
+        this._contentsBackSprite.alpha =
+            SceneManager._scene?.constructor?.name === 'Scene_KeyConfig_V10'
+                ? 1
+                : 1 / 3;
     };
     // WASD移動デフォ
     Input.keyMapper[87] = 'up'; //Wキー
