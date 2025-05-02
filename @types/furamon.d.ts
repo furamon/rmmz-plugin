@@ -2,6 +2,11 @@ interface MetaObject {
   meta: Metadata; // metaプロパティの型をMetadata型で定義
 }
 
+declare class TextManager {
+  public static readonly file: string;
+  public static readonly autosave: string;
+}
+
 declare namespace ConfigManager {
   let tauriWindowSize: number;
   function readTauriWindowSize(config: Config);
@@ -27,6 +32,16 @@ interface BattleManager {
 
 interface Scene_Battle {
   _enemyNameWindow: Window_EnemyName;
+}
+declare class Scene_KeyConfig{
+    /** Smoothly select an item by index */
+    smoothSelect(index: number): void;
+    /** Draw background for an item */
+    drawItemBackground(): void;
+    /** Number of visible items */
+    maxVisibleItems(): number;
+    /** Item rectangle with padding */
+    itemRectWithPadding(): Rectangle;
 }
 
 interface Game_BattlerBase {
@@ -93,15 +108,4 @@ interface Window_Options {
   _gamepadOptionIndex: number;
   _keyboardConfigIndex: number;
   changeWindowSizeValue(symbol: string, value: number): void;
-}
-
-declare class Scene_KeyConfig{
-    /** Smoothly select an item by index */
-    smoothSelect(index: number): void;
-    /** Draw background for an item */
-    drawItemBackground(): void;
-    /** Number of visible items */
-    maxVisibleItems(): number;
-    /** Item rectangle with padding */
-    itemRectWithPadding(): Rectangle;
 }
