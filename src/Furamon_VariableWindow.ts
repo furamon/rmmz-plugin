@@ -145,13 +145,13 @@
             this.openness = 0; // 初期状態を閉じた状態にする
             this.contentsOpacity = 255; // 文字透明度
             this._showedTextLength = enableTextScroll ? 0 : text.length; // 文字送り用
-            this._textSpeed =
-                100 /
-                (nrpSpeedVariable
+            this._textSpeed = nrpParams
+                ? (100 / nrpSpeedVariable
                     ? $gameVariables.value(nrpSpeedVariable)
                     : ConfigManager.messageSpeed
                     ? ConfigManager.messageSpeed
-                    : nrpDefaultSpeed);
+                    : nrpDefaultSpeed)
+                : 1;
             this._textWaitCount = 0;
             this._isAllShown = !enableTextScroll; // 送り無効なら最初から全文表示
             this.refresh(); // テキストを描画し、ウィンドウサイズを調整
