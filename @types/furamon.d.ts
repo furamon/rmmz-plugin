@@ -14,6 +14,7 @@ declare namespace ConfigManager {
   interface Config {
     tauriWindowSize: number;
   }
+  let messageSpeed: number;
 }
 
 interface PluginManager {

@@ -42,14 +42,6 @@
  * @text 文字送り有効
  * @desc 文字送り（1文字ずつ表示）を有効にするか。falseで一括表示。
  *
- * @arg textSpeed
- * @type number
- * @decimals 2
- * @default 1.00
- * @min 0
- * @text 文字送り速度
- * @desc 1文字あたりのフレーム数。小さいほど速い。
- *
  * @arg position
  * @type select
  * @option 上 @value 0
@@ -109,6 +101,11 @@
     const PLUGIN_NAME = 'Furamon_VariableWindow';
     const parameters = PluginManager.parameters(PLUGIN_NAME);
 
+    // NRP_MessageSpeed連携
+    const nrpParams = PluginManager.parameters('NRP_MessageSpeed');
+    const nrpDefaultSpeed = Number(nrpParams['DefaultSpeed'] || 100);
+    const nrpSpeedVariable = Number(nrpParams['SpeedVariable'] || 0);
+
     type Game_Interpreter_TemporaryText = Game_Interpreter & {
         _temporaryWindow?: Window_TemporaryText | null;
     };
@@ -135,8 +132,7 @@
             position: number,
             fullWidth: boolean,
             textAlign: string,
-            enableTextScroll: boolean = true,
-            textSpeed: number = 2
+            enableTextScroll: boolean = true
         ) {
             super(rect);
             this._text = text;
@@ -149,7 +145,13 @@
             this.openness = 0; // 初期状態を閉じた状態にする
             this.contentsOpacity = 255; // 文字透明度
             this._showedTextLength = enableTextScroll ? 0 : text.length; // 文字送り用
-            this._textSpeed = textSpeed; // コマンド引数で指定
+            this._textSpeed =
+                100 /
+                (nrpSpeedVariable
+                    ? $gameVariables.value(nrpSpeedVariable)
+                    : ConfigManager.messageSpeed
+                    ? ConfigManager.messageSpeed
+                    : nrpDefaultSpeed);
             this._textWaitCount = 0;
             this._isAllShown = !enableTextScroll; // 送り無効なら最初から全文表示
             this.refresh(); // テキストを描画し、ウィンドウサイズを調整
@@ -214,7 +216,14 @@
                     this._textWaitCount++;
                     if (this._textWaitCount >= this._textSpeed) {
                         this._textWaitCount = 0;
-                        this._showedTextLength++;
+                        let charsToShow = 1;
+                        if (this._textSpeed < 1) {
+                            charsToShow = Math.floor(1 / this._textSpeed);
+                        }
+                        this._showedTextLength += charsToShow;
+                        if (this._showedTextLength > this._text.length) {
+                            this._showedTextLength = this._text.length;
+                        }
                         this.refresh();
                     }
                     // 決定キーで全文表示
@@ -252,8 +261,11 @@
             const fullWidth = args.fullWidth === 'true'; // boolean引数は文字列で渡される
             const textAlign = String(args.textAlign || 'center');
             // 新規: 文字送り有無・速度
-            const enableTextScroll = args.enableTextScroll === undefined ? true : (args.enableTextScroll === true || args.enableTextScroll === 'true');
-            const textSpeed = args.textSpeed !== undefined ? Number(args.textSpeed) : 2;
+            const enableTextScroll =
+                args.enableTextScroll === undefined
+                    ? true
+                    : args.enableTextScroll === true ||
+                      args.enableTextScroll === 'true';
 
             const wait = args.wait !== 'false'; // デフォルトtrue。"false"が指定された時だけfalseに
             let x = 0;
@@ -279,8 +291,7 @@
                 position,
                 fullWidth,
                 textAlign,
-                enableTextScroll,
-                textSpeed
+                enableTextScroll
             );
 
             // 現在のシーンにウィンドウを追加
