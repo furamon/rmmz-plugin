@@ -37,6 +37,7 @@
 //                  NRP_CalcResultFirst.jsとの競合処理を追加。
 //                  HP全快処理を戦闘前にも挟んだ。
 // 2025/03/16 1.5.4 競合処理を微修正。
+// 2025/05/10 1.5.5 リファクタリング。
 /*:
  * @target MZ
  * @plugindesc 戦闘不能に関わるライフポイントを実装します。
@@ -130,13 +131,13 @@
  * @desc 戦闘後LPが残っていればHPが全回復します。
  *
  */
-const PLUGIN_NAME = 'Furamon_LP';
-const parameters = PluginManager.parameters(PLUGIN_NAME);
-const prmMaxLP = parameters['MaxLP'];
-const prmLPBreakMessage = parameters['LPBreakMessage'];
-const prmLPGainMessage = parameters['LPGainMessage'];
-const prmBattleEndRecover = parameters['BattleEndRecover'];
 (function () {
+    const PLUGIN_NAME = 'Furamon_LP';
+    const parameters = PluginManager.parameters(PLUGIN_NAME);
+    const prmMaxLP = parameters['MaxLP'];
+    const prmLPBreakMessage = parameters['LPBreakMessage'];
+    const prmLPGainMessage = parameters['LPGainMessage'];
+    const prmBattleEndRecover = parameters['BattleEndRecover'] === 'true';
     // プラグインコマンド
     PluginManager.registerCommand(PLUGIN_NAME, 'growLP', function (args) {
         const actorId = Number(args.actor);

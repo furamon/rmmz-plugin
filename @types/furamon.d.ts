@@ -5,6 +5,7 @@ interface MetaObject {
 declare class TextManager {
   public static readonly file: string;
   public static readonly autosave: string;
+  public static readonly escapeFailure: string;
 }
 
 declare namespace ConfigManager {
@@ -22,17 +23,23 @@ interface PluginManager {
 
 declare let Imported: {
     [key: string]: boolean | undefined;
-    NUUN_PassiveSkill?: boolean; // 例: NUUN_PassiveSkill のフラグ
-    // 他のプラグインのフラグもここに追加可能
+    NUUN_PassiveSkill?: boolean;
 };
 
 interface BattleManager {
   rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
 }
 
+// Scene_Base
+interface Scene_Base {
+    _partyCommandWindow: Window_PartyCommand;
+    _actorCommandWindow: Window_ActorCommand;
+}
+
 interface Scene_Battle {
   _enemyNameWindow: Window_EnemyName;
 }
+
 declare class Scene_KeyConfig{
     /** Smoothly select an item by index */
     smoothSelect(index: number): void;
@@ -108,4 +115,8 @@ interface Window_Options {
   _gamepadOptionIndex: number;
   _keyboardConfigIndex: number;
   changeWindowSizeValue(symbol: string, value: number): void;
+}
+
+interface Game_Interpreter {
+    _temporaryWindow: Window_TemporaryText;
 }
