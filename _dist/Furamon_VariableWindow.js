@@ -263,7 +263,6 @@
     // updateWaitMode を拡張して、temporaryText モードの待機処理を追加
     const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
     Game_Interpreter.prototype.updateWaitMode = function () {
-        console.log(this._waitMode);
         if (this._waitMode === 'temporaryText') {
             // _temporaryWindow が存在し、かつ閉じ始めていない（開いている途中か表示中）かチェック
             if (this._temporaryWindow && !this._temporaryWindow.isClosing()) {

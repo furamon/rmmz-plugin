@@ -2,6 +2,10 @@ interface MetaObject {
   meta: Metadata; // metaプロパティの型をMetadata型で定義
 }
 
+declare var ApngLoader: any;
+declare var SceneManager: any;
+declare var Sprite_Enemy: any;
+
 declare class TextManager {
   public static readonly file: string;
   public static readonly autosave: string;
@@ -105,6 +109,12 @@ interface Sprite_Gauge {
 
 interface Sprite_Battler {
   _dynamicMotionDuration: number;
+}
+
+interface Sprite_Enemy {
+    _battler: Game_Battler;
+    _dynamicMotionDuration: number;
+    startMove(x: number, y: number, duration: number): void;
 }
 
 interface _Window {

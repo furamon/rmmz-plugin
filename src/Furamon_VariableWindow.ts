@@ -312,8 +312,6 @@
     Game_Interpreter.prototype.updateWaitMode = function (
         this: Game_Interpreter_TemporaryText
     ): boolean {
-        console.log(this._waitMode);
-
         if (this._waitMode === 'temporaryText') {
             // _temporaryWindow が存在し、かつ閉じ始めていない（開いている途中か表示中）かチェック
             if (this._temporaryWindow && !this._temporaryWindow.isClosing()) {
