@@ -144,13 +144,22 @@
         }
     });
     /**
-     * F4 or Alt + Enterキーでフルスクリーンを切り替える
+     * 指定キーでフルスクリーンを切り替える
      */
     // フルスクリーン切り替え
     document.addEventListener('keydown', (event) => {
         if (event.key === fullscreenKey) {
             // "toggle_fullscreen" イベントを Tauri に送信
             emit('toggle_fullscreen');
+        }
+    });
+    /**
+     * 指定キーでのリロードを自前実装
+     */
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'F5') {
+            // "reload" イベントを Tauri に送信
+            emit('reload');
         }
     });
     /**
