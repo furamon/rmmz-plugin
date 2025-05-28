@@ -37,7 +37,7 @@
             this.drawText(TextManager.autosave, x, y, 180);
         }
         else if (savefileId === 1) {
-            this.drawText("クイックセーブ", x, y, 180);
+            this.drawText("クイックセーブ", x, y, 240);
         }
         else {
             this.drawText(TextManager.file + ' ' + (savefileId - 1), x, y, 180);
