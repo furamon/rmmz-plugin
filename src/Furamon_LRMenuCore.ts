@@ -32,6 +32,13 @@
                 : 1 / 3;
     };
 
+    // Window_MenuStatusならカーソル透明
+    Window_MenuStatus.prototype._refreshCursor = function () {
+        if (this.constructor.name === 'Window_MenuStatus') {
+            this._cursorSprite.alpha = 0;
+        }
+    }
+
     // WASD移動デフォ
     Input.keyMapper[87] = 'up'; //Wキー
     Input.keyMapper[65] = 'left'; //Aキー
