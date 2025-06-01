@@ -18,11 +18,14 @@
     const _Window_Base_initialize = Window_Base.prototype.initialize;
     Window_Base.prototype.initialize = function (rect) {
         _Window_Base_initialize.call(this, rect);
-        // Mano_InputConfig以外
+        // Mano_InputConfigなら不透明
         this._contentsBackSprite.alpha =
             SceneManager._scene?.constructor?.name === 'Scene_KeyConfig_V10'
                 ? 1
-                : 1 / 3;
+                : // Window_MenuStatusなら完全透明
+                    this.constructor.name === 'Window_MenuStatus'
+                        ? 0
+                        : 1 / 3;
     };
     // WASD移動デフォ
     Input.keyMapper[87] = 'up'; //Wキー
@@ -37,7 +40,7 @@
             this.drawText(TextManager.autosave, x, y, 180);
         }
         else if (savefileId === 1) {
-            this.drawText("クイックセーブ", x, y, 240);
+            this.drawText('クイックセーブ', x, y, 240);
         }
         else {
             this.drawText(TextManager.file + ' ' + (savefileId - 1), x, y, 180);
