@@ -63,6 +63,8 @@ interface Game_BattlerBase {
 interface Game_Battler {
   stepBack(): void;
   _reservedResults: Game_ActionResult;
+  isUsedSlot(slotId: number): boolean;
+  _usedItemSlots: number[];
 }
 
 interface Game_Actor {

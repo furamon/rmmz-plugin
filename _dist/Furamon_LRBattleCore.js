@@ -133,11 +133,8 @@
         if (isNrpPreCalc) {
             const initialSuccess = result.success; // StateResistToFailure 用
             let chance = effect.value1;
-            // isCertainHit は result を参照しないので事前計算中でも使えるはず
+            // isCertainHit は result を参照しないので事前計算中でも使える
             if (!this.isCertainHit()) {
-                // isCertainHit() が true の場合、確率計算をスキップして必ず成功させるべきか？
-                // 元のコードでは isCertainHit() が true でも確率計算していたので、それに倣う。
-                // もし isCertainHit() で確定付与したいなら、ここの if を調整する。
                 chance +=
                     (this.subject().luk - target.luk) * 0.03 +
                         (this.subject().tp - target.tp) * 0.01;
