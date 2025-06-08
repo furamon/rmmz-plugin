@@ -60,6 +60,11 @@ interface Game_BattlerBase {
   isDummyEnemy(): boolean;
 }
 
+interface Game_Player {
+  setJumpSpeed(speed: number): void;
+  setJumpHeight(height: number): void;
+}
+
 interface Game_Battler {
   stepBack(): void;
   _reservedResults: Game_ActionResult;
