@@ -17,6 +17,7 @@
  * - どちらも通行不可ならその場でジャンプ
  *
  * キーを設定するかプラグインコマンドをイベント内で実行してください。
+ * トリアコンタン氏のHalfMove.jsとの併用に対応しています。
  * -----------------------------------------------------------------------------
  * # 謝辞 #
  * -----------------------------------------------------------------------------
@@ -142,35 +143,35 @@
  * @default true
  */
 (function () {
-    'use strict';
-    // パラメータ取得
-    const pluginName = 'Furamon_SmartJump';
-    const parameters = PluginManager.parameters(pluginName);
+    const PLUGIN_NAME = 'Furamon_SmartJump';
+    const parameters = PluginManager.parameters(PLUGIN_NAME);
 
-    const config = {
-        jumpSoundName: parameters['jumpSoundName'] || 'Jump1',
-        jumpSoundVolume: Number(parameters['jumpSoundVolume']) || 90,
-        jumpSoundPitch: Number(parameters['jumpSoundPitch']) || 80,
-        jumpSpeed: Number(parameters['jumpSpeed']) || 50,
-        jumpHeight: Number(parameters['jumpHeight']) || 200,
-        enableThrough: parameters['enableThrough'] === 'true',
-        jumpKey: parameters['jumpKey'] || 'control',
-        requireSwitch: Number(parameters['requireSwitch']) || 0,
-        disableInMenu: parameters['disableInMenu'] === 'true',
-    };
+    const prmJumpSoundName = parameters['jumpSoundName'] || 'Jump1';
+    const prmJumpSoundVolume = Number(parameters['jumpSoundVolume']) || 90;
+    const prmJumpSoundPitch = Number(parameters['jumpSoundPitch']) || 80;
+    const prmJumpSpeed = Number(parameters['jumpSpeed']) || 50;
+    const prmJumpHeight = Number(parameters['jumpHeight']) || 200;
+    const prmEnableThrough = parameters['enableThrough'] === 'true';
+    const prmJumpKey = parameters['jumpKey'] || 'control';
+    const prmRequireSwitch = Number(parameters['requireSwitch']) || 0;
+    const prmDisableInMenu = parameters['disableInMenu'] === 'true';
 
     /**
-     * 通行可能かチェック
+     * HalfMove.jsの有無を検出
      */
-    function canPass(x: number, y: number) {
-        return $gameMap.isPassable(x, y, $gamePlayer.direction());
+    function isHalfMoveActive() {
+        return (
+            typeof Game_Map.tileUnit !== 'undefined' &&
+            $gamePlayer.isHalfMove &&
+            $gamePlayer.isHalfMove()
+        );
     }
 
     /**
-     * 方向に応じたオフセットを取得
+     * 方向に応じたオフセットを取得（常に1マス単位）
      */
-    function getDirectionOffset(direction : number) {
-        const offsets : {[key: number]: [number, number]} = {
+    function getDirectionOffset(direction: number) {
+        const offsets: Record<number, number[]> = {
             2: [0, 1], // 下
             4: [-1, 0], // 左
             6: [1, 0], // 右
@@ -180,13 +181,56 @@
     }
 
     /**
+     * 通行判定を行う（HalfMove対応版）
+     */
+    function canPassToPosition(
+        fromX: number,
+        fromY: number,
+        direction: number,
+        distance: number
+    ) {
+        // 着地予定地点の座標を計算
+        const [dx, dy] = getDirectionOffset(direction);
+        const targetX = fromX + dx * distance;
+        const targetY = fromY + dy * distance;
+
+        if (isHalfMoveActive()) {
+            // HalfMoveがアクティブな場合、着地点での通行可能性をチェック
+            const player = $gamePlayer;
+            const tempX = player._x;
+            const tempY = player._y;
+
+            // 着地点に一時的に設定して通行可能かチェック
+            player._x = targetX;
+            player._y = targetY;
+
+            // 着地点が通行可能かチェック（方向は関係ないので適当な方向を指定）
+            const canLand =
+                $gameMap.isPassable(
+                    Math.floor(targetX),
+                    Math.floor(targetY),
+                    2
+                ) ||
+                $gameMap.isPassable(Math.ceil(targetX), Math.ceil(targetY), 2);
+
+            // 元の位置に戻す
+            player._x = tempX;
+            player._y = tempY;
+
+            return canLand;
+        } else {
+            // 通常の場合、着地点の通行判定
+            return $gameMap.isPassable(targetX, targetY, 2); // 下方向で通行判定
+        }
+    }
+    /**
      * ジャンプ効果音を再生
      */
     function playJumpSound() {
         const se = {
-            name: config.jumpSoundName,
-            volume: config.jumpSoundVolume,
-            pitch: config.jumpSoundPitch,
+            name: prmJumpSoundName,
+            volume: prmJumpSoundVolume,
+            pitch: prmJumpSoundPitch,
             pan: 0,
         };
         AudioManager.playSe(se);
@@ -199,18 +243,17 @@
         const player = $gamePlayer;
 
         // すり抜け設定
-        if (useThrough && config.enableThrough) {
+        if (useThrough && prmEnableThrough) {
             player.setThrough(true);
         }
 
         // ジャンプ設定と実行
-        player.setJumpSpeed(config.jumpSpeed);
-        player.setJumpHeight(config.jumpHeight);
+        player.setJumpSpeed(prmJumpSpeed);
+        player.setJumpHeight(prmJumpHeight);
         player.jump(jumpX, jumpY);
 
         // すり抜け解除（ジャンプ完了後）
-        if (useThrough && config.enableThrough) {
-            // ジャンプ完了を待ってからすり抜け解除
+        if (useThrough && prmEnableThrough) {
             const originalUpdate = player.updateJump;
             player.updateJump = function () {
                 originalUpdate.call(this);
@@ -229,21 +272,21 @@
         const player = $gamePlayer;
         const direction = player.direction();
         const [px, py] = [player.x, player.y];
-        const [dx, dy] = getDirectionOffset(direction);
 
         // 効果音再生
         playJumpSound();
 
-        // 2マス先の座標
-        const [x2, y2] = [px + dx * 2, py + dy * 2];
-        // 1マス先の座標
-        const [x1, y1] = [px + dx, py + dy];
+        // 1マス先と2マス先への着地可能性を判定
+        const can1Pass = canPassToPosition(px, py, direction, 1);
+        const can2Pass = canPassToPosition(px, py, direction, 2);
 
-        // 通行判定とジャンプ実行
-        if (canPass(x2, y2)) {
+        // ジャンプ距離を決定（常に通常の1マス＝1単位で計算）
+        const [dx, dy] = getDirectionOffset(direction);
+
+        if (can2Pass) {
             // 2マス先が通れる場合：2マスジャンプ（すり抜け有効）
             executeJump(dx * 2, dy * 2, true);
-        } else if (canPass(x1, y1)) {
+        } else if (can1Pass) {
             // 1マス先だけ通れる場合：1マスジャンプ
             executeJump(dx, dy, false);
         } else {
@@ -255,7 +298,7 @@
     /**
      * スイッチ条件付きでスマートジャンプを実行
      */
-    function executeSmartJumpWithSwitch(switchId:number) {
+    function executeSmartJumpWithSwitch(switchId: number) {
         if ($gameSwitches.value(switchId)) {
             executeSmartJump();
         }
@@ -272,21 +315,16 @@
      * キー入力でジャンプ可能かチェック
      */
     function canExecuteByKey() {
-        // 基本的な実行可能チェック
         if (!canExecuteSmartJump()) return false;
 
-        // メニュー中無効化設定がONの場合
-        if (config.disableInMenu) {
-            // メニューシーンやメッセージ表示中は無効
+        if (prmDisableInMenu) {
             if (SceneManager._scene.constructor !== Scene_Map) return false;
             if ($gameMessage.isBusy()) return false;
-            // イベント実行中は無効
             if ($gameMap.isEventRunning()) return false;
         }
 
-        // 必須スイッチのチェック
-        if (config.requireSwitch > 0) {
-            if (!$gameSwitches.value(config.requireSwitch)) return false;
+        if (prmRequireSwitch > 0) {
+            if (!$gameSwitches.value(prmRequireSwitch)) return false;
         }
 
         return true;
@@ -296,19 +334,18 @@
      * 指定されたキーが押されたかチェック
      */
     function isJumpKeyPressed() {
-        if (config.jumpKey === 'none') return false;
+        if (prmJumpKey === 'none') return false;
 
-        // キーマッピング
         const keyMap: { [key: string]: string } = {
             control: 'control',
             shift: 'shift',
             alt: 'alt',
-            space: 'ok', // スペースキーはokキーとして扱われる
+            space: 'ok',
             ok: 'ok',
             escape: 'escape',
             tab: 'tab',
-            z: 'ok', // ツクールMZでは通常Zキー = OK
-            x: 'escape', // ツクールMZでは通常Xキー = Cancel/Escape
+            z: 'ok',
+            x: 'escape',
             c: 'pageup',
             v: 'pagedown',
             a: 'shift',
@@ -319,7 +356,7 @@
             e: 'pagedown',
         };
 
-        const mappedKey = keyMap[config.jumpKey];
+        const mappedKey = keyMap[prmJumpKey];
         if (!mappedKey) return false;
 
         return Input.isTriggered(mappedKey);
@@ -335,7 +372,7 @@
     }
 
     /**
-     * 安全にスマートジャンプを実行（移動中チェック付き）
+     * 安全にスマートジャンプを実行
      */
     function safeExecuteSmartJump() {
         if (canExecuteSmartJump()) {
@@ -346,14 +383,13 @@
     /**
      * 安全にスイッチ条件付きスマートジャンプを実行
      */
-    function safeExecuteSmartJumpWithSwitch(switchId:number) {
+    function safeExecuteSmartJumpWithSwitch(switchId: number) {
         if (canExecuteSmartJump()) {
             executeSmartJumpWithSwitch(switchId);
         }
     }
 
     function registerKeyHandlers() {
-        // マップシーンでのキー入力処理
         const originalUpdateInputData = Input.update;
         Input.update = function () {
             originalUpdateInputData.call(this);
@@ -364,11 +400,21 @@
     }
 
     /**
+     * プラグインコマンド登録
+     */
+    PluginManager.registerCommand(PLUGIN_NAME, 'execute', (args) => {
+        safeExecuteSmartJump();
+    });
+
+    PluginManager.registerCommand(PLUGIN_NAME, 'executeWithSwitch', (args) => {
+        safeExecuteSmartJumpWithSwitch(Number(args.switchId));
+    });
+
+    /**
      * プラグイン初期化
      */
     function initialize() {
         registerKeyHandlers();
-        // その他の初期化処理があれば追加
     }
 
     // プラグイン開始時に初期化を実行
