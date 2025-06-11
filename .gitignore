@@ -24,4 +24,4 @@ pnpm-lock.yaml
 *.sln
 *.sw?
 
-**_Template.ts
+**_Template.*

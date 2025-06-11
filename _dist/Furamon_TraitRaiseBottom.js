@@ -42,7 +42,8 @@
  * @desc 最大HP補正特徴の処理方式。加算式か乗算式か？
  *
  *
- */ (function () {
+ */
+(function () {
     const PLUGIN_NAME = 'Furamon_TraitRaiseBottom';
     const parameters = PluginManager.parameters(PLUGIN_NAME);
     const prmHPPlus = parameters['HPPlus'] || 'mul';
