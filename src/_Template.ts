@@ -1,0 +1,19 @@
+//------------------------------------------------------------------------------
+// Furamon_xxx.js
+// This software is released under the MIT License.
+// http://opensource.org/licenses/mit-license.php
+//------------------------------------------------------------------------------
+
+/*:
+ * @target MZ
+ * @plugindesc 雛形
+ * @author Furamon
+ * @help 雛形
+ *
+ */
+(function () {
+    const pluginName = 'Furamon_xxx';
+    const parameters = PluginManager.parameters(pluginName);
+
+    console.log(`[Furamon] ${pluginName} is loaded.`);
+})();
