@@ -407,7 +407,7 @@
             this._svActorSprite.forceMotion('damage');
             // 12フレーム後に戻す
             setTimeout(() => {
-                this._svActorSprite.forceMotion('walk');
+                this._svActorSprite.refreshMotion();
             }, 600);
         }
         _Sprite_Enemy_setupDamagePopup.call(this);
