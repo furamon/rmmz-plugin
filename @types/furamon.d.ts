@@ -2,6 +2,16 @@ interface MetaObject {
     meta: Metadata; // metaプロパティの型をMetadata型で定義
 }
 
+// グローバル変数の型定義
+declare global {
+    var HPPosition: number;
+    var Gauge_X: number;
+    var Gauge_Y: number;
+    var enemyHPGaugeLength: string[] | null;
+    var getSplit: (tag: string | null | undefined) => string[] | null;
+    var Sprite_EnemyHPGauge: any;
+}
+
 declare var ApngLoader: any;
 declare var SceneManager: any;
 declare var Sprite_Enemy: any;
@@ -10,6 +20,11 @@ declare class TextManager {
     public static readonly file: string;
     public static readonly autosave: string;
     public static readonly escapeFailure: string;
+}
+
+declare namespace ImageManager {
+    export function loadSvEnemy(filename: string, hue?: number): Bitmap;
+    export function loadEmptyBitmap(): Bitmap;
 }
 
 declare namespace ConfigManager {
@@ -50,6 +65,7 @@ declare class Scene_KeyConfig {
     maxVisibleItems(): number;
     itemRectWithPadding(): Rectangle;
 }
+
 interface Game_Map {
     tileUnit?: number;
 }
@@ -61,6 +77,7 @@ interface Game_Map {
 declare namespace Game_Map {
     let tileUnit: number;
 }
+
 interface Game_Player {
     setJumpSpeed(speed: number): void;
     setJumpHeight(height: number): void;
@@ -69,6 +86,8 @@ interface Game_Player {
 
 interface Game_BattlerBase {
     isDummyEnemy(): boolean;
+    isActor(): this is Game_Actor;
+    isEnemy(): this is Game_Enemy;
 }
 
 interface Game_Battler {
@@ -76,6 +95,32 @@ interface Game_Battler {
     _reservedResults: Game_ActionResult;
     isUsedSlot(slotId: number): boolean;
     _usedItemSlots: number[];
+    makeSPName?(action?: Game_Action): string | null;
+}
+
+// Sprite_Battler のコンストラクタ関数の型定義（プロトタイプ操作用）
+declare interface Sprite_BattlerConstructor {
+    prototype: Sprite_Battler;
+    MOTIONS: Record<string, any>;
+    new (): Sprite_Battler;
+    [key: string]: any; // インデックスシグネチャを追加
+}
+
+// グローバルなSprite_Battlerクラス
+declare var Sprite_Battler: Sprite_BattlerConstructor;
+
+// NUUN_ButlerHPGauge プラグインなどによってグローバルに追加される可能性のある関数
+declare function getSplit(
+    metaValue: string | undefined | null
+): string[] | null;
+
+// NUUN_ButlerHPGauge プラグインなどによってグローバルに追加される可能性のあるクラス
+declare class Sprite_EnemyHPGauge extends Sprite {
+    constructor();
+    setup(battler: Game_Battler, type: string): void;
+    show(): void;
+    hide(): void;
+    update(): void;
 }
 
 interface Game_Actor {
@@ -91,6 +136,17 @@ interface Game_Actor {
     getStateParamRate(paramId: number): number;
     getEquipParamRate(paramId: number): number;
     passiveObject(): any[];
+}
+
+interface Game_Enemy {
+    enemy(): MZ.Enemy;
+    requestMotion(motionName: string): void;
+    makeSPName?(action: Game_Action): string | null;
+    isSvActor(): boolean;
+    requestSPName(action: Game_Action): string | null;
+    isEnemy(): this is Game_Enemy;
+    _motionType?: string;
+    _motionRefresh?: boolean;
 }
 
 interface Game_Action {
@@ -122,16 +178,55 @@ interface Sprite_Gauge {
 
 interface Sprite_Battler {
     _dynamicMotionDuration: number;
+    startMotion(motionType: string): void;
+    forceMotion(motionType: string): void;
+    updateMotionCount(): void;
+    refreshMotion(): void;
+    _motionCount: number;
+    motionSpeed(): number;
+    startMove(x: number, y: number, duration: number): void;
+    [key: string]: any; // インデックスシグネチャを追加
 }
 
 interface Sprite_Enemy {
-    _battler: Game_Battler;
-    _dynamicMotionDuration: number;
-    startMove(x: number, y: number, duration: number): void;
+    battlerOverlay: PIXI.Container;
 }
+
+// Sprite_SvActor の型定義
+declare class Sprite_SvActor extends Sprite {
+    constructor();
+    initialize(): void;
+
+    update(): void;
+    width: number;
+    height: number;
+    [key: string]: any; // インデックスシグネチャを追加
+}
+
+// Sprite_SvActorのコンストラクタ関数の型定義
+declare interface Sprite_SvActorConstructor {
+    prototype: Sprite_SvActor;
+    new (): Sprite_SvActor;
+}
+
+// グローバルなSprite_SvActorクラス
+declare var Sprite_SvActor: Sprite_SvActorConstructor;
+
+// Sprite_Actorの型定義（MOTIONSアクセス用）
+declare interface Sprite_ActorConstructor {
+    MOTIONS: Record<string, any>;
+    prototype: any;
+}
+
+declare var Sprite_Actor: Sprite_ActorConstructor;
 
 interface _Window {
     __TAURI__: any;
+    enemyHPGaugeLength?: string[] | null;
+    getSplit?: (tag: string | null | undefined) => string[] | null;
+    HPPosition?: number;
+    Gauge_X?: number;
+    Gauge_Y?: number;
 }
 
 interface Window_Options {
@@ -144,3 +239,11 @@ interface Window_Options {
 interface Game_Interpreter {
     _temporaryWindow: Window_TemporaryText;
 }
+
+declare interface Game_Temp {
+    enemyHPGaugeRefresh?: boolean;
+}
+
+declare let Gauge_X: number | undefined;
+declare let Gauge_Y: number | undefined;
+declare let HPPosition: number | undefined;
