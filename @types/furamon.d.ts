@@ -2,19 +2,15 @@ interface MetaObject {
     meta: Metadata; // metaプロパティの型をMetadata型で定義
 }
 
-// グローバル変数の型定義
-declare global {
-    var HPPosition: number;
-    var Gauge_X: number;
-    var Gauge_Y: number;
-    var enemyHPGaugeLength: string[] | null;
-    var getSplit: (tag: string | null | undefined) => string[] | null;
-    var Sprite_EnemyHPGauge: any;
-}
-
 declare var ApngLoader: any;
 declare var SceneManager: any;
 declare var Sprite_Enemy: any;
+
+interface NuunHpGaugeParams {
+    HPPosition?: number; // HPの位置を指定するプロパティ
+    Gauge_X?: number; // ゲージのX座標
+    Gauge_Y?: number; // ゲージのY座標
+}
 
 declare class TextManager {
     public static readonly file: string;
@@ -147,6 +143,7 @@ interface Game_Enemy {
     isEnemy(): this is Game_Enemy;
     _motionType?: string;
     _motionRefresh?: boolean;
+    getActionMotion(action: Game_Action): string
 }
 
 interface Game_Action {

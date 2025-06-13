@@ -147,7 +147,6 @@
             // アクション終了後に待機モーション（walk）に戻る
             setTimeout(() => {
                 if (this && !this._motionType) {
-                    console.log('Action finished, requesting walk motion');
                     this.requestMotion('walk');
                 }
             }, 100); // 100msに短縮
@@ -397,6 +396,10 @@
             this._battler.isDamagePopupRequested()) {
             // 強制的にダメージモーションを設定
             this._svActorSprite.forceMotion('damage');
+            // 12フレーム後に戻す
+            setTimeout(() => {
+                this._svActorSprite.forceMotion('walk');
+            }, 600);
         }
         _Sprite_Enemy_setupDamagePopup.call(this);
     };
@@ -500,6 +503,7 @@
     };
     // メインのモーション制御
     Sprite_SvActor.prototype.startMotion = function (motionType) {
+        this._motionFinished = false;
         // 戦闘不能時は何もしない
         if (this._battler && this._battler.isDead()) {
             return;
@@ -542,6 +546,7 @@
             }
         }
         else {
+            // 標準のSprite_Actorのモーション定義を使用
             let newMotion = null;
             if (typeof Sprite_Actor !== 'undefined' && Sprite_Actor.MOTIONS) {
                 newMotion = Sprite_Actor.MOTIONS[motionType];
@@ -556,12 +561,12 @@
                 this._pattern = 0;
             }
             else {
-                // フォールバックモーション定義
-                const fallbackMotions = {
+                // 正しいRPGツクールMZの標準モーション定義
+                const standardMotions = {
                     walk: { index: 0, loop: true, speed: 12 },
                     wait: { index: 1, loop: true, speed: 12 },
-                    chant: { index: 2, loop: false, speed: 12 },
-                    guard: { index: 3, loop: false, speed: 12 },
+                    chant: { index: 2, loop: true, speed: 12 },
+                    guard: { index: 3, loop: true, speed: 12 },
                     damage: { index: 4, loop: false, speed: 12 },
                     evade: { index: 5, loop: false, speed: 12 },
                     thrust: { index: 6, loop: false, speed: 12 },
@@ -577,11 +582,11 @@
                     sleep: { index: 16, loop: true, speed: 12 },
                     dead: { index: 17, loop: true, speed: 12 },
                 };
-                const fallbackMotion = fallbackMotions[motionType] || fallbackMotions['walk'];
+                const standardMotion = standardMotions[motionType] || standardMotions['walk'];
                 this._motion = {
-                    index: fallbackMotion.index,
-                    loop: fallbackMotion.loop,
-                    speed: fallbackMotion.speed,
+                    index: standardMotion.index,
+                    loop: standardMotion.loop,
+                    speed: standardMotion.speed,
                 };
                 this._motionCount = 0;
                 this._pattern = 0;
@@ -608,10 +613,10 @@
             ? Sprite_Battler.MOTIONS
             : Sprite_Actor.MOTIONS;
         if (!motions[motionType]) {
-            motionType = 'wait';
+            motionType = 'walk';
         }
         if (!motions[motionType]) {
-            this._motion = { index: 1, loop: true, speed: 12 };
+            this._motion = { index: 0, loop: true, speed: 12 };
             return;
         }
         this._motion.index = motions[motionType].index;
@@ -648,6 +653,20 @@
             }
         }
         return motionType;
+    };
+    Sprite_SvActor.prototype.update = function () {
+        Sprite.prototype.update.call(this);
+        if (!this._battler)
+            return;
+        this.updateBitmap();
+        this.updateFrame();
+        this.updateMotion();
+        this.updateStateSprite();
+        // refreshMotionを明示的に呼び出し
+        if (this._battler._motionRefresh) {
+            this._battler._motionRefresh = false;
+            this.refreshMotion();
+        }
     };
     Sprite_SvActor.prototype.updateBitmap = function () {
         if (!this._battler)
@@ -691,21 +710,25 @@
         }
     };
     Sprite_SvActor.prototype.updateMotion = function () {
-        const hasBattleMotionMZ = typeof Sprite_Battler !== 'undefined' &&
-            this.updateMotionCount &&
-            typeof Sprite_Battler.prototype.updateMotionCount === 'function';
-        if (hasBattleMotionMZ && this.remake) {
-            try {
-                // BattleMotionMZの処理
-                this.updateMotionCount();
+        if (!this._motion)
+            return;
+        this._motionCount++;
+        if (this._motionCount >= this._motion.speed * 3) {
+            this._motionCount = 0;
+            this._pattern++;
+            if (this._pattern >= 3) {
+                if (this._motion.loop) {
+                    this._pattern = 0;
+                }
+                else {
+                    this._pattern = 2;
+                    // ループしないモーションの場合は一度だけrefreshMotionを呼ぶ
+                    if (!this._motionFinished) {
+                        this._motionFinished = true;
+                        this.refreshMotion();
+                    }
+                }
             }
-            catch (e) {
-                console.log('BattleMotionMZ updateMotion failed, using default:', e);
-                this.updateMotionDefault();
-            }
-        }
-        else {
-            this.updateMotionDefault();
         }
     };
     // デフォルトのモーション更新処理を分離
@@ -751,23 +774,16 @@
         }
         const cw = bitmap.width / 9; // 9コマ幅
         const ch = bitmap.height / 6; // 6コマ高
-        // 修正: モーションインデックスを範囲内に収める
-        let motionIndex = this._motion.index;
-        if (motionIndex >= 18) {
-            // 6行×3のモーション制限
-            motionIndex = motionIndex % 18;
-        }
-        // 修正: より安全なフレーム計算
-        const row = Math.floor(motionIndex / 6); // 6モーション毎に行が変わる
-        const motionInRow = motionIndex % 6; // 行内でのモーション位置
-        const pattern = Math.min(this._pattern, 2); // パターンを0-2に制限
-        const col = Math.min(motionInRow * 3 + pattern, 8); // 列を制限（0-8）
-        // 範囲チェックと補正
-        const maxCols = 9;
-        const maxRows = 6;
-        if (col >= maxCols || row >= maxRows) {
-            console.warn('Frame would be out of bounds, using fallback frame');
-            // フォールバック: 待機モーション（1行目の最初のパターン）を使用
+        const motionIndex = this._motion.index;
+        const pattern = this._pattern;
+        const motionsPerColumn = 6; // 1列に6モーション
+        const patternsPerMotion = 3; // 1モーションに3パターン
+        const column = Math.floor(motionIndex / motionsPerColumn); // どの列か
+        const row = motionIndex % motionsPerColumn; // 列内での行位置
+        const col = column * patternsPerMotion + pattern; // 実際の列位置
+        // 範囲チェック
+        if (col >= 6 || row >= 9) {
+            console.warn('Frame out of bounds, using fallback');
             this._mainSprite.setFrame(0, 0, cw, ch);
             return;
         }
@@ -799,32 +815,30 @@
     Sprite_SvActor.prototype.refreshMotion = function () {
         if (!this._battler)
             return;
-        // 要求されたモーションがある場合は優先
+        // ステート確認
+        if (this._battler.states &&
+            typeof this._battler.states === 'function') {
+            const states = this._battler.states();
+            for (let i = 0; i < states.length; i++) {
+                const state = states[i];
+                if (state && state.meta) {
+                    const enemyMotion = state.meta['EnemyMotion'];
+                    if (typeof enemyMotion === 'string' &&
+                        enemyMotion.trim().length > 0) {
+                        this.forceMotion(enemyMotion.trim());
+                    }
+                }
+            }
+        }
+        // 要求されたモーション確認
         if (this._battler._motionType) {
             const requestedMotion = this._battler._motionType;
-            this._battler._motionType = null; // 先にクリア
+            this._battler._motionType = null;
             this.startMotion(requestedMotion);
             return;
         }
-        // 状態に基づくモーション決定（デフォルトをwalkに）
-        let motionType = 'walk'; // 修正: waitからwalkに
-        if (this._battler.isChanting && this._battler.isChanting()) {
-            motionType = 'chant';
-        }
-        else if (this._battler.isGuard && this._battler.isGuard()) {
-            motionType = 'guard';
-        }
-        else if (this._battler.isGuardWaiting &&
-            this._battler.isGuardWaiting()) {
-            motionType = 'guard';
-        }
-        // 現在のモーションと同じ場合はスキップ（無限ループ防止）
-        if (this._motion &&
-            this._motion.index === this.getMotionIndex(motionType)) {
-            console.log('Same motion, skipping refresh:', motionType);
-            return;
-        }
-        this.startMotion(motionType);
+        // デフォルトモーション
+        this.startMotion('walk');
     };
     // モーションインデックス取得のヘルパー関数
     Sprite_SvActor.prototype.getMotionIndex = function (motionType) {
@@ -840,7 +854,7 @@
         const fallbackMotions = {
             walk: { index: 0, loop: true, speed: 12 },
             wait: { index: 1, loop: true, speed: 12 },
-            chant: { index: 2, loop: false, speed: 12 },
+            chant: { index: 2, loop: true, speed: 12 },
             guard: { index: 3, loop: false, speed: 12 },
             damage: { index: 4, loop: false, speed: 12 },
             evade: { index: 5, loop: false, speed: 12 },
@@ -879,7 +893,6 @@
             if (Sprite_Battler.prototype[methodName]) {
                 Sprite_SvActor.prototype[methodName] =
                     Sprite_Battler.prototype[methodName];
-                console.log('Migrated method:', methodName);
             }
         });
         // updateMotionCountは条件付きで移植
