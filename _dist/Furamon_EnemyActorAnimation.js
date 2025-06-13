@@ -3,6 +3,7 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
+// 2025/06/13 1.0.0 公開！
 /*:
  * @target MZ
  * @plugindesc 敵キャラにSV_Actorsのスプライトシートを適用します。
@@ -13,6 +14,14 @@
  * 「<svActor:ファイル名>」
  * 「<SVアクター:ファイル名>」
  * ＜使用例＞Actor1_1.pngを使いたいなら=>「<svActor:Actor1_1>」
+ * -----------------------------------------------------------------------------
+ * # 謝辞 #
+ * -----------------------------------------------------------------------------
+ * Claude 4 sonnetの力を借りて借りて借りまくりました。
+ *
+ * @-----------------------------------------------------------
+ * @ プラグインパラメータ
+ * @-----------------------------------------------------------
  *
  * @param autoMirror
  * @text 敵スプライトを自動反転するか
@@ -39,17 +48,17 @@
     // グローバル変数の設定（NUUN_ButlerHPGaugeとの互換性）
     if (typeof window.HPPosition === 'undefined') {
         window.HPPosition = nuunHpGaugeParams.HPPosition
-            ? Number(nuunHpGaugeParams.HPPosition)
+            ? Number(nuunHpGaugeParams.HPPosition) // 文字列を数値に変換
             : 0;
     }
     if (typeof window.Gauge_X === 'undefined') {
         window.Gauge_X = nuunHpGaugeParams.Gauge_X
-            ? Number(nuunHpGaugeParams.Gauge_X)
+            ? Number(nuunHpGaugeParams.Gauge_X) // 文字列を数値に変換
             : 0;
     }
     if (typeof window.Gauge_Y === 'undefined') {
         window.Gauge_Y = nuunHpGaugeParams.Gauge_Y
-            ? Number(nuunHpGaugeParams.Gauge_Y)
+            ? Number(nuunHpGaugeParams.Gauge_Y) // 文字列を数値に変換
             : 0;
     }
     /**
@@ -503,7 +512,6 @@
     };
     // メインのモーション制御
     Sprite_SvActor.prototype.startMotion = function (motionType) {
-        this._motionFinished = false;
         // 戦闘不能時は何もしない
         if (this._battler && this._battler.isDead()) {
             return;
@@ -562,6 +570,7 @@
             }
             else {
                 // 正しいRPGツクールMZの標準モーション定義
+                // 修正: 型安全なモーション定義
                 const standardMotions = {
                     walk: { index: 0, loop: true, speed: 12 },
                     wait: { index: 1, loop: true, speed: 12 },
@@ -580,8 +589,9 @@
                     dying: { index: 14, loop: true, speed: 12 },
                     abnormal: { index: 15, loop: true, speed: 12 },
                     sleep: { index: 16, loop: true, speed: 12 },
-                    dead: { index: 17, loop: true, speed: 12 },
+                    dead: { index: 17, loop: true, speed: 12 }
                 };
+                // 安全なアクセス
                 const standardMotion = standardMotions[motionType] || standardMotions['walk'];
                 this._motion = {
                     index: standardMotion.index,
@@ -609,19 +619,20 @@
     };
     // BattleMotionMZ用のメソッドを条件付きで適用
     Sprite_SvActor.prototype.setupValue = function (motionType) {
-        const motions = typeof Sprite_Battler !== 'undefined' && Sprite_Battler.MOTIONS
-            ? Sprite_Battler.MOTIONS
-            : Sprite_Actor.MOTIONS;
-        if (!motions[motionType]) {
-            motionType = 'walk';
-        }
-        if (!motions[motionType]) {
-            this._motion = { index: 0, loop: true, speed: 12 };
-            return;
-        }
-        this._motion.index = motions[motionType].index;
-        this._motion.loop = motions[motionType].loop;
-        this._motion.speed = motions[motionType].speed;
+        // 修正: 型安全なモーション定義
+        const motions = (typeof Sprite_Battler !== 'undefined' && Sprite_Battler.MOTIONS) ||
+            (typeof Sprite_Actor !== 'undefined' && Sprite_Actor.MOTIONS) ||
+            {};
+        // 安全なアクセス
+        const motion = motions[motionType] ||
+            motions['walk'] || {
+            index: 0,
+            loop: true,
+            speed: 12,
+        };
+        this._motion.index = motion.index;
+        this._motion.loop = motion.loop;
+        this._motion.speed = motion.speed;
         this._motionCount = 0;
         this._pattern = 0;
         // BattleMotionMZ特有のプロパティ（BattleMotionMZがある場合のみ）
@@ -710,25 +721,21 @@
         }
     };
     Sprite_SvActor.prototype.updateMotion = function () {
-        if (!this._motion)
-            return;
-        this._motionCount++;
-        if (this._motionCount >= this._motion.speed * 3) {
-            this._motionCount = 0;
-            this._pattern++;
-            if (this._pattern >= 3) {
-                if (this._motion.loop) {
-                    this._pattern = 0;
-                }
-                else {
-                    this._pattern = 2;
-                    // ループしないモーションの場合は一度だけrefreshMotionを呼ぶ
-                    if (!this._motionFinished) {
-                        this._motionFinished = true;
-                        this.refreshMotion();
-                    }
-                }
+        const hasBattleMotionMZ = typeof Sprite_Battler !== 'undefined' &&
+            this.updateMotionCount &&
+            typeof Sprite_Battler.prototype.updateMotionCount === 'function';
+        if (hasBattleMotionMZ && this.remake) {
+            try {
+                // BattleMotionMZの処理
+                this.updateMotionCount();
             }
+            catch (e) {
+                console.log('BattleMotionMZ updateMotion failed, using default:', e);
+                this.updateMotionDefault();
+            }
+        }
+        else {
+            this.updateMotionDefault();
         }
     };
     // デフォルトのモーション更新処理を分離
@@ -736,7 +743,7 @@
         if (this._motion) {
             this._motionCount++;
             const speed = this.motionSpeed();
-            if (this._motionCount >= speed) {
+            if (this._motionCount >= speed * 3) {
                 if (this._motion.loop) {
                     // ループ処理
                     if (this._pattern === 0) {
@@ -825,7 +832,8 @@
                     const enemyMotion = state.meta['EnemyMotion'];
                     if (typeof enemyMotion === 'string' &&
                         enemyMotion.trim().length > 0) {
-                        this.forceMotion(enemyMotion.trim());
+                        this.forceMotion(enemyMotion);
+                        return; // モーションが設定されたら終了
                     }
                 }
             }
@@ -842,38 +850,12 @@
     };
     // モーションインデックス取得のヘルパー関数
     Sprite_SvActor.prototype.getMotionIndex = function (motionType) {
-        const hasBattleMotionMZ = typeof Sprite_Battler !== 'undefined' && Sprite_Battler.MOTIONS;
-        const motions = hasBattleMotionMZ
-            ? Sprite_Battler.MOTIONS
-            : typeof Sprite_Actor !== 'undefined' && Sprite_Actor.MOTIONS
-                ? Sprite_Actor.MOTIONS
-                : null;
-        if (motions && motions[motionType]) {
-            return motions[motionType].index;
-        }
-        const fallbackMotions = {
-            walk: { index: 0, loop: true, speed: 12 },
-            wait: { index: 1, loop: true, speed: 12 },
-            chant: { index: 2, loop: true, speed: 12 },
-            guard: { index: 3, loop: false, speed: 12 },
-            damage: { index: 4, loop: false, speed: 12 },
-            evade: { index: 5, loop: false, speed: 12 },
-            thrust: { index: 6, loop: false, speed: 12 },
-            swing: { index: 7, loop: false, speed: 12 },
-            missile: { index: 8, loop: false, speed: 12 },
-            skill: { index: 9, loop: false, speed: 12 },
-            spell: { index: 10, loop: false, speed: 12 },
-            item: { index: 11, loop: false, speed: 12 },
-            escape: { index: 12, loop: true, speed: 12 },
-            victory: { index: 13, loop: true, speed: 12 },
-            dying: { index: 14, loop: true, speed: 12 },
-            abnormal: { index: 15, loop: true, speed: 12 },
-            sleep: { index: 16, loop: true, speed: 12 },
-            dead: { index: 17, loop: true, speed: 12 },
-        };
-        return fallbackMotions[motionType]
-            ? fallbackMotions[motionType].index
-            : 0;
+        // 修正: 型安全なモーション定義
+        const motions = (typeof Sprite_Battler !== 'undefined' && Sprite_Battler.MOTIONS) ||
+            (typeof Sprite_Actor !== 'undefined' && Sprite_Actor.MOTIONS) ||
+            {};
+        // 安全なアクセス
+        return motions[motionType]?.index ?? 0;
     };
     // BattleMotionMZメソッドの条件付き移植
     if (typeof Sprite_Battler !== 'undefined') {

@@ -6,11 +6,11 @@ declare var ApngLoader: any;
 declare var SceneManager: any;
 declare var Sprite_Enemy: any;
 
-interface NuunHpGaugeParams {
-    HPPosition?: number; // HPの位置を指定するプロパティ
-    Gauge_X?: number; // ゲージのX座標
-    Gauge_Y?: number; // ゲージのY座標
-}
+declare var nuunHpGaugeParams: {
+    HPPosition?: number; // オプショナルプロパティに変更
+    Gauge_X?: number; // オプショナルプロパティに変更
+    Gauge_Y?: number; // オプショナルプロパティに変更
+};
 
 declare class TextManager {
     public static readonly file: string;
@@ -36,6 +36,21 @@ interface PluginManager {
     public static checkErrors(): void;
     public static isLoaded(name: string): boolean;
 }
+
+// Sprite_Battler のコンストラクタ関数の型定義（プロトタイプ操作用）
+declare interface Sprite_BattlerConstructor {
+    prototype: Sprite_Battler;
+    MOTIONS: Record<string, { index: number; loop: boolean; speed: number }>;
+    new (): Sprite_Battler;
+    [key: string]: any;
+}
+
+// グローバルなSprite_Battlerクラス
+declare var Sprite_Battler: Sprite_BattlerConstructor;
+
+declare function getSplit(
+    metaValue: string | undefined | null
+): string[] | null;
 
 declare let Imported: {
     [key: string]: boolean | undefined;
@@ -94,23 +109,8 @@ interface Game_Battler {
     makeSPName?(action?: Game_Action): string | null;
 }
 
-// Sprite_Battler のコンストラクタ関数の型定義（プロトタイプ操作用）
-declare interface Sprite_BattlerConstructor {
-    prototype: Sprite_Battler;
-    MOTIONS: Record<string, any>;
-    new (): Sprite_Battler;
-    [key: string]: any; // インデックスシグネチャを追加
-}
 
-// グローバルなSprite_Battlerクラス
-declare var Sprite_Battler: Sprite_BattlerConstructor;
 
-// NUUN_ButlerHPGauge プラグインなどによってグローバルに追加される可能性のある関数
-declare function getSplit(
-    metaValue: string | undefined | null
-): string[] | null;
-
-// NUUN_ButlerHPGauge プラグインなどによってグローバルに追加される可能性のあるクラス
 declare class Sprite_EnemyHPGauge extends Sprite {
     constructor();
     setup(battler: Game_Battler, type: string): void;
@@ -143,7 +143,9 @@ interface Game_Enemy {
     isEnemy(): this is Game_Enemy;
     _motionType?: string;
     _motionRefresh?: boolean;
-    getActionMotion(action: Game_Action): string
+    getActionMotion(action: Game_Action): string;
+    getHPGaugePositionX(): number;
+    getHPGaugePositionY(): number;
 }
 
 interface Game_Action {
