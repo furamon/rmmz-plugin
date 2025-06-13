@@ -892,7 +892,7 @@
         const col = column * patternsPerMotion + pattern; // 実際の列位置
 
         // 範囲チェック
-        if (col >= 6 || row >= 9) {
+        if (col >= 9 || row >= 6) {
             console.warn('Frame out of bounds, using fallback');
             this._mainSprite.setFrame(0, 0, cw, ch);
             return;
