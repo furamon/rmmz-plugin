@@ -12,9 +12,22 @@
  * @help 敵キャラにSV_Actorsのスプライトシートを適用します。
  *
  * 敵のメモ欄に以下のいずれかを記述します：
- * 「<svActor:ファイル名>」
+ * 「<SVActor:ファイル名>」
  * 「<SVアクター:ファイル名>」
- * ＜使用例＞Actor1_1.pngを使いたいなら=>「<svActor:Actor1_1>」
+ * ＜使用例＞Actor1_1.pngを使いたいなら=>「<SVActor:Actor1_1>」
+ *
+ * そのうえでenemyまたはsv_enemiesフォルダに指定画像と同名の画像ファイルを
+ * 何でもいいので配置してください。
+ * リポジトリトップにダミー画像ファイルを用意してありますのでご入用なら。
+ *
+ * -----------------------------------------------------------------------------
+ * # あてんしょん #
+ * -----------------------------------------------------------------------------
+ * SVアクター敵と通常敵をまたいで変身すると敵が透明になります。
+ * 特殊すぎるシチュエーションであるため修正の予定はありません。
+ * もしこの場面になった際は通常敵をGimpかなんかで
+ * 9x6に並べ、SV敵にしてください。ごめんね。
+ *
  * -----------------------------------------------------------------------------
  * # 謝辞 #
  * -----------------------------------------------------------------------------
@@ -74,9 +87,9 @@
      */
     function getSvActorFileName(enemy: MZ.Enemy) {
         const meta = enemy.meta;
-        const fileName = meta['svActor'] || meta['SVアクター'];
+        const fileName = meta['SVActor'] || meta['SVアクター'];
         // 値が空でない文字列の場合のみファイル名を返すように修正
-        // タグのみ (<svActor>) が記述された場合に true が返るのを防ぐ
+        // タグのみ (<SVActor>) が記述された場合に true が返るのを防ぐ
         if (typeof fileName === 'string' && fileName.length > 0) {
             return fileName;
         }
@@ -98,42 +111,9 @@
         }
 
         const fileName =
-            enemy.meta['svActor'] || enemy.meta['SVアクター'] || null;
+            enemy.meta['SVActor'] || enemy.meta['SVアクター'] || null;
         const result = !!fileName;
         return result;
-    }
-
-    // imageManagerの安全化
-    const _ImageManager_loadSvEnemy = ImageManager.loadSvEnemy;
-    ImageManager.loadSvEnemy = function (filename) {
-        try {
-            if (!svEnemyFileExists(filename)) {
-                console.log('SvEnemy file not found:', filename);
-                return this.loadEmptyBitmap();
-            }
-            return _ImageManager_loadSvEnemy.call(this, filename);
-        } catch (e) {
-            console.log('Failed to load sv_enemy, using dummy:', filename);
-            return this.loadEmptyBitmap();
-        }
-    };
-    ImageManager.loadEmptyBitmap = function () {
-        const bitmap = new Bitmap(64, 64);
-        bitmap.clear();
-        return bitmap;
-    };
-
-    function svEnemyFileExists(filename: string) {
-        try {
-            const path =
-                'img/sv_enemies/' + encodeURIComponent(filename) + '.png';
-            const xhr = new XMLHttpRequest();
-            xhr.open('HEAD', path, false);
-            xhr.send();
-            return xhr.status === 200;
-        } catch (e) {
-            return false;
-        }
     }
 
     // --------------------------------------------------------------------------
@@ -153,7 +133,7 @@
         _Game_Enemy_performAction.call(this, action);
 
         if (isSvActorEnemy(this as any)) {
-            let motionName = 'thrust'; // デフォルトを攻撃モーションに
+            let motionName = 'thrust'; // デフォルトスキルモーションに
 
             // アクションタイプに応じてモーションを決定
             if (action.isAttack()) {
@@ -168,13 +148,6 @@
                 motionName = 'item';
             }
             this.requestMotion(motionName);
-
-            // アクション終了後に待機モーション（walk）に戻る
-            setTimeout(() => {
-                if (this && !this._motionType) {
-                    this.requestMotion('walk');
-                }
-            }, 100); // 100msに短縮
         }
     };
 
@@ -222,14 +195,14 @@
         }
     };
 
-    // Game_Enemyでのアクター判定（DynamicMotion用）
-    const _Game_Enemy_isSvActor = Game_Enemy.prototype.isSvActor;
-    Game_Enemy.prototype.isSvActor = function () {
-        if (getSvActorFileName(this.enemy())) {
-            return true; // DynamicMotionでSVアクターとして認識
-        }
-        return _Game_Enemy_isSvActor ? _Game_Enemy_isSvActor.call(this) : false;
-    };
+    // // Game_Enemyでのアクター判定（DynamicMotion用）
+    // const _Game_Enemy_isSvActor = Game_Enemy.prototype.isSvActor;
+    // Game_Enemy.prototype.isSvActor = function () {
+    //     if (getSvActorFileName(this.enemy())) {
+    //         return true; // DynamicMotionでSVアクターとして認識
+    //     }
+    //     return _Game_Enemy_isSvActor ? _Game_Enemy_isSvActor.call(this) : false;
+    // };
 
     // Game_EnemyにBattleMotionMZメソッドを移植
     if (
@@ -431,14 +404,14 @@
         }
     };
 
-    // DynamicMotionでアクターかどうか判定されるメソッド
-    const _Sprite_Enemy_isActor = Sprite_Enemy.prototype.isActor;
-    Sprite_Enemy.prototype.isActor = function () {
-        if (this._isSvActorEnemy) {
-            return true; // DynamicMotionでアクターとして扱われるようにする
-        }
-        return _Sprite_Enemy_isActor ? _Sprite_Enemy_isActor.call(this) : false;
-    };
+    // // DynamicMotionでアクターかどうか判定されるメソッド
+    // const _Sprite_Enemy_isActor = Sprite_Enemy.prototype.isActor;
+    // Sprite_Enemy.prototype.isActor = function () {
+    //     if (this._isSvActorEnemy) {
+    //         return true; // DynamicMotionでアクターとして扱われるようにする
+    //     }
+    //     return _Sprite_Enemy_isActor ? _Sprite_Enemy_isActor.call(this) : false;
+    // };
 
     // DynamicMotionでのモーション制御
     const _Sprite_Enemy_forceMotion = Sprite_Enemy.prototype.forceMotion;
@@ -471,7 +444,7 @@
     // 更新処理の統合修正
     const _Sprite_Enemy_update = Sprite_Enemy.prototype.update;
     Sprite_Enemy.prototype.update = function () {
-        if (this._isSvActorEnemy) {
+        if (this._isSvActorEnemy && this._svActorSprite) {
             this._svActorSprite.update();
             this._svActorSprite.updateFrame();
             this._svActorSprite.updateMotion();
@@ -648,25 +621,25 @@
             } else {
                 // 正しいRPGツクールMZの標準モーション定義
                 // 修正: 型安全なモーション定義
-                const standardMotions: Record<string, { index: number; loop: boolean; speed: number }> = {
-                    walk: { index: 0, loop: true, speed: 12 },
-                    wait: { index: 1, loop: true, speed: 12 },
-                    chant: { index: 2, loop: true, speed: 12 },
-                    guard: { index: 3, loop: true, speed: 12 },
-                    damage: { index: 4, loop: false, speed: 12 },
-                    evade: { index: 5, loop: false, speed: 12 },
-                    thrust: { index: 6, loop: false, speed: 12 },
-                    swing: { index: 7, loop: false, speed: 12 },
-                    missile: { index: 8, loop: false, speed: 12 },
-                    skill: { index: 9, loop: false, speed: 12 },
-                    spell: { index: 10, loop: false, speed: 12 },
-                    item: { index: 11, loop: false, speed: 12 },
-                    escape: { index: 12, loop: true, speed: 12 },
-                    victory: { index: 13, loop: true, speed: 12 },
-                    dying: { index: 14, loop: true, speed: 12 },
-                    abnormal: { index: 15, loop: true, speed: 12 },
-                    sleep: { index: 16, loop: true, speed: 12 },
-                    dead: { index: 17, loop: true, speed: 12 }
+                const standardMotions: Record<string, { index: number; loop: boolean;}> = {
+                    walk: { index: 0, loop: true},
+                    wait: { index: 1, loop: true},
+                    chant: { index: 2, loop: true},
+                    guard: { index: 3, loop: true},
+                    damage: { index: 4, loop: false},
+                    evade: { index: 5, loop: false},
+                    thrust: { index: 6, loop: false},
+                    swing: { index: 7, loop: false},
+                    missile: { index: 8, loop: false},
+                    skill: { index: 9, loop: false},
+                    spell: { index: 10, loop: false},
+                    item: { index: 11, loop: false},
+                    escape: { index: 12, loop: true},
+                    victory: { index: 13, loop: true},
+                    dying: { index: 14, loop: true},
+                    abnormal: { index: 15, loop: true},
+                    sleep: { index: 16, loop: true},
+                    dead: { index: 17, loop: true}
                 };
 
                 // 安全なアクセス
@@ -674,8 +647,7 @@
 
                 this._motion = {
                     index: standardMotion.index,
-                    loop: standardMotion.loop,
-                    speed: standardMotion.speed,
+                    loop: standardMotion.loop
                 };
                 this._motionCount = 0;
                 this._pattern = 0;
@@ -696,7 +668,7 @@
     // BattleMotionMZ用のモーション初期化
     Sprite_SvActor.prototype.setupMotionForBattleMotionMZ = function () {
         if (!this._motion) {
-            this._motion = { index: 0, loop: true, speed: 12 };
+            this._motion = { index: 0, loop: true};
         }
     };
 
