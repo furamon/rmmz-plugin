@@ -6,6 +6,11 @@ declare var ApngLoader: any;
 declare var SceneManager: any;
 declare var Sprite_Enemy: any;
 
+declare let EnemyStatePosition: number;
+declare let State_X: number;
+declare let State_Y: number;
+declare let stateVisible: number;
+
 declare var nuunHpGaugeParams: {
     HPPosition?: number; // オプショナルプロパティに変更
     Gauge_X?: number; // オプショナルプロパティに変更
@@ -15,12 +20,10 @@ declare var nuunHpGaugeParams: {
 declare class TextManager {
     public static readonly file: string;
     public static readonly autosave: string;
-    public static readonly escapeFailure: string;
 }
 
 declare namespace ImageManager {
     export function loadSvEnemy(filename: string, hue?: number): Bitmap;
-    export function loadEmptyBitmap(): Bitmap;
 }
 
 declare namespace ConfigManager {
@@ -102,14 +105,12 @@ interface Game_BattlerBase {
 }
 
 interface Game_Battler {
-    stepBack(): void;
     _reservedResults: Game_ActionResult;
     isUsedSlot(slotId: number): boolean;
     _usedItemSlots: number[];
     makeSPName?(action?: Game_Action): string | null;
+    enemy(): MZ.Enemy;
 }
-
-
 
 declare class Sprite_EnemyHPGauge extends Sprite {
     constructor();
@@ -191,25 +192,39 @@ interface Sprite_Enemy {
     battlerOverlay: PIXI.Container;
 }
 
-// Sprite_SvActor の型定義
-declare class Sprite_SvActor extends Sprite {
-    constructor();
-    initialize(): void;
+// Game_Temp インターフェースを拡張
+declare interface Game_Temp {
+    enemyHPGaugeRefresh?: boolean;
+    enemyStateRefresh?: boolean;
+    refreshOverlay?: boolean;
+}
 
+// Sprite_StateIcon インターフェースを拡張
+declare class Sprite_StateIcon {
+    _pseudo3dType: string;
+    stateVisible(): void;
+    // 既存のメソッドやプロパティ...
+}
+
+// Sprite_SvActor のコンストラクタシグネチャを修正
+declare class Sprite_SvActor extends Sprite {
+    constructor(...args: any[]);
+    initialize(): void;
     update(): void;
     width: number;
     height: number;
-    [key: string]: any; // インデックスシグネチャを追加
+    [key: string]: any;
 }
 
 // Sprite_SvActorのコンストラクタ関数の型定義
 declare interface Sprite_SvActorConstructor {
     prototype: Sprite_SvActor;
-    new (): Sprite_SvActor;
+    new (...args: any[]): Sprite_SvActor;
 }
 
 // グローバルなSprite_SvActorクラス
 declare var Sprite_SvActor: Sprite_SvActorConstructor;
+
 
 // Sprite_Actorの型定義（MOTIONSアクセス用）
 declare interface Sprite_ActorConstructor {
@@ -237,10 +252,6 @@ interface Window_Options {
 
 interface Game_Interpreter {
     _temporaryWindow: Window_TemporaryText;
-}
-
-declare interface Game_Temp {
-    enemyHPGaugeRefresh?: boolean;
 }
 
 declare let Gauge_X: number | undefined;
