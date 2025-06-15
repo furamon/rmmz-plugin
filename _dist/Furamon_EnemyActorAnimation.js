@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 // 2025/06/13 1.0.0 公開！
 // 2025/06/14 1.0.1 DynamicMotionのNear型で敵のそばにちゃんと移動するよう修正
+// 2025/06/14 1.0.2 モーション制御が不安定だったので見直し
 /*:
  * @target MZ
  * @plugindesc 敵キャラにSV_Actorsのスプライトシートを適用します。
@@ -133,6 +134,13 @@
     }
     // --------------------------------------------------------------------------
     // Game_Enemy
+    const _Game_Enemy_initialize = Game_Enemy.prototype.initialize;
+    Game_Enemy.prototype.initialize = function (enemyId, x, y) {
+        _Game_Enemy_initialize.call(this, enemyId, x, y);
+        // SvActorEnemyで使用するプロパティを初期化
+        this._damaged = false;
+        this._damageMotionCount = 0;
+    };
     const _Game_Enemy_battlerName = Game_Enemy.prototype.battlerName;
     Game_Enemy.prototype.battlerName = function () {
         const svActorFile = getSvActorFileName(this.enemy());
@@ -165,15 +173,12 @@
             this.requestMotion(motionName);
         }
     };
-    // Game_Enemy のモーション状態管理
-    Game_Enemy.prototype.requestMotion = function (motion) {
-        this._motion = motion;
-        this.refresh();
-    };
     const _Game_Enemy_performDamage = Game_Enemy.prototype.performDamage;
     Game_Enemy.prototype.performDamage = function () {
         _Game_Enemy_performDamage.call(this);
         if (isSvActorEnemy(this)) {
+            this._damaged = true; // ダメージ受けてるフラグ
+            this._damageMotionCount = 18; // ダメージモーションを取るフレーム
             this.requestMotion('damage');
         }
     };
@@ -181,6 +186,9 @@
     Game_Enemy.prototype.performEvasion = function () {
         _Game_Enemy_performEvasion.call(this);
         if (isSvActorEnemy(this)) {
+            this._damaged = true; // 回避フラグ(ダメージと共用)
+            // 回避モーションを取るフレーム(ダメージと共用)
+            this._damageMotionCount = 18;
             this.requestMotion('evade');
         }
     };
@@ -188,8 +196,15 @@
     Game_Enemy.prototype.performMagicEvasion = function () {
         _Game_Enemy_performMagicEvasion.call(this);
         if (isSvActorEnemy(this)) {
+            this._damaged = true; // 回避フラグ(ダメージと共用)
+            // 回避モーションを取るフレーム(ダメージと共用)
+            this._damageMotionCount = 18;
             this.requestMotion('evade');
         }
+    };
+    Game_Enemy.prototype.requestMotion = function (motion) {
+        this._motion = motion;
+        this._motionRefresh = true; // 即座に更新フラグを立てる
     };
     // Game_EnemyにBattleMotionMZメソッドを移植
     if (typeof Game_Battler !== 'undefined' &&
@@ -220,7 +235,6 @@
         _Sprite_Enemy_initMembers.call(this);
         this._isSvActorEnemy = false;
         this._svActorSprite = null;
-        this._damages = []; // ダメージ配列を初期化
     };
     const _Sprite_Enemy_setBattler = Sprite_Enemy.prototype.setBattler;
     Sprite_Enemy.prototype.setBattler = function (battler) {
@@ -732,10 +746,21 @@
         this.updateFrame();
         this.updateMotion();
         this.updateStateSprite();
-        // refreshMotionを明示的に呼び出し
-        if (this._battler._motionRefresh) {
-            this._battler._motionRefresh = false;
-            this.refreshMotion();
+        // damageMotionCountが0になったらモーションを再開する
+        if (this._battler._damageMotionCount > 0) {
+            console.log(this._battler._damageMotionCount);
+            this._battler._damageMotionCount -= 1;
+        }
+        else {
+            this._battler._damaged = false;
+        }
+        // requestMotionで設定されたモーションを即座に反映
+        if (this._battler._motion && !this._processingMotion) {
+            this._processingMotion = true;
+            const requestedMotion = this._battler._motion;
+            this._battler._motion = null;
+            this.startMotion(requestedMotion);
+            this._processingMotion = false;
         }
     };
     Sprite_SvActor.prototype.updateBitmap = function () {
@@ -799,6 +824,11 @@
         }
     };
     Sprite_SvActor.prototype.updateMotion = function () {
+        // モーション更新要求があれば即座に処理
+        if (this._battler._motionRefresh && !this._battler._damaged) {
+            this._battler._motionRefresh = false;
+            this.refreshMotion();
+        }
         if (hasBattleMotion && this.remake) {
             try {
                 // BattleMotionMZの処理
@@ -850,7 +880,7 @@
             }
         }
         else {
-            if (this._battler._motionRefresh) {
+            if (this._battler._motionRefresh && !this._batller._damaged) {
                 this._battler._motionRefresh = false;
                 this.refreshMotion();
             }
