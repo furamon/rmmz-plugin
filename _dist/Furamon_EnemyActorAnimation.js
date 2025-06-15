@@ -109,76 +109,76 @@
         const result = !!fileName;
         return result;
     }
-    // DynamicMotionMZ用のメタ情報を解析
-    function parseDynamicMotionMeta(actionId) {
-        console.log(actionId);
-        if (!action || !action._item)
-            return null;
-        const item = action.item();
-        if (!item || !item.note)
-            return null;
-        // <D-Motion:テンプレート名> の解析
-        const dmatch = item.note.match(/<D-Motion\s*:\s*(.+?)(?:\s*\/\s*>|\s*>)/i);
-        if (dmatch) {
-            return {
-                type: 'motion',
-                templateId: dmatch[1].trim(),
-                params: null,
-            };
-        }
-        // 複数行記述の解析 <D-Motion:テンプレート名> ... </D-Motion>
-        const multiMatch = item.note.match(/<D-Motion\s*:\s*(.+?)>([\s\S]*?)<\/D-Motion>/i);
-        if (multiMatch) {
-            const templateId = multiMatch[1].trim();
-            const paramText = multiMatch[2];
-            const params = parseMotionParams(paramText);
-            return {
-                type: 'motion',
-                templateId: templateId,
-                params: params,
-            };
-        }
-        // 短縮記述もサポート（DMやDSパラメータがあれば）
-        const shortMatch = item.note.match(/<(?:DM|dm)\s*:\s*(.+?)(?:\s*\/\s*>|\s*>)/i);
-        if (shortMatch) {
-            return {
-                type: 'motion',
-                templateId: shortMatch[1].trim(),
-                params: null,
-            };
-        }
-        return null;
-    }
-    // パラメータ解析関数
-    function parseMotionParams(paramText) {
-        const params = {};
-        if (!paramText)
-            return params;
-        // key = value 形式の行を解析
-        const lines = paramText.split('\n');
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || trimmed.startsWith('//'))
-                continue;
-            const match = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
-            if (match) {
-                const key = match[1];
-                let value = match[2].trim();
-                // 数値の場合は変換
-                if (/^-?\d+(\.\d+)?$/.test(value)) {
-                    params[key] = parseFloat(value);
-                }
-                else if (value === 'true' || value === 'false') {
-                    params[key] = value === 'true';
-                }
-                else {
-                    // 文字列値（クォートを除去）
-                    params[key] = value.replace(/^["']|["']$/g, '');
-                }
-            }
-        }
-        return params;
-    }
+    // // DynamicMotionMZ用のメタ情報を解析
+    // function parseDynamicMotionMeta(actionId: Number) {
+    //     console.log(actionId);
+    //     if (!action || !action._item) return null;
+    //     const item = action.item();
+    //     if (!item || !item.note) return null;
+    //     // <D-Motion:テンプレート名> の解析
+    //     const dmatch = item.note.match(
+    //         /<D-Motion\s*:\s*(.+?)(?:\s*\/\s*>|\s*>)/i
+    //     );
+    //     if (dmatch) {
+    //         return {
+    //             type: 'motion',
+    //             templateId: dmatch[1].trim(),
+    //             params: null,
+    //         };
+    //     }
+    //     // 複数行記述の解析 <D-Motion:テンプレート名> ... </D-Motion>
+    //     const multiMatch = item.note.match(
+    //         /<D-Motion\s*:\s*(.+?)>([\s\S]*?)<\/D-Motion>/i
+    //     );
+    //     if (multiMatch) {
+    //         const templateId = multiMatch[1].trim();
+    //         const paramText = multiMatch[2];
+    //         const params = parseMotionParams(paramText);
+    //         return {
+    //             type: 'motion',
+    //             templateId: templateId,
+    //             params: params,
+    //         };
+    //     }
+    //     // 短縮記述もサポート（DMやDSパラメータがあれば）
+    //     const shortMatch = item.note.match(
+    //         /<(?:DM|dm)\s*:\s*(.+?)(?:\s*\/\s*>|\s*>)/i
+    //     );
+    //     if (shortMatch) {
+    //         return {
+    //             type: 'motion',
+    //             templateId: shortMatch[1].trim(),
+    //             params: null,
+    //         };
+    //     }
+    //     return null;
+    // }
+    // // パラメータ解析関数
+    // function parseMotionParams(paramText: string) {
+    //     const params: any = {};
+    //     if (!paramText) return params;
+    //     // key = value 形式の行を解析
+    //     const lines = paramText.split('\n');
+    //     for (const line of lines) {
+    //         const trimmed = line.trim();
+    //         if (!trimmed || trimmed.startsWith('//')) continue;
+    //         const match = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
+    //         if (match) {
+    //             const key = match[1];
+    //             let value = match[2].trim();
+    //             // 数値の場合は変換
+    //             if (/^-?\d+(\.\d+)?$/.test(value)) {
+    //                 params[key] = parseFloat(value);
+    //             } else if (value === 'true' || value === 'false') {
+    //                 params[key] = value === 'true';
+    //             } else {
+    //                 // 文字列値（クォートを除去）
+    //                 params[key] = value.replace(/^["']|["']$/g, '');
+    //             }
+    //         }
+    //     }
+    //     return params;
+    // }
     // --------------------------------------------------------------------------
     // Game_Enemy
     const _Game_Enemy_battlerName = Game_Enemy.prototype.battlerName;
@@ -194,33 +194,30 @@
         _Game_Enemy_performAction.call(this, action);
         if (isSvActorEnemy(this)) {
             if (hasDynamicMotion) {
-                console.log(this._actions);
-                // スキルのメモ欄のDynamicMotion設定をチェック
-                const skillMotionData = parseDynamicMotionMeta(this._actions[this._actions.length - 1]._itemId);
-                // DynamicMotionが設定されている場合はそちらを優先
-                this.requestMotion(skillMotionData.templateId);
-                this._currentSkillMotionData = skillMotionData; // 一時保存
-                return;
-            }
-            else if (hasDynamicMotion) {
-                // DynamicMotionプラグインがあるが特別な設定がない場合はデフォルトモーション
-                let motionName = 'thrust';
-                if (action.isAttack()) {
-                    motionName = 'attack'; // DynamicMotionのテンプレート名に合わせる
-                }
-                else if (action.isGuard()) {
-                    motionName = 'guard';
-                }
-                else if (action.isMagicSkill()) {
-                    motionName = 'spell';
-                }
-                else if (action.isSkill()) {
-                    motionName = 'skill';
-                }
-                else if (action.isItem()) {
-                    motionName = 'item';
-                }
-                this.requestMotion(motionName);
+                //     console.log (this._actions)
+                //     // スキルのメモ欄のDynamicMotion設定をチェック
+                //     const skillMotionData = parseDynamicMotionMeta(
+                //         this._actions[this._actions.length - 1]._itemId
+                //     );
+                //     // DynamicMotionが設定されている場合はそちらを優先
+                //     this.requestMotion(skillMotionData.templateId);
+                //     this._currentSkillMotionData = skillMotionData; // 一時保存
+                //     return;
+                // } else if (hasDynamicMotion) {
+                //     // DynamicMotionプラグインがあるが特別な設定がない場合はデフォルトモーション
+                //     let motionName = 'thrust';
+                //     if (action.isAttack()) {
+                //         motionName = 'attack'; // DynamicMotionのテンプレート名に合わせる
+                //     } else if (action.isGuard()) {
+                //         motionName = 'guard';
+                //     } else if (action.isMagicSkill()) {
+                //         motionName = 'spell';
+                //     } else if (action.isSkill()) {
+                //         motionName = 'skill';
+                //     } else if (action.isItem()) {
+                //         motionName = 'item';
+                //     }
+                //     this.requestMotion(motionName);
                 return;
             }
             else {
@@ -605,38 +602,38 @@
             }
         },
     });
-    Object.defineProperty(Sprite_Enemy.prototype, '_screenX', {
-        get: function () {
-            if (this._isSvActorEnemy && this._svActorSprite) {
-                return this._svActorSprite.x;
-            }
-            return this._battler ? this._battler._screenX : this.x;
-        },
-        set: function (value) {
-            if (this._battler) {
-                this._battler._screenX = value;
-            }
-            if (this._isSvActorEnemy && this._svActorSprite) {
-                this._svActorSprite.x = value;
-            }
-        },
-    });
-    Object.defineProperty(Sprite_Enemy.prototype, '_screenY', {
-        get: function () {
-            if (this._isSvActorEnemy && this._svActorSprite) {
-                return this._svActorSprite.y;
-            }
-            return this._battler ? this._battler._screenY : this.y;
-        },
-        set: function (value) {
-            if (this._battler) {
-                this._battler._screenY = value;
-            }
-            if (this._isSvActorEnemy && this._svActorSprite) {
-                this._svActorSprite.y = value;
-            }
-        },
-    });
+    // Object.defineProperty(Sprite_Enemy.prototype, '_screenX', {
+    //     get: function () {
+    //         if (this._isSvActorEnemy && this._svActorSprite) {
+    //             return this._svActorSprite.x;
+    //         }
+    //         return this._battler ? this._battler._screenX : this.x;
+    //     },
+    //     set: function (value) {
+    //         if (this._battler) {
+    //             this._battler._screenX = value;
+    //         }
+    //         if (this._isSvActorEnemy && this._svActorSprite) {
+    //             this._svActorSprite.x = value;
+    //         }
+    //     },
+    // });
+    // Object.defineProperty(Sprite_Enemy.prototype, '_screenY', {
+    //     get: function () {
+    //         if (this._isSvActorEnemy && this._svActorSprite) {
+    //             return this._svActorSprite.y;
+    //         }
+    //         return this._battler ? this._battler._screenY : this.y;
+    //     },
+    //     set: function (value) {
+    //         if (this._battler) {
+    //             this._battler._screenY = value;
+    //         }
+    //         if (this._isSvActorEnemy && this._svActorSprite) {
+    //             this._svActorSprite.y = value;
+    //         }
+    //     },
+    // });
     // --------------------------------------------------------------------------
     // Sprite_SvActor（独自）
     function Sprite_SvActor() {
@@ -764,36 +761,43 @@
         if (this._battler && this._battler.isDead()) {
             return;
         }
-        // スキルから取得したモーション設定を優先チェック
-        const skillMotionData = this._battler._currentSkillMotionData;
-        if (hasDynamicMotion &&
-            skillMotionData &&
-            skillMotionData.templateId === motionType) {
-            const template = this.findDynamicMotionTemplate(skillMotionData.templateId);
-            if (template) {
-                this._isDynamicMotion = true;
-                this._currentMotionType = skillMotionData.templateId;
-                // パラメータをテンプレートにマージ
-                const mergedTemplate = this.mergeTemplateParams(template, skillMotionData.params);
-                this.startDynamicMotion(mergedTemplate);
-                // 使用済みフラグをクリア
-                this._battler._currentSkillMotionData = null;
-                return;
-            }
-        }
-        // 通常のテンプレート検索
-        if (hasDynamicMotion) {
-            const template = this.findDynamicMotionTemplate(motionType);
-            if (template) {
-                this._isDynamicMotion = true;
-                this._currentMotionType = motionType;
-                this.startDynamicMotion(template);
-                return;
-            }
-        }
-        // DynamicMotion以外の場合はフラグをfalseに
-        this._isDynamicMotion = false;
-        this._currentMotionType = motionType;
+        // // スキルから取得したモーション設定を優先チェック
+        // const skillMotionData = this._battler._currentSkillMotionData;
+        // if (
+        //     hasDynamicMotion &&
+        //     skillMotionData &&
+        //     skillMotionData.templateId === motionType
+        // ) {
+        //     const template = this.findDynamicMotionTemplate(
+        //         skillMotionData.templateId
+        //     );
+        //     if (template) {
+        //         this._isDynamicMotion = true;
+        //         this._currentMotionType = skillMotionData.templateId;
+        //         // パラメータをテンプレートにマージ
+        //         const mergedTemplate = this.mergeTemplateParams(
+        //             template,
+        //             skillMotionData.params
+        //         );
+        //         this.startDynamicMotion(mergedTemplate);
+        //         // 使用済みフラグをクリア
+        //         this._battler._currentSkillMotionData = null;
+        //         return;
+        //     }
+        // }
+        // // 通常のテンプレート検索
+        // if (hasDynamicMotion) {
+        //     const template = this.findDynamicMotionTemplate(motionType);
+        //     if (template) {
+        //         this._isDynamicMotion = true;
+        //         this._currentMotionType = motionType;
+        //         this.startDynamicMotion(template);
+        //         return;
+        //     }
+        // }
+        // // DynamicMotion以外の場合はフラグをfalseに
+        // this._isDynamicMotion = false;
+        // this._currentMotionType = motionType;
         if (hasBattleMotion) {
             const newMotion = Sprite_Battler.MOTIONS[motionType];
             if (newMotion) {
@@ -850,92 +854,95 @@
             this._pattern = 0;
         }
     };
-    Sprite_SvActor.prototype.mergeTemplateParams = function (template, params) {
-        if (!params || Object.keys(params).length === 0) {
-            return template;
-        }
-        // テンプレートのコピーを作成
-        const mergedTemplate = JSON.parse(JSON.stringify(template));
-        // パラメータを上書き
-        Object.keys(params).forEach((key) => {
-            mergedTemplate[key] = params[key];
-        });
-        return mergedTemplate;
-    };
-    Sprite_SvActor.prototype.findDynamicMotionTemplate = function (motionType) {
-        if (!hasDynamicMotion || !prmDM['templateList']) {
-            return null;
-        }
-        // templateListが配列の場合の処理を修正
-        const templateList = prmDM['templateList'];
-        // 文字列の場合はJSONパースを試行
-        let parsedList;
-        if (typeof templateList === 'string') {
-            try {
-                parsedList = JSON.parse(templateList);
-            }
-            catch (e) {
-                console.warn('Failed to parse templateList:', e);
-                return null;
-            }
-        }
-        else {
-            parsedList = templateList;
-        }
-        // 配列内の各テンプレートオブジェクトを検索
-        if (Array.isArray(parsedList)) {
-            for (const template of parsedList) {
-                if (template && typeof template === 'object') {
-                    // templateオブジェクトを直接パース
-                    let templateObj;
-                    if (typeof template === 'string') {
-                        try {
-                            templateObj = JSON.parse(template);
-                        }
-                        catch (e) {
-                            continue;
-                        }
-                    }
-                    else {
-                        templateObj = template;
-                    }
-                    // templateIdが一致するものを検索
-                    if (templateObj.templateId === motionType) {
-                        return templateObj;
-                    }
-                }
-            }
-        }
-        return null;
-    };
-    // DynamicMotionMZ用のモーション開始メソッド
-    Sprite_SvActor.prototype.startDynamicMotion = function (template) {
-        if (!template || !hasDynamicMotion)
-            return;
-        try {
-            // NRP_DynamicMotionMZのstartMotion関数を呼び出し
-            if (window.DynamicMotion &&
-                typeof window.DynamicMotion.startMotion === 'function') {
-                // バトラー情報をセット
-                const dynamicData = {
-                    a: this._battler, // 実行者
-                    b: this._battler._targets || this._battler, // 対象者（適宜調整）
-                    subject: this._battler,
-                    targets: this._battler._targets || [this._battler],
-                };
-                // DynamicMotionを開始
-                window.DynamicMotion.startMotion(this, template, dynamicData);
-                return;
-            }
-            // フォールバック: 標準モーションに戻す
-            console.warn('DynamicMotionMZ not properly loaded, falling back to standard motion');
-            this.startMotion(template.motion || 'walk');
-        }
-        catch (e) {
-            console.error('Error starting DynamicMotion:', e);
-            this.startMotion(template.motion || 'walk');
-        }
-    };
+    // Sprite_SvActor.prototype.mergeTemplateParams = function (
+    //     template: any,
+    //     params: any
+    // ) {
+    //     if (!params || Object.keys(params).length === 0) {
+    //         return template;
+    //     }
+    //     // テンプレートのコピーを作成
+    //     const mergedTemplate = JSON.parse(JSON.stringify(template));
+    //     // パラメータを上書き
+    //     Object.keys(params).forEach((key) => {
+    //         mergedTemplate[key] = params[key];
+    //     });
+    //     return mergedTemplate;
+    // };
+    // Sprite_SvActor.prototype.findDynamicMotionTemplate = function (
+    //     motionType: string
+    // ) {
+    //     if (!hasDynamicMotion || !prmDM['templateList']) {
+    //         return null;
+    //     }
+    //     // templateListが配列の場合の処理を修正
+    //     const templateList = prmDM['templateList'];
+    //     // 文字列の場合はJSONパースを試行
+    //     let parsedList;
+    //     if (typeof templateList === 'string') {
+    //         try {
+    //             parsedList = JSON.parse(templateList);
+    //         } catch (e) {
+    //             console.warn('Failed to parse templateList:', e);
+    //             return null;
+    //         }
+    //     } else {
+    //         parsedList = templateList;
+    //     }
+    //     // 配列内の各テンプレートオブジェクトを検索
+    //     if (Array.isArray(parsedList)) {
+    //         for (const template of parsedList) {
+    //             if (template && typeof template === 'object') {
+    //                 // templateオブジェクトを直接パース
+    //                 let templateObj;
+    //                 if (typeof template === 'string') {
+    //                     try {
+    //                         templateObj = JSON.parse(template);
+    //                     } catch (e) {
+    //                         continue;
+    //                     }
+    //                 } else {
+    //                     templateObj = template;
+    //                 }
+    //                 // templateIdが一致するものを検索
+    //                 if (templateObj.templateId === motionType) {
+    //                     return templateObj;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     return null;
+    // };
+    // // DynamicMotionMZ用のモーション開始メソッド
+    // Sprite_SvActor.prototype.startDynamicMotion = function (template: any) {
+    //     if (!template || !hasDynamicMotion) return;
+    //     try {
+    //         // NRP_DynamicMotionMZのstartMotion関数を呼び出し
+    //         if (
+    //             window.DynamicMotion &&
+    //             typeof window.DynamicMotion.startMotion === 'function'
+    //         ) {
+    //             // バトラー情報をセット
+    //             const dynamicData = {
+    //                 a: this._battler, // 実行者
+    //                 b: this._battler._targets || this._battler, // 対象者（適宜調整）
+    //                 subject: this._battler,
+    //                 targets: this._battler._targets || [this._battler],
+    //             };
+    //             // DynamicMotionを開始
+    //             window.DynamicMotion.startMotion(this, template, dynamicData);
+    //             return;
+    //         }
+    //         // フォールバック: 標準モーションに戻す
+    //         console.warn(
+    //             'DynamicMotionMZ not properly loaded, falling back to standard motion'
+    //         );
+    //         this.startMotion(template.motion || 'walk');
+    //     } catch (e) {
+    //         console.error('Error starting DynamicMotion:', e);
+    //         this.startMotion(template.motion || 'walk');
+    //     }
+    // };
     Sprite_SvActor.prototype.isMotionRequested = function () {
         return this._battler && this._battler._motionType;
     };
