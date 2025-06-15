@@ -11,11 +11,51 @@ declare let State_X: number;
 declare let State_Y: number;
 declare let stateVisible: number;
 
+// Motion関連の型定義を修正・追加
+interface StandardMotion {
+    index: number;
+    loop: boolean;
+}
+
+interface StandardMotions {
+    [key: string]: StandardMotion;
+    walk: StandardMotion;
+    wait: StandardMotion;
+    chant: StandardMotion;
+    guard: StandardMotion;
+    damage: StandardMotion;
+    evade: StandardMotion;
+    thrust: StandardMotion;
+    swing: StandardMotion;
+    missile: StandardMotion;
+    skill: StandardMotion;
+    spell: StandardMotion;
+    item: StandardMotion;
+    escape: StandardMotion;
+    victory: StandardMotion;
+    dying: StandardMotion;
+    abnormal: StandardMotion;
+    sleep: StandardMotion;
+    dead: StandardMotion;
+}
+
+interface Motion {
+    [key: string]: StandardMotion;
+}
+
+declare function getStandardMotions(): StandardMotions;
+
 declare var nuunHpGaugeParams: {
-    HPPosition?: number; // オプショナルプロパティに変更
-    Gauge_X?: number; // オプショナルプロパティに変更
-    Gauge_Y?: number; // オプショナルプロパティに変更
+    HPPosition?: number;
+    Gauge_X?: number;
+    Gauge_Y?: number;
 };
+
+declare namespace BattleManager {
+    interface Spriteset {
+        battlerSprites(): Sprite_Battler[];
+    }
+}
 
 declare class TextManager {
     public static readonly file: string;
@@ -35,6 +75,8 @@ declare namespace ConfigManager {
     let messageSpeed: number;
 }
 
+
+
 interface PluginManager {
     public static checkErrors(): void;
     public static isLoaded(name: string): boolean;
@@ -47,6 +89,8 @@ declare interface Sprite_BattlerConstructor {
     new (): Sprite_Battler;
     [key: string]: any;
 }
+
+
 
 // グローバルなSprite_Battlerクラス
 declare var Sprite_Battler: Sprite_BattlerConstructor;
@@ -81,15 +125,7 @@ declare class Scene_KeyConfig {
 }
 
 interface Game_Map {
-    tileUnit?: number;
-}
-
-interface Game_Map {
-    tileUnit: number;
-}
-
-declare namespace Game_Map {
-    let tileUnit: number;
+    tileUnit: any; // または適切な型を指定してください
 }
 
 interface Game_Player {
@@ -139,14 +175,14 @@ interface Game_Enemy {
     enemy(): MZ.Enemy;
     requestMotion(motionName: string): void;
     makeSPName?(action: Game_Action): string | null;
-    isSvActor(): boolean;
-    requestSPName(action: Game_Action): string | null;
-    isEnemy(): this is Game_Enemy;
-    _motionType?: string;
+    _motion?: string;
     _motionRefresh?: boolean;
-    getActionMotion(action: Game_Action): string;
     getHPGaugePositionX(): number;
     getHPGaugePositionY(): number;
+    performAttackDynamicMotion(weaponId: number, weaponType: string): void;
+    _battlerName: string;
+    weapons(): any[];
+    weapon(): {wtypeId: number} | null;
 }
 
 interface Game_Action {
@@ -156,6 +192,15 @@ interface Game_Action {
 interface Game_ActionResult {
     lpDamage: number;
     _isHitConfirm: boolean;
+}
+
+interface Sprite {
+    startDynamicMotion(dynamicMotion: any): void;
+    startDynamicSvMotion(dynamicMotion: any): void;
+    endDynamicMotion(dynamicMotion: any): void;
+    _isDynamicMotionPlaying: boolean;
+    _isSvActorEnemy: boolean;
+    _svActorSprite: Sprite_Battler;
 }
 
 interface Sprite_Damage {
@@ -189,8 +234,18 @@ interface Sprite_Battler {
 }
 
 interface Sprite_Enemy {
+    getMotionDefinition(motionType: string): StandardMotion;
+    updateMotionCount(): void;
+    playDamageMotionTemporary?(): void;
+    restoreSavedMotion?(): void;
+    playTemporaryMotion?(motionType: string, duration?: number): void;
+    clearSvActorMotion?(): void;
+    _savedMotion?: any;
+    // 既存のプロパティ
     battlerOverlay: PIXI.Container;
+    _battler: Game_Enemy;
 }
+
 
 // Game_Temp インターフェースを拡張
 declare interface Game_Temp {
@@ -225,7 +280,6 @@ declare interface Sprite_SvActorConstructor {
 // グローバルなSprite_SvActorクラス
 declare var Sprite_SvActor: Sprite_SvActorConstructor;
 
-
 // Sprite_Actorの型定義（MOTIONSアクセス用）
 declare interface Sprite_ActorConstructor {
     MOTIONS: Record<string, any>;
@@ -253,7 +307,6 @@ interface Window_Options {
 interface Game_Interpreter {
     _temporaryWindow: Window_TemporaryText;
 }
-
 declare let Gauge_X: number | undefined;
 declare let Gauge_Y: number | undefined;
 declare let HPPosition: number | undefined;

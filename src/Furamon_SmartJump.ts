@@ -162,8 +162,9 @@
      * HalfMove.jsの有無を検出
      */
     function isHalfMoveActive() {
+        const map = new Game_Map();
         return (
-            typeof Game_Map.tileUnit !== 'undefined' &&
+            typeof map.tileUnit !== 'undefined' &&
             $gamePlayer.isHalfMove &&
             $gamePlayer.isHalfMove()
         );
