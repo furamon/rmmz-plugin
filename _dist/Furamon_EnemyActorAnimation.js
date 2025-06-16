@@ -34,6 +34,8 @@
  *
  * BattleMotionMZ(Lib様)、及びNRP_DynamicMotionMZ(砂川赳様)と併用できます。
  * 後者はFuramon_EnemyActorDynamicMotionをこのプラグインの下に置いてください。
+ * なお、BattleMotionMZのモーションカラー右上で次モーションにつなげる機能には
+ * 対応していません。DynamicMotionMZをうまく使って代用してください。
  *
  * -----------------------------------------------------------------------------
  * # 謝辞 #
@@ -57,7 +59,8 @@
     const pluginName = 'Furamon_EnemyActorAnimation';
     const parameters = PluginManager.parameters(pluginName);
     const prmAutoMirror = parameters['autoMirror'] === 'true';
-    const prmBattleMotion = PluginManager._scripts.includes('BattleMotionMZ') && PluginManager.parameters('BattleMotionMZ');
+    const prmBattleMotion = PluginManager._scripts.includes('BattleMotionMZ') &&
+        PluginManager.parameters('BattleMotionMZ');
     const prmMotionCol = prmBattleMotion && prmBattleMotion['motionCol'] === 'true';
     // NUUN_ButlerHPGaugeのパラメータを取得
     let nuunHpGaugeParams = {};
@@ -357,34 +360,6 @@
         // 通常の敵の場合は元の処理
         _Sprite_Enemy_updateStateSprite.call(this);
     };
-    // ステートアイコンの位置を取得するメソッドを追加
-    Sprite_Enemy.prototype.getStateIconPosition = function () {
-        if (this._isSvActorEnemy && this._svActorSprite) {
-            const svSprite = this._svActorSprite;
-            const mainSprite = svSprite._mainSprite;
-            if (mainSprite &&
-                mainSprite.bitmap &&
-                mainSprite.bitmap.isReady()) {
-                const frameHeight = mainSprite.bitmap.height / 6;
-                return {
-                    x: svSprite.x,
-                    y: svSprite.y - frameHeight - 20,
-                };
-            }
-            else {
-                return {
-                    x: svSprite.x,
-                    y: svSprite.y - 60,
-                };
-            }
-        }
-        else {
-            return {
-                x: this.x,
-                y: this.y - this.height * 0.8,
-            };
-        }
-    };
     const _Sprite_Enemy_updateBitmap = Sprite_Enemy.prototype.updateBitmap;
     Sprite_Enemy.prototype.updateBitmap = function () {
         if (this._isSvActorEnemy) {
@@ -433,6 +408,34 @@
             const position = this.getStateIconPosition();
             this._stateIconSprite.x = position.x;
             this._stateIconSprite.y = position.y;
+        }
+    };
+    // ステートアイコンの位置を取得するメソッドを追加
+    Sprite_Enemy.prototype.getStateIconPosition = function () {
+        if (this._isSvActorEnemy && this._svActorSprite) {
+            const svSprite = this._svActorSprite;
+            const mainSprite = svSprite._mainSprite;
+            if (mainSprite &&
+                mainSprite.bitmap &&
+                mainSprite.bitmap.isReady()) {
+                const frameHeight = mainSprite.bitmap.height / 6;
+                return {
+                    x: svSprite.x,
+                    y: svSprite.y - frameHeight - 20,
+                };
+            }
+            else {
+                return {
+                    x: svSprite.x,
+                    y: svSprite.y - 60,
+                };
+            }
+        }
+        else {
+            return {
+                x: this.x,
+                y: this.y - this.height * 0.8,
+            };
         }
     };
     Sprite_Enemy.prototype.getBattlerOverlayHeight = function () {
@@ -640,12 +643,6 @@
     };
     // メインのモーション制御
     Sprite_SvActor.prototype.startMotion = function (motion) {
-        // // バトラーが死亡している場合は死亡モーション以外受け付けない
-        // if (this._battler && this._battler.isDead && this._battler.isDead()) {
-        //     if (motion !== 'dead' && motion !== 'dying') {
-        //         motion = 'dead';
-        //     }
-        // }
         if (prmBattleMotion) {
             const newMotion = Sprite_Battler.MOTIONS[motion];
             if (newMotion) {
@@ -805,7 +802,6 @@
                 const motionRow = motionIndex % motionsPerRow; // 何行目か
                 cx = motionColumn * actualFramesPerMotion + pattern;
                 cy = motionRow;
-                console.log(`Custom calculation: motionIndex=${motionIndex}, pattern=${pattern}, actualFrames=${actualFramesPerMotion}, cx=${cx}, cy=${cy}`);
                 // 範囲チェック
                 const maxCx = Math.floor(bitmap.width / cellSize);
                 if (cx >= maxCx || cy >= 6 || cx < 0 || cy < 0) {
@@ -813,7 +809,6 @@
                     cx = 0;
                     cy = 0;
                 }
-                console.log(`Final frame: x=${cx * cellSize}, y=${cy * cellSize}, size=${cellSize}`);
                 this._mainSprite.setFrame(cx * cellSize, cy * cellSize, cellSize, cellSize);
             }
             catch (e) {
@@ -827,8 +822,7 @@
     };
     Sprite_SvActor.prototype.updateMotion = function () {
         // モーション更新要求があれば即座に処理
-        if (this._battler._motionRefresh &&
-            !this._battler._damaged) {
+        if (this._battler._motionRefresh && !this._battler._damaged) {
             this._battler._motionRefresh = false;
             this.refreshMotion();
         }
@@ -849,14 +843,8 @@
     // BattleMotionMZ用のモーション更新処理を新規作成
     Sprite_SvActor.prototype.updateMotionBMMZ = function () {
         this._motionCount++;
-        let speed = 12;
-        try {
-            // blueFpsはこれで機能する
-            speed = this.motionSpeed();
-        }
-        catch (e) {
-            console.warn('motionSpeed call failed, using default speed');
-        }
+        // BattleMotionMZのmotionSpeedを使わず、独自実装を使用
+        let speed = this.getCustomMotionSpeed();
         if (this._motionCount >= speed) {
             const bitmap = this._mainSprite.bitmap;
             if (!bitmap || !bitmap.isReady())
@@ -866,7 +854,6 @@
             const frameInfo = this.getMotionFrameInfo(bitmap, cellSize, motionIndex);
             const frameCount = frameInfo.frameCount - 1;
             const animType = frameInfo.animType;
-            console.log(`Motion update: frameCount=${frameCount}, animType=${animType}, currentPattern=${this._pattern}`);
             if (animType === 'freeze') {
                 // R255のみ = 最後のコマで停止
                 if (this._pattern < frameCount - 1) {
@@ -895,7 +882,7 @@
             }
             else if (animType === 'loop') {
                 // G255のみ = 一方通行ループ (0->1->2->0->...)
-                this._pattern = (this._pattern + 1) % (frameCount);
+                this._pattern = (this._pattern + 1) % frameCount;
             }
             else {
                 // 通常処理（animType === 'normal' または BattleMotionMZの標準動作）
@@ -911,7 +898,6 @@
                     }
                 }
             }
-            console.log(`Pattern updated to: ${this._pattern}, direction: ${this._patternDirection}`);
             this._motionCount = 0;
         }
     };
@@ -990,7 +976,6 @@
             const sampleY = y + 1;
             const imageData = context.getImageData(sampleX, sampleY, 1, 1);
             const [r, g, b, a] = imageData.data;
-            console.log(`End frame color check at (${sampleX}, ${sampleY}): R${r} G${g} B${b} A${a}`);
             // 透明でない場合のみ色制御を適用
             if (a > 128) {
                 // 半透明以上
@@ -1013,6 +998,69 @@
         catch (e) {
             console.warn('Color detection failed:', e);
             return { animType: 'normal' };
+        }
+    };
+    // 独自のモーションスピード計算メソッド
+    Sprite_SvActor.prototype.getCustomMotionSpeed = function () {
+        const bitmap = this._mainSprite.bitmap;
+        if (!bitmap || !bitmap.isReady())
+            return 12;
+        if (!prmMotionCol) {
+            // motionColが無効な場合は標準速度
+            return this._motion && this._motion.speed ? this._motion.speed : 12;
+        }
+        try {
+            const motionIndex = this._motion ? this._motion.index : 0;
+            const cellSize = this.cs(this._mainSprite);
+            const motionsPerRow = 6;
+            const motionCount = Object.keys(Sprite_Battler.MOTIONS).length;
+            const totalColumns = motionCount / motionsPerRow;
+            const maxFramesPerMotion = Math.floor(bitmap.width / cellSize / totalColumns);
+            // このモーションの位置を計算
+            const motionColumn = Math.floor(motionIndex / motionsPerRow);
+            const motionRow = motionIndex % motionsPerRow;
+            const motionStartX = motionColumn * maxFramesPerMotion * cellSize;
+            const motionStartY = motionRow * cellSize;
+            // 終端フレームを探す
+            for (let i = 1; i <= maxFramesPerMotion; i++) {
+                const frameX = motionStartX + (i - 1) * cellSize;
+                if (this.isEndFrame(bitmap, frameX, motionStartY, cellSize, maxFramesPerMotion, i)) {
+                    // 終端フレームの青色要素を取得してスピードを計算
+                    const blueValue = this.getEndFrameBlueValue(bitmap, frameX, motionStartY);
+                    if (blueValue > 0 && blueValue < 255) {
+                        // 青色要素からフレームレートを計算 (BattleMotionMZのロジック)
+                        const speed = blueValue;
+                        console.log(`Motion ${motionIndex}: Blue=${blueValue},  Speed=${speed}`);
+                        return speed;
+                    }
+                    break;
+                }
+            }
+        }
+        catch (e) {
+            console.warn('Custom motion speed calculation failed:', e);
+        }
+        // フォールバック：標準速度を返す
+        return this._motion && this._motion.speed ? this._motion.speed : 12;
+    };
+    // 終端フレームの青色要素を取得
+    Sprite_SvActor.prototype.getEndFrameBlueValue = function (bitmap, x, y) {
+        try {
+            const canvas = bitmap.canvas || bitmap._canvas;
+            if (!canvas)
+                return 0;
+            const context = canvas.getContext('2d');
+            const imageData = context.getImageData(x + 1, y + 1, 1, 1);
+            const [r, g, b, a] = imageData.data;
+            // 透明でない場合のみ青色要素を返す
+            if (a > 128) {
+                return b;
+            }
+            return 0;
+        }
+        catch (e) {
+            console.warn('Blue value detection failed:', e);
+            return 0;
         }
     };
     // デフォルトのモーション更新処理（標準SV用）
