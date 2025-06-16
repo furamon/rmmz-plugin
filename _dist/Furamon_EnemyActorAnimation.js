@@ -57,8 +57,8 @@
     const pluginName = 'Furamon_EnemyActorAnimation';
     const parameters = PluginManager.parameters(pluginName);
     const prmAutoMirror = parameters['autoMirror'] === 'true';
-    const prmBattleMotion = PluginManager.parameters('BattleMotionMZ');
-    const prmMotionCol = prmBattleMotion['motionCol'] === 'true';
+    const prmBattleMotion = PluginManager._scripts.includes('BattleMotionMZ') && PluginManager.parameters('BattleMotionMZ');
+    const prmMotionCol = prmBattleMotion && prmBattleMotion['motionCol'] === 'true';
     // NUUN_ButlerHPGaugeのパラメータを取得
     let nuunHpGaugeParams = {};
     try {
@@ -640,12 +640,12 @@
     };
     // メインのモーション制御
     Sprite_SvActor.prototype.startMotion = function (motion) {
-        // バトラーが死亡している場合は死亡モーション以外受け付けない
-        if (this._battler && this._battler.isDead && this._battler.isDead()) {
-            if (motion !== 'dead' && motion !== 'dying') {
-                motion = 'dead';
-            }
-        }
+        // // バトラーが死亡している場合は死亡モーション以外受け付けない
+        // if (this._battler && this._battler.isDead && this._battler.isDead()) {
+        //     if (motion !== 'dead' && motion !== 'dying') {
+        //         motion = 'dead';
+        //     }
+        // }
         if (prmBattleMotion) {
             const newMotion = Sprite_Battler.MOTIONS[motion];
             if (newMotion) {
@@ -751,6 +751,7 @@
         // damageMotionCountが0になったらモーションを再開する
         if (this._battler._damageMotionCount > 0) {
             this._battler._damageMotionCount -= 1;
+            // HP0ならダメージモーションのまま退場
         }
         else {
             this._battler._damaged = false;
@@ -826,7 +827,8 @@
     };
     Sprite_SvActor.prototype.updateMotion = function () {
         // モーション更新要求があれば即座に処理
-        if (this._battler._motionRefresh && !this._battler._damaged) {
+        if (this._battler._motionRefresh &&
+            !this._battler._damaged) {
             this._battler._motionRefresh = false;
             this.refreshMotion();
         }
@@ -1066,9 +1068,9 @@
         // 標準のSVアクター処理（9x6）のみ
         const cw = bitmap.width / 9;
         const ch = bitmap.height / 6;
-        // 敵が死んでるならフォールバック
+        // 戦闘不能ならダメージモーションで退場
         if (this._battler && this._battler.isDead()) {
-            this._mainSprite.setFrame(0, 0, cw, ch);
+            this.startMotion('damage');
             return;
         }
         const motionIndex = this._motion.index;
