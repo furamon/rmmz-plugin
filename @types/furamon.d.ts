@@ -75,8 +75,6 @@ declare namespace ConfigManager {
     let messageSpeed: number;
 }
 
-
-
 interface PluginManager {
     public static checkErrors(): void;
     public static isLoaded(name: string): boolean;
@@ -89,8 +87,6 @@ declare interface Sprite_BattlerConstructor {
     new (): Sprite_Battler;
     [key: string]: any;
 }
-
-
 
 // グローバルなSprite_Battlerクラス
 declare var Sprite_Battler: Sprite_BattlerConstructor;
@@ -182,7 +178,9 @@ interface Game_Enemy {
     performAttackDynamicMotion(weaponId: number, weaponType: string): void;
     _battlerName: string;
     weapons(): any[];
-    weapon(): {wtypeId: number} | null;
+    weapon(): { wtypeId: number } | null;
+    _damaged: boolean;
+    _damageMotionCount: number;
 }
 
 interface Game_Action {
@@ -245,7 +243,6 @@ interface Sprite_Enemy {
     battlerOverlay: PIXI.Container;
     _battler: Game_Enemy;
 }
-
 
 // Game_Temp インターフェースを拡張
 declare interface Game_Temp {
