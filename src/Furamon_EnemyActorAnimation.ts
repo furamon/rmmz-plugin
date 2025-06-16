@@ -737,13 +737,6 @@
 
     // メインのモーション制御
     Sprite_SvActor.prototype.startMotion = function (motion: string) {
-        // // バトラーが死亡している場合は死亡モーション以外受け付けない
-        // if (this._battler && this._battler.isDead && this._battler.isDead()) {
-        //     if (motion !== 'dead' && motion !== 'dying') {
-        //         motion = 'dead';
-        //     }
-        // }
-
         if (prmBattleMotion) {
             const newMotion = Sprite_Battler.MOTIONS[motion];
 
