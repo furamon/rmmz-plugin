@@ -1066,9 +1066,9 @@
     };
 
     Sprite_SvActor.prototype.getMotionFrameInfo = function (
-        bitmap,
-        cellSize,
-        motionIndex
+        bitmap: Bitmap,
+        cellSize: number,
+        motionIndex: number
     ) {
         const totalFrames = bitmap.width / cellSize;
         const motionCount = Object.keys(Sprite_Battler.MOTIONS).length;
@@ -1127,12 +1127,12 @@
 
     // 終端フレームかどうかを判定
     Sprite_SvActor.prototype.isEndFrame = function (
-        bitmap,
-        frameX,
-        frameY,
-        cellSize,
-        maxFramesPerMotion,
-        currentFrame
+        bitmap: Bitmap,
+        frameX: number,
+        frameY: number,
+        cellSize: number,
+        maxFramesPerMotion: number,
+        currentFrame: number
     ) {
         try {
             // maxFramesPerMotionの倍数個目かチェック
@@ -1151,7 +1151,7 @@
             if (!canvas) return false;
 
             const context = canvas.getContext('2d');
-            const imageData = context.getImageData(checkX, checkY, 1, 1);
+            const imageData = context!.getImageData(checkX, checkY, 1, 1);
             const [r, g, b, a] = imageData.data;
 
             // 透明でなく、かつ黒でない場合は終端フレーム
@@ -1168,10 +1168,10 @@
 
     // 終端フレームの色情報を解析
     Sprite_SvActor.prototype.getEndFrameColorInfo = function (
-        bitmap,
-        x,
-        y,
-        cellSize
+        bitmap: Bitmap,
+        x: number,
+        y: number,
+        cellSize: number
     ) {
         try {
             // キャンバスコンテキストを取得
@@ -1186,7 +1186,7 @@
             const sampleX = x + 1;
             const sampleY = y + 1;
 
-            const imageData = context.getImageData(sampleX, sampleY, 1, 1);
+            const imageData = context!.getImageData(sampleX, sampleY, 1, 1);
             const [r, g, b, a] = imageData.data;
 
             console.log(
@@ -1334,6 +1334,12 @@
 
     Sprite_SvActor.prototype.refreshMotion = function () {
         if (!this._battler) return;
+
+        // HP0なら死亡処理
+        if (this._battler.hp <= 0) {
+            this.startMotion('damage');
+            return;
+        }
 
         // ステート確認
         if (

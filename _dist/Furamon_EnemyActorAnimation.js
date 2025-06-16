@@ -1120,6 +1120,11 @@
     Sprite_SvActor.prototype.refreshMotion = function () {
         if (!this._battler)
             return;
+        // HP0なら死亡処理
+        if (this._battler.hp <= 0) {
+            this.startMotion('damage');
+            return;
+        }
         // ステート確認
         if (this._battler.states &&
             typeof this._battler.states === 'function') {
