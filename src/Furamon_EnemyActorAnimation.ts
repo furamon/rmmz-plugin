@@ -6,12 +6,18 @@
 // 2025/06/13 1.0.0 公開！
 // 2025/06/14 1.0.1 DynamicMotionのNear型で敵のそばにちゃんと移動するよう修正
 //                  モーション制御が不安定だったので見直し
-// 2025/06/15 1.0.2 BattleMotionMZに実は対応してなかったのを直した
+// 2025/06/16 1.0.2 BattleMotionMZに実は対応してなかったのを直した
+// 2025/06/17 1.1.0 BattleMotionMZ関連を分離した
+
 
 /*:
  * @target MZ
  * @plugindesc 敵キャラにSV_Actorsのスプライトシートを適用します。
  * @author Furamon
+ * @orderAfter BattleMotionMZ
+ * @orderAfter NRP_DynamicMotionMZ
+ * @orderBefore Furamon_EnemyActorBattleMotion
+ * @orderBefore Furamon_EnemyActorDynamicMotion
  * @help 敵キャラにSV_Actorsのスプライトシートを適用します。
  *
  * 敵のメモ欄に以下のいずれかを記述します：
@@ -34,7 +40,7 @@
  * 9x6に並べ、SV敵にしてください。ごめんね。
  *
  * BattleMotionMZ(Lib様)、及びNRP_DynamicMotionMZ(砂川赳様)と併用できます。
- * 後者はFuramon_EnemyActorDynamicMotionをこのプラグインの下に置いてください。
+ * Furamon_EnemyActorBattleMotion、Furamon_EnemyActorDynamicMotionをこのプラグインの下に置いてください。
  * なお、BattleMotionMZのモーションカラー右上で次モーションにつなげる機能には
  * 対応していません。DynamicMotionMZをうまく使って代用してください。
  *
@@ -62,11 +68,7 @@
     const parameters = PluginManager.parameters(pluginName);
     const prmAutoMirror = parameters['autoMirror'] === 'true';
 
-    const prmBattleMotion =
-        PluginManager._scripts.includes('BattleMotionMZ') &&
-        PluginManager.parameters('BattleMotionMZ');
-    const prmMotionCol =
-        prmBattleMotion && prmBattleMotion['motionCol'] === 'true';
+    const hasBattleMotion = PluginManager._scripts.includes('BattleMotionMZ');
 
     // NUUN_ButlerHPGaugeのパラメータを取得
     let nuunHpGaugeParams: {
@@ -300,25 +302,16 @@
             ) {
                 const bitmap = mainSprite.bitmap;
 
-                if (prmBattleMotion) {
-                    // BattleMotionMZのコマ数計算ロジック
-                    const cellSize = bitmap.height / 6; // 1セルのサイズ（正方形）
-                    const totalFrames = bitmap.width / cellSize; // 総フレーム数
-
-                    // 1モーション辺りの最大フレーム数を計算
-                    let motionCount = Object.keys(
-                        Sprite_Battler.MOTIONS
-                    ).length;
-                    const maxFramesPerMotion = totalFrames / (motionCount / 6); // 6行分のモーション
-
+                // 最低限のBattleMotionMZ対応
+                // こっちでやらないとwidthがおかしくなる
+                if (hasBattleMotion) {
+                    // BattleMotionMZの場合：1セルは正方形（高さ÷6）
+                    const cellSize = bitmap.height / 6;
                     return {
                         width: cellSize,
                         height: cellSize,
                         frameWidth: cellSize,
                         frameHeight: cellSize,
-                        maxFramesPerMotion: maxFramesPerMotion,
-                        totalFrames: totalFrames,
-                        cellSize: cellSize,
                     };
                 } else {
                     // 標準のSVアクター（9x6）
@@ -335,7 +328,6 @@
         }
         return null;
     };
-
     /**
      * 元の敵スプライトを非表示にする
      */
@@ -361,7 +353,7 @@
             this._battler._motion = null;
         }
 
-        this._svActorSprite = new (Sprite_SvActor as any)();
+        this._svActorSprite = new Sprite_SvActor();
         this._svActorSprite.setup(this._battler);
 
         if (prmAutoMirror) {
@@ -581,7 +573,13 @@
         get: function () {
             if (this._isSvActorEnemy && this._svActorSprite) {
                 const size = this.getSvActorSpriteSize();
-                return size ? size.width : 64;
+                if (hasBattleMotion) {
+                    // BattleMotionMZの場合は正方形セルサイズを返す
+                    return size ? size.cellSize || size.width : 64;
+                } else {
+                    // 通常SVアクターの場合
+                    return size ? size.width : 64;
+                }
             }
             // bitmapがnullの場合は0を返す
             return this.bitmap ? this.bitmap.width : 0;
@@ -599,7 +597,13 @@
         get: function () {
             if (this._isSvActorEnemy && this._svActorSprite) {
                 const size = this.getSvActorSpriteSize();
-                return size ? size.height : 64;
+                if (hasBattleMotion) {
+                    // BattleMotionMZの場合は正方形セルサイズを返す
+                    return size ? size.cellSize || size.height : 64;
+                } else {
+                    // 通常SVアクターの場合
+                    return size ? size.height : 64;
+                }
             }
             // bitmapがnullの場合は0を返す
             return this.bitmap ? this.bitmap.height : 0;
@@ -613,161 +617,97 @@
         },
     });
 
-    function Sprite_SvActor(this: any) {
-        this.initialize(...arguments);
-    }
+    class Sprite_SvActor extends Sprite {
+        _battler: Game_Battler | null;
+        _motion: any;
+        _motionCount: number;
+        _pattern: number;
+        _mainSprite: Sprite;
+        _shadowSprite: Sprite;
+        _weaponSprite: Sprite_Weapon;
+        _stateSprite: Sprite_StateOverlay;
+        _setupComplete: boolean;
+        _processingMotion: boolean;
+        _patternDirection: number;
 
-    // 連携用
-    Sprite_SvActor.prototype = Object.create(Sprite.prototype);
-    Sprite_SvActor.prototype.constructor = Sprite_SvActor;
+        constructor() {
+            super();
+            this._battler = null;
+            this._motion = null;
+            this._motionCount = 0;
+            this._pattern = 0;
+            this._setupComplete = false;
+            this._processingMotion = false;
+            this._patternDirection = 1;
+            this.createMainSprite();
+            this.createShadowSprite();
+            this.createWeaponSprite();
+            this.createStateSprite();
+        }
 
-    Sprite_SvActor.prototype.initialize = function () {
-        Sprite.prototype.initialize.call(this);
-        this._battler = null;
-        this._motion = null;
-        this._motionCount = 0;
-        this._pattern = 0;
-        this.createMainSprite();
-        this.createShadowSprite();
-        this.createWeaponSprite();
-        this.createStateSprite();
-    };
+        createMainSprite() {
+            this._mainSprite = new Sprite();
+            this._mainSprite.anchor.x = 0.5;
+            this._mainSprite.anchor.y = 1;
+            this.addChild(this._mainSprite);
+        }
 
-    Sprite_SvActor.prototype.setup = function (battler: Game_Battler) {
-        this._battler = battler;
-        this._setupComplete = true;
+        createShadowSprite() {
+            this._shadowSprite = new Sprite();
+            this._shadowSprite.bitmap = ImageManager.loadSystem('Shadow2');
+            this._shadowSprite.anchor.x = 0.5;
+            this._shadowSprite.anchor.y = 0.5;
+            this._shadowSprite.y = -2;
+            this._shadowSprite.opacity = 160;
+            this.addChild(this._shadowSprite);
+        }
 
-        // ビットマップを先に読み込み
-        this.refreshBitmap();
+        createWeaponSprite() {
+            this._weaponSprite = new Sprite_Weapon();
+            this.addChild(this._weaponSprite);
+        }
 
-        // 初期化
-        this._motion = null;
-        this._motionCount = 0;
-        this._pattern = 0;
+        createStateSprite() {
+            this._stateSprite = new Sprite_StateOverlay();
+            this.addChild(this._stateSprite);
+        }
 
-        // ビットマップが読み込まれてから初期モーションを設定
-        const bitmap = this._mainSprite.bitmap;
-        if (bitmap && bitmap.isReady()) {
-            this.setupInitialMotion();
-        } else if (bitmap) {
-            bitmap.addLoadListener(() => {
+        setup(battler: Game_Battler) {
+            this._battler = battler;
+            this._setupComplete = true;
+
+            this.refreshBitmap();
+            this._motion = null;
+            this._motionCount = 0;
+            this._pattern = 0;
+
+            const bitmap = this._mainSprite.bitmap;
+            if (bitmap && bitmap.isReady()) {
                 this.setupInitialMotion();
-            });
-        }
+            } else if (bitmap) {
+                bitmap.addLoadListener(() => {
+                    this.setupInitialMotion();
+                });
+            }
 
-        if (this._stateSprite && battler) {
-            this._stateSprite.setup(battler);
-        }
-    };
-
-    Sprite_SvActor.prototype.setupInitialMotion = function () {
-        // モーション状態をリセット
-        this._motion = null;
-        this._motionCount = 0;
-        this._pattern = 0;
-
-        // BattleMotionMZ用のプロパティ初期化
-        if (prmBattleMotion) {
-            this._animCount = 0;
-            this.fpsMotion = 0;
-            this.motionType = null;
-            this.animLoop = true;
-            this.remake = true;
-            this.speed = 12;
-            this.nextMotionNo = -1;
-            this.offsetX = 0;
-            this.offsetY = 0;
-        }
-
-        // 初期モーションをwalk（待機）に設定
-        this.startMotion('walk');
-
-        // モーションリフレッシュフラグをリセット
-        if (this._battler) {
-            this._battler._motionRefresh = false;
-            this._battler._motion = null;
-        }
-    };
-
-    Sprite_SvActor.prototype.getMotionFrameCount = function () {
-        const bitmap = this._mainSprite.bitmap;
-        if (!bitmap || !bitmap.isReady()) return 3;
-
-        if (prmBattleMotion) {
-            try {
-                const cellSize = bitmap.height / 6;
-                const motionIndex = this._motion ? this._motion.index : 0;
-                const frameInfo = this.getMotionFrameInfo(
-                    bitmap,
-                    cellSize,
-                    motionIndex
-                );
-                return frameInfo.frameCount;
-            } catch (e) {
-                console.warn('Frame count calculation failed:', e);
-                return 3;
+            if (this._stateSprite && battler) {
+                this._stateSprite.setup(battler);
             }
         }
 
-        return 3;
-    };
+        setupInitialMotion() {
+            this._motion = null;
+            this._motionCount = 0;
+            this._pattern = 0;
+            this.startMotion('walk');
 
-    Sprite_SvActor.prototype.createMainSprite = function () {
-        this._mainSprite = new Sprite();
-        this._mainSprite.anchor.x = 0.5;
-        this._mainSprite.anchor.y = 1;
-        this.addChild(this._mainSprite);
-    };
-
-    Sprite_SvActor.prototype.createShadowSprite = function () {
-        this._shadowSprite = new Sprite();
-        this._shadowSprite.bitmap = ImageManager.loadSystem('Shadow2');
-        this._shadowSprite.anchor.x = 0.5;
-        this._shadowSprite.anchor.y = 0.5;
-        this._shadowSprite.y = -2;
-        this._shadowSprite.opacity = 160;
-        this.addChild(this._shadowSprite);
-    };
-
-    Sprite_SvActor.prototype.createWeaponSprite = function () {
-        this._weaponSprite = new Sprite_Weapon();
-        this.addChild(this._weaponSprite);
-    };
-
-    Sprite_SvActor.prototype.createStateSprite = function () {
-        this._stateSprite = new Sprite_StateOverlay();
-        this.addChild(this._stateSprite);
-    };
-
-    // メインのモーション制御
-    Sprite_SvActor.prototype.startMotion = function (motion: string) {
-        if (prmBattleMotion) {
-            const newMotion = Sprite_Battler.MOTIONS[motion];
-
-            if (newMotion) {
-                this._motion = {
-                    index: newMotion.index,
-                    loop: newMotion.loop,
-                    speed: newMotion.speed || 12,
-                };
-                this._motionCount = 0;
-                this._pattern = 0;
-
-                // BattleMotionMZ特有のプロパティ
-                this._animCount = 0;
-                this.fpsMotion = 0;
-                this.motionType = motion;
-                this.animLoop = newMotion.loop;
-                this.remake = true;
-                this.speed = newMotion.speed || 12;
-                this.nextMotionNo = -1;
-                this.offsetX = 0;
-                this.offsetY = 0;
-            } else {
-                this.startMotion('walk');
+            if (this._battler) {
+                (this._battler as any)._motionRefresh = false;
+                (this._battler as any)._motion = null;
             }
-        } else {
-            // 標準のモーション処理（共通関数を使用）
+        }
+
+        startMotion(motion: string) {
             const standardMotions = getStandardMotions();
             const standardMotion =
                 standardMotions[motion] || standardMotions['walk'];
@@ -778,698 +718,226 @@
             };
             this._motionCount = 0;
             this._pattern = 0;
-        }
 
-        // パターン方向の初期化（ループアニメーション用）
-        if (this._motion && this._motion.loop) {
-            this._patternDirection = 1;
-        }
-    };
-
-    Sprite_SvActor.prototype.isMotionRequested = function () {
-        return this._battler && this._battler._motion;
-    };
-
-    Sprite_SvActor.prototype.motionType = function () {
-        return this._motion ? this.motionType : 'walk';
-    };
-
-    Sprite_SvActor.prototype.forceMotion = function (motionType: string) {
-        // 現在のモーションを強制的にリセット
-        this._motion = null;
-        this._motionCount = 0;
-        this._pattern = 0;
-
-        // 新しいモーションを開始
-        this.startMotion(motionType);
-    };
-
-    // BattleMotionMZ用のモーション初期化
-    Sprite_SvActor.prototype.setupMotionBMMZ = function () {
-        if (!this._motion) {
-            this._motion = { index: 0, loop: true };
-        }
-    };
-
-    // BattleMotionMZ用のメソッドを条件付きで適用
-    Sprite_SvActor.prototype.setupValue = function (motionType: string) {
-        // 型安全なモーション定義
-        const motions: Record<
-            string,
-            { index: number; loop: boolean; speed: number }
-        > =
-            (typeof Sprite_Battler !== 'undefined' && Sprite_Battler.MOTIONS) ||
-            (typeof Sprite_Actor !== 'undefined' && Sprite_Actor.MOTIONS) ||
-            {};
-
-        // 安全なアクセスを確保
-        const motion = motions[motionType] ||
-            motions['walk'] || {
-                index: 0,
-                loop: true,
-                speed: 12,
-            };
-
-        // モーションが未初期化の場合の対応
-        if (!this._motion) {
-            this._motion = { index: 0, loop: true };
-        }
-
-        this._motion.index = motion.index;
-        this._motion.loop = motion.loop;
-        this._motionCount = 0;
-        this._pattern = 0;
-
-        // BattleMotionMZ特有のプロパティ（BattleMotionMZがある場合のみ）
-        if (typeof Sprite_Battler !== 'undefined') {
-            this._animCount = 0;
-            this.fpsMotion = 0;
-            this.motionType = motionType;
-            this.animLoop = true;
-            this.remake = true;
-            this.speed = motions[motionType].speed;
-            this.nextMotionNo = -1;
-            this.offsetX = 0;
-            this.offsetY = 0;
-        }
-    };
-
-    Sprite_SvActor.prototype.update = function () {
-        if (!this._battler) return;
-
-        this.updateBitmap();
-        this.updateFrame();
-        this.updateMotion();
-        this.updateStateSprite();
-
-        // damageMotionCountが0になったらモーションを再開する
-        if (this._battler._damageMotionCount > 0) {
-            this._battler._damageMotionCount -= 1;
-            // HP0ならダメージモーションのまま退場
-        } else {
-            this._battler._damaged = false;
-        }
-
-        // requestMotionで設定されたモーションを即座に反映
-        if (this._battler._motion && !this._processingMotion) {
-            this._processingMotion = true;
-            const requestedMotion = this._battler._motion;
-            this._battler._motion = null;
-            this.startMotion(requestedMotion);
-            this._processingMotion = false;
-        }
-    };
-
-    Sprite_SvActor.prototype.updateBitmap = function () {
-        if (!this._battler) return;
-
-        const fileName = this._battler.battlerName();
-        if (fileName) {
-            const newBitmap = ImageManager.loadSvActor(fileName);
-            if (this._mainSprite.bitmap !== newBitmap) {
-                this._mainSprite.bitmap = newBitmap;
+            if (this._motion && this._motion.loop) {
+                this._patternDirection = 1;
             }
         }
-    };
 
-    Sprite_SvActor.prototype.updateFrame = function () {
-        const bitmap = this._mainSprite.bitmap;
-        if (!bitmap || !bitmap.isReady()) return;
+        forceMotion(motionType: string) {
+            this._motion = null;
+            this._motionCount = 0;
+            this._pattern = 0;
+            this.startMotion(motionType);
+        }
 
-        if (prmBattleMotion) {
-            try {
-                // BattleMotionMZ処理
-                if (this.getRemake() === true) {
-                    this.addMotionData && this.addMotionData(this._mainSprite);
-                    this.setMotionFps && this.setMotionFps(this._mainSprite);
-                    this.setMotionArray && this.setMotionArray();
-                    this.setRemake && this.setRemake(false);
+        update() {
+            if (!this._battler) return;
+
+            this.updateBitmap();
+            this.updateFrame();
+            this.updateMotion();
+            this.updateStateSprite();
+
+            const battlerAny = this._battler as any;
+            if (battlerAny._damageMotionCount > 0) {
+                battlerAny._damageMotionCount -= 1;
+            } else {
+                battlerAny._damaged = false;
+            }
+
+            if (battlerAny._motion && !this._processingMotion) {
+                this._processingMotion = true;
+                const requestedMotion = battlerAny._motion;
+                battlerAny._motion = null;
+                this.startMotion(requestedMotion);
+                this._processingMotion = false;
+            }
+        }
+
+        updateBitmap() {
+            if (!this._battler) return;
+
+            const fileName = (this._battler as any).battlerName();
+            if (fileName) {
+                const newBitmap = ImageManager.loadSvActor(fileName);
+                if (this._mainSprite.bitmap !== newBitmap) {
+                    this._mainSprite.bitmap = newBitmap;
                 }
-
-                const cellSize = this.cs(this._mainSprite);
-                let cx = 0,
-                    cy = 0;
-
-                // BattleMotionMZの処理を使わず、独自計算で実際のフレーム数を使用
-                const motionIndex = this._motion ? this._motion.index : 0;
-                const pattern = this._pattern || 0;
-
-                // 実際のフレーム数を計算
-                const totalFrames = bitmap.width / cellSize;
-                const motionCount = Object.keys(Sprite_Battler.MOTIONS).length;
-                const motionsPerRow = 6; // 縦に6モーション
-                const totalColumns = motionCount / motionsPerRow; // 横の列数
-                const actualFramesPerMotion = Math.floor(
-                    totalFrames / totalColumns
-                );
-
-                // 正しいcx, cy計算（BattleMotionMZの制限を無視）
-                const motionColumn = Math.floor(motionIndex / motionsPerRow); // 何列目か
-                const motionRow = motionIndex % motionsPerRow; // 何行目か
-
-                cx = motionColumn * actualFramesPerMotion + pattern;
-                cy = motionRow;
-
-                // 範囲チェック
-                const maxCx = Math.floor(bitmap.width / cellSize);
-                if (cx >= maxCx || cy >= 6 || cx < 0 || cy < 0) {
-                    console.warn(
-                        `Frame out of bounds: cx=${cx}, cy=${cy}, maxCx=${maxCx}, resetting to 0,0`
-                    );
-                    cx = 0;
-                    cy = 0;
-                }
-                this._mainSprite.setFrame(
-                    cx * cellSize,
-                    cy * cellSize,
-                    cellSize,
-                    cellSize
-                );
-            } catch (e) {
-                console.warn(
-                    'BattleMotionMZ updateFrame failed, using default:',
-                    e
-                );
-                this.updateFrameDefault(bitmap);
             }
-        } else {
-            this.updateFrameDefault(bitmap);
-        }
-    };
-    Sprite_SvActor.prototype.updateMotion = function () {
-        // モーション更新要求があれば即座に処理
-        if (this._battler._motionRefresh && !this._battler._damaged) {
-            this._battler._motionRefresh = false;
-            this.refreshMotion();
         }
 
-        if (prmBattleMotion) {
-            try {
-                // BattleMotionMZの処理
-                this.updateMotionBMMZ();
-            } catch (e) {
-                console.log(
-                    'BattleMotionMZ updateMotion failed, using default:',
-                    e
-                );
-                this.updateMotionDefault();
-            }
-        } else {
-            this.updateMotionDefault();
-        }
-    };
-
-    // BattleMotionMZ用のモーション更新処理を新規作成
-    Sprite_SvActor.prototype.updateMotionBMMZ = function () {
-        this._motionCount++;
-
-        // BattleMotionMZのmotionSpeedを使わず、独自実装を使用
-        let speed = this.getCustomMotionSpeed();
-
-        if (this._motionCount >= speed) {
+        updateFrame() {
             const bitmap = this._mainSprite.bitmap;
             if (!bitmap || !bitmap.isReady()) return;
 
-            const cellSize = this.cs(this._mainSprite);
-            const motionIndex = this._motion ? this._motion.index : 0;
-            const frameInfo = this.getMotionFrameInfo(
-                bitmap,
-                cellSize,
-                motionIndex
-            );
-            const frameCount = frameInfo.frameCount - 1;
-            const animType = frameInfo.animType;
-
-            if (animType === 'freeze') {
-                // R255のみ = 最後のコマで停止
-                if (this._pattern < frameCount - 1) {
-                    this._pattern++;
-                } else {
-                    this._pattern = frameCount - 1;
-                }
-            } else if (animType === 'pingpong') {
-                // R255G255 = ping-pong（往復ループ）
-                if (this._patternDirection === undefined) {
-                    this._patternDirection = 1;
-                }
-
-                if (this._pattern <= 0) {
-                    this._pattern = 1;
-                    this._patternDirection = 1;
-                } else if (this._pattern >= frameCount - 1) {
-                    this._pattern = frameCount - 2;
-                    this._patternDirection = -1;
-                } else {
-                    this._pattern += this._patternDirection;
-                }
-            } else if (animType === 'loop') {
-                // G255のみ = 一方通行ループ (0->1->2->0->...)
-                this._pattern = (this._pattern + 1) % frameCount;
-            } else {
-                // 通常処理（animType === 'normal' または BattleMotionMZの標準動作）
-                if (this._motion && this._motion.loop) {
-                    this._pattern = (this._pattern + 1) % frameCount;
-                } else {
-                    if (this._pattern < frameCount) {
-                        this._pattern++;
-                    } else {
-                        this._pattern = frameCount;
-                    }
-                }
-            }
-            this._motionCount = 0;
-        }
-    };
-
-    Sprite_SvActor.prototype.getMotionFrameInfo = function (
-        bitmap: Bitmap,
-        cellSize: number,
-        motionIndex: number
-    ) {
-        const totalFrames = bitmap.width / cellSize;
-        const motionCount = Object.keys(Sprite_Battler.MOTIONS).length;
-        const motionsPerRow = 6;
-        const totalColumns = motionCount / motionsPerRow;
-        const maxFramesPerMotion = Math.floor(totalFrames / totalColumns);
-
-        if (!prmMotionCol) {
-            // motionColが無効な場合は通常の処理
-            return { frameCount: maxFramesPerMotion, animType: 'normal' };
-        }
-
-        // 色制御による実際のフレーム数とアニメーションタイプを取得
-        const motionColumn = Math.floor(motionIndex / motionsPerRow);
-        const motionRow = motionIndex % motionsPerRow;
-
-        // このモーションの開始位置
-        const motionStartX = motionColumn * maxFramesPerMotion * cellSize;
-        const motionStartY = motionRow * cellSize;
-
-        // 終端カラーコマを探す（maxFramesPerMotionの倍数個目）
-        let endFrameIndex = maxFramesPerMotion - 1; // デフォルトは最後のフレーム
-
-        for (let i = 1; i <= maxFramesPerMotion; i++) {
-            const frameX = motionStartX + (i - 1) * cellSize;
-
-            if (
-                this.isEndFrame(
-                    bitmap,
-                    frameX,
-                    motionStartY,
-                    cellSize,
-                    maxFramesPerMotion,
-                    i
-                )
-            ) {
-                endFrameIndex = i - 1;
-                break;
-            }
-        }
-
-        // 終端フレームの色情報を取得
-        const endFrameX = motionStartX + endFrameIndex * cellSize;
-        const colorInfo = this.getEndFrameColorInfo(
-            bitmap,
-            endFrameX,
-            motionStartY,
-            cellSize
-        );
-
-        return {
-            frameCount: endFrameIndex + 1, // 実際のフレーム数
-            animType: colorInfo.animType,
-        };
-    };
-
-    // 終端フレームかどうかを判定
-    Sprite_SvActor.prototype.isEndFrame = function (
-        bitmap: Bitmap,
-        frameX: number,
-        frameY: number,
-        cellSize: number,
-        maxFramesPerMotion: number,
-        currentFrame: number
-    ) {
-        try {
-            // maxFramesPerMotionの倍数個目かチェック
-            if (
-                currentFrame % maxFramesPerMotion !== 0 &&
-                currentFrame !== maxFramesPerMotion
-            ) {
-                return false;
+            if (this._battler && this._battler.isDead()) {
+                this.startMotion('damage');
+                return;
             }
 
-            // フレームの左上から右1下1の色を取得
-            const checkX = frameX + 1;
-            const checkY = frameY + 1;
+            if (!this._motion) return;
 
-            const canvas = bitmap.canvas || bitmap._canvas;
-            if (!canvas) return false;
+            if (hasBattleMotion) {
+                // BattleMotionMZ用のフレーム計算
+                const cellSize = bitmap.height / 6; // 1セルのサイズ（正方形）
+                const motionIndex = this._motion.index;
+                const pattern = this._pattern;
 
-            const context = canvas.getContext('2d');
-            const imageData = context!.getImageData(checkX, checkY, 1, 1);
-            const [r, g, b, a] = imageData.data;
+                // BattleMotionMZでは横並びでモーションが配置される
+                const col = motionIndex * 3 + pattern; // 各モーション3フレーム
+                const row = 0; // とりあえず1行目を使用
 
-            // 透明でなく、かつ黒でない場合は終端フレーム
-            if (a > 128 && !(r === 0 && g === 0 && b === 0)) {
-                return true;
-            }
-
-            return false;
-        } catch (e) {
-            console.warn('isEndFrame check failed:', e);
-            return false;
-        }
-    };
-
-    // 終端フレームの色情報を解析
-    Sprite_SvActor.prototype.getEndFrameColorInfo = function (
-        bitmap: Bitmap,
-        x: number,
-        y: number,
-        cellSize: number
-    ) {
-        try {
-            // キャンバスコンテキストを取得
-            const canvas = bitmap.canvas || bitmap._canvas;
-            if (!canvas) {
-                return { animType: 'normal' };
-            }
-
-            const context = canvas.getContext('2d');
-
-            // 終端フレームの左上から右1下1の色を取得
-            const sampleX = x + 1;
-            const sampleY = y + 1;
-
-            const imageData = context!.getImageData(sampleX, sampleY, 1, 1);
-            const [r, g, b, a] = imageData.data;
-
-            // 透明でない場合のみ色制御を適用
-            if (a > 128) {
-                // 半透明以上
-                if (r === 255 && g === 255 && b < 255) {
-                    // R255G255 = ping-pong（往復ループ）
-                    return { animType: 'pingpong' };
-                } else if (r === 255 && g < 255 && b < 255) {
-                    // R255のみ = 最後のコマで停止（一方通行）
-                    return { animType: 'freeze' };
-                } else if (r < 255 && g === 255 && b < 255) {
-                    // G255のみ = 一方通行ループ
-                    return { animType: 'loop' };
-                }
-            }
-
-            // その他 = 通常処理
-            return { animType: 'normal' };
-        } catch (e) {
-            console.warn('Color detection failed:', e);
-            return { animType: 'normal' };
-        }
-    };
-
-    // 独自のモーションスピード計算メソッド
-    Sprite_SvActor.prototype.getCustomMotionSpeed = function () {
-        const bitmap = this._mainSprite.bitmap;
-        if (!bitmap || !bitmap.isReady()) return 12;
-
-        if (!prmMotionCol) {
-            // motionColが無効な場合は標準速度
-            return this._motion && this._motion.speed ? this._motion.speed : 12;
-        }
-
-        try {
-            const motionIndex = this._motion ? this._motion.index : 0;
-            const cellSize = this.cs(this._mainSprite);
-            const motionsPerRow = 6;
-            const motionCount = Object.keys(Sprite_Battler.MOTIONS).length;
-            const totalColumns = motionCount / motionsPerRow;
-            const maxFramesPerMotion = Math.floor(
-                bitmap.width / cellSize / totalColumns
-            );
-
-            // このモーションの位置を計算
-            const motionColumn = Math.floor(motionIndex / motionsPerRow);
-            const motionRow = motionIndex % motionsPerRow;
-            const motionStartX = motionColumn * maxFramesPerMotion * cellSize;
-            const motionStartY = motionRow * cellSize;
-
-            // 終端フレームを探す
-            for (let i = 1; i <= maxFramesPerMotion; i++) {
-                const frameX = motionStartX + (i - 1) * cellSize;
-
-                if (
-                    this.isEndFrame(
-                        bitmap,
-                        frameX,
-                        motionStartY,
-                        cellSize,
-                        maxFramesPerMotion,
-                        i
-                    )
-                ) {
-                    // 終端フレームの青色要素を取得してスピードを計算
-                    const blueValue = this.getEndFrameBlueValue(
-                        bitmap,
-                        frameX,
-                        motionStartY
+                // 範囲チェック
+                const maxCols = Math.floor(bitmap.width / cellSize);
+                if (col >= maxCols) {
+                    console.warn(
+                        'BattleMotionMZ frame out of bounds, using fallback'
                     );
-
-                    if (blueValue > 0 && blueValue < 255) {
-                        // 青色要素からフレームレートを計算 (BattleMotionMZのロジック)
-                        const speed = blueValue
-
-                        console.log(
-                            `Motion ${motionIndex}: Blue=${blueValue},  Speed=${speed}`
-                        );
-                        return speed;
-                    }
-                    break;
+                    this._mainSprite.setFrame(0, 0, cellSize, cellSize);
+                    return;
                 }
-            }
-        } catch (e) {
-            console.warn('Custom motion speed calculation failed:', e);
-        }
 
-        // フォールバック：標準速度を返す
-        return this._motion && this._motion.speed ? this._motion.speed : 12;
-    };
+                this._mainSprite.setFrame(
+                    col * cellSize,
+                    row * cellSize,
+                    cellSize,
+                    cellSize
+                );
+            } else {
+                // 標準SVアクター用のフレーム計算
+                const cw = bitmap.width / 9;
+                const ch = bitmap.height / 6;
 
-    // 終端フレームの青色要素を取得
-    Sprite_SvActor.prototype.getEndFrameBlueValue = function (bitmap:Bitmap, x:number, y:number) {
-        try {
-            const canvas = bitmap.canvas || bitmap._canvas;
-            if (!canvas) return 0;
+                const motionIndex = this._motion.index;
+                const pattern = this._pattern;
 
-            const context = canvas.getContext('2d');
-            const imageData = context!.getImageData(x + 1, y + 1, 1, 1);
-            const [r, g, b, a] = imageData.data;
+                const motionsPerColumn = 6;
+                const patternsPerMotion = 3;
 
-            // 透明でない場合のみ青色要素を返す
-            if (a > 128) {
-                return b;
-            }
-            return 0;
-        } catch (e) {
-            console.warn('Blue value detection failed:', e);
-            return 0;
-        }
-    };
+                const column = Math.floor(motionIndex / motionsPerColumn);
+                const row = motionIndex % motionsPerColumn;
+                const col = column * patternsPerMotion + pattern;
 
-    // デフォルトのモーション更新処理（標準SV用）
-    Sprite_SvActor.prototype.updateMotionDefault = function () {
-        if (this._motion) {
-            this._motionCount++;
-
-            // motionSpeedメソッドを安全に呼び出し
-            let speed = 12; // デフォルト値
-            try {
-                speed = this.motionSpeed();
-            } catch (e) {
-                console.warn('motionSpeed call failed, using default speed');
-            }
-
-            if (this._motionCount >= speed) {
-                if (this._motion.loop) {
-                    // ループ処理の修正（標準SV: 3コマ）
-                    if (this._patternDirection === undefined) {
-                        this._patternDirection = 1;
-                    }
-
-                    if (this._pattern === 0) {
-                        this._pattern = 1;
-                        this._patternDirection = 1;
-                    } else if (this._pattern === 1) {
-                        this._pattern = this._patternDirection === 1 ? 2 : 0;
-                    } else if (this._pattern === 2) {
-                        this._pattern = 1;
-                        this._patternDirection = -1;
-                    }
-                } else {
-                    // 非ループ処理 - 最後のコマ（2）で止まる
-                    if (this._pattern < 2) {
-                        this._pattern++;
-                    } else {
-                        this._pattern = 2; // 最後のコマで維持
-                    }
+                if (col >= 9 || row >= 6) {
+                    console.warn('Frame out of bounds, using fallback');
+                    this._mainSprite.setFrame(0, 0, cw, ch);
+                    return;
                 }
-                this._motionCount = 0;
+
+                this._mainSprite.setFrame(col * cw, row * ch, cw, ch);
             }
-        } else {
-            if (this._battler._motionRefresh && !this._battler._damaged) {
-                this._battler._motionRefresh = false;
+        }
+        updateMotion() {
+            const battlerAny = this._battler as any;
+
+            if (battlerAny._motionRefresh && !battlerAny._damaged) {
+                battlerAny._motionRefresh = false;
                 this.refreshMotion();
             }
-        }
-    };
 
-    Sprite_SvActor.prototype.updateFrameDefault = function (bitmap: Bitmap) {
-        // 標準のSVアクター処理（9x6）のみ
-        const cw = bitmap.width / 9;
-        const ch = bitmap.height / 6;
+            if (this._motion) {
+                this._motionCount++;
+                const speed = 12;
 
-        // 戦闘不能ならダメージモーションで退場
-        if (this._battler && this._battler.isDead()) {
-            this.startMotion('damage');
-            return;
-        }
+                if (this._motionCount >= speed) {
+                    if (this._motion.loop) {
+                        if (this._patternDirection === undefined) {
+                            this._patternDirection = 1;
+                        }
 
-        const motionIndex = this._motion.index;
-        const pattern = this._pattern;
-
-        const motionsPerColumn = 6;
-        const patternsPerMotion = 3;
-
-        const column = Math.floor(motionIndex / motionsPerColumn);
-        const row = motionIndex % motionsPerColumn;
-        const col = column * patternsPerMotion + pattern;
-
-        // 範囲チェック
-        if (col >= 9 || row >= 6) {
-            console.warn('Frame out of bounds, using fallback');
-            this._mainSprite.setFrame(0, 0, cw, ch);
-            return;
-        }
-
-        this._mainSprite.setFrame(col * cw, row * ch, cw, ch);
-    };
-
-    // motionSpeedメソッドの修正
-    Sprite_SvActor.prototype.motionSpeed = function () {
-        // BattleMotionMZのmotionSpeedを優先
-        if (
-            typeof Sprite_Battler !== 'undefined' &&
-            Sprite_Battler.prototype.motionSpeed
-        ) {
-            try {
-                return Sprite_Battler.prototype.motionSpeed.call(this);
-            } catch (e) {
-                console.warn(
-                    'BattleMotionMZ motionSpeed call failed, using fallback'
-                );
-            }
-        }
-
-        // 標準処理
-        if (this._motion && typeof this._motion.speed === 'number') {
-            return this._motion.speed;
-        }
-        return 12; // デフォルト値
-    };
-
-    Sprite_SvActor.prototype.updateStateSprite = function () {
-        if (this._stateSprite && this._battler) {
-            this._stateSprite.setup(this._battler);
-        }
-    };
-
-    Sprite_SvActor.prototype.refreshBitmap = function () {
-        if (this._battler) {
-            const fileName = this._battler.battlerName();
-            if (fileName) {
-                this._mainSprite.bitmap = ImageManager.loadSvActor(fileName);
-            }
-        }
-    };
-
-    Sprite_SvActor.prototype.refreshMotion = function () {
-        if (!this._battler) return;
-
-        // HP0なら死亡処理
-        if (this._battler.hp <= 0) {
-            this.startMotion('damage');
-            return;
-        }
-
-        // ステート確認
-        if (
-            this._battler.states &&
-            typeof this._battler.states === 'function'
-        ) {
-            const states = this._battler.states();
-
-            for (let i = 0; i < states.length; i++) {
-                const state = states[i];
-                if (state && state.meta) {
-                    const enemyMotion = state.meta['EnemyMotion'];
-                    if (
-                        typeof enemyMotion === 'string' &&
-                        enemyMotion.trim().length > 0
-                    ) {
-                        this.forceMotion(enemyMotion);
-                        return;
+                        if (this._pattern === 0) {
+                            this._pattern = 1;
+                            this._patternDirection = 1;
+                        } else if (this._pattern === 1) {
+                            this._pattern =
+                                this._patternDirection === 1 ? 2 : 0;
+                        } else if (this._pattern === 2) {
+                            this._pattern = 1;
+                            this._patternDirection = -1;
+                        }
+                    } else {
+                        if (this._pattern < 2) {
+                            this._pattern++;
+                        } else {
+                            this._pattern = 2;
+                        }
                     }
+                    this._motionCount = 0;
                 }
             }
         }
 
-        // 要求されたモーション確認
-        if (this._battler._motion) {
-            const requestedMotion = this._battler._motion;
-            this._battler._motion = null;
-            this.startMotion(requestedMotion);
-            return;
+        updateStateSprite() {
+            if (this._stateSprite && this._battler) {
+                this._stateSprite.setup(this._battler);
+            }
         }
 
-        // デフォルトのモーション
-        this.startMotion('walk');
-    };
-
-    // モーションインデックス取得のヘルパー関数
-    Sprite_SvActor.prototype.getMotionIndex = function (
-        motionType: string
-    ): number {
-        const motions: Record<string, { index: number }> =
-            (typeof Sprite_Battler !== 'undefined' && Sprite_Battler.MOTIONS) ||
-            (typeof Sprite_Actor !== 'undefined' && Sprite_Actor.MOTIONS) ||
-            {};
-
-        // 安全なアクセス
-        return motions[motionType]?.index ?? 0;
-    };
-
-    // BattleMotionMZ用のメソッドを条件付きで移植
-    if (typeof Sprite_Battler !== 'undefined') {
-        const methodsToMigrate = [
-            'getRemake',
-            'setRemake',
-            'oneMotionFps',
-            'addMotionData',
-            'setMotionFps',
-            'setMotionArray',
-            'cs',
-            'cx',
-            'cy',
-            'motionIndex',
-        ];
-
-        methodsToMigrate.forEach((methodName) => {
-            if (Sprite_Battler.prototype[methodName]) {
-                Sprite_SvActor.prototype[methodName] =
-                    Sprite_Battler.prototype[methodName];
+        refreshBitmap() {
+            if (this._battler) {
+                const fileName = (this._battler as any).battlerName();
+                if (fileName) {
+                    this._mainSprite.bitmap =
+                        ImageManager.loadSvActor(fileName);
+                }
             }
-        });
+        }
+
+        refreshMotion() {
+            if (!this._battler) return;
+
+            if (this._battler.hp <= 0) {
+                this.startMotion('damage');
+                return;
+            }
+
+            if (
+                this._battler.states &&
+                typeof this._battler.states === 'function'
+            ) {
+                const states = this._battler.states();
+
+                for (let i = 0; i < states.length; i++) {
+                    const state = states[i];
+                    if (state && state.meta) {
+                        const enemyMotion = state.meta['EnemyMotion'];
+                        if (
+                            typeof enemyMotion === 'string' &&
+                            enemyMotion.trim().length > 0
+                        ) {
+                            this.forceMotion(enemyMotion);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            const battlerAny = this._battler as any;
+            if (battlerAny._motion) {
+                const requestedMotion = battlerAny._motion;
+                battlerAny._motion = null;
+                this.startMotion(requestedMotion);
+                return;
+            }
+
+            this.startMotion('walk');
+        }
+
+        getMotionIndex(motionType: string): number {
+            const motions: Record<string, { index: number }> =
+                (typeof (window as any).Sprite_Battler !== 'undefined' &&
+                    (window as any).Sprite_Battler.MOTIONS) ||
+                (typeof (window as any).Sprite_Actor !== 'undefined' &&
+                    (window as any).Sprite_Actor.MOTIONS) ||
+                {};
+
+            return motions[motionType]?.index ?? 0;
+        }
     }
+
+    // グローバルに公開
+    (window as any).Sprite_SvActor = Sprite_SvActor;
 
     // getSplit関数のグローバル定義（NUUN_ButlerHPGaugeで使用）
     if (typeof window.getSplit === 'undefined') {

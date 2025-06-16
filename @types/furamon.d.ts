@@ -292,6 +292,11 @@ interface _Window {
     HPPosition?: number;
     Gauge_X?: number;
     Gauge_Y?: number;
+    Sprite_SvActor?: Sprite_SvActorConstructor;
+}
+
+interface Sprite_SvActorConstructor {
+    new (...args: any[]): Sprite_SvActor;
 }
 
 interface Window_Options {

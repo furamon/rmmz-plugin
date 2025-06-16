@@ -7,6 +7,10 @@
  * @target MZ
  * @plugindesc 敵キャラのDynamicMotion対応パッチ
  * @author Furamon
+ * @base Furamon_EnemyActorAnimation
+ * @orderAfter Furamon_EnemyActorAnimation
+ * @base NRP_DynamicMotionMZ
+ * @orderAfter NRP_DynamicMotionMZ
  * @help SVアクター敵キャラをDynamicMotionに対応させます。
  *
  * NRP_DynamicMotionMZとFuramon_EnemyActorAnimationが必要です。
