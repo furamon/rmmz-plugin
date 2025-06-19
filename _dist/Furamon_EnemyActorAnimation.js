@@ -8,6 +8,7 @@
 //                  モーション制御が不安定だったので見直し
 // 2025/06/16 1.0.2 BattleMotionMZに実は対応してなかったのを直した
 // 2025/06/17 1.1.0 BattleMotionMZ関連を分離した
+// 2025/06/19 1.2.0 BattleMotionMZの透明ピクセルを考慮するよう修正
 /*:
  * @target MZ
  * @plugindesc 敵キャラにSV_Actorsのスプライトシートを適用します。
@@ -256,48 +257,25 @@
     };
     Sprite_Enemy.prototype.getSvActorSpriteSize = function () {
         if (this._isSvActorEnemy && this._svActorSprite) {
-            const mainSprite = this._svActorSprite._mainSprite;
-            if (mainSprite &&
-                mainSprite.bitmap &&
-                mainSprite.bitmap.isReady()) {
-                const bitmap = mainSprite.bitmap;
-                // 最低限のBattleMotionMZ対応
-                // こっちでやらないとwidthがおかしくなる
-                if (hasBattleMotion) {
-                    // BattleMotionMZの場合：1セルは正方形（高さ÷6）
-                    const cellSize = bitmap.height / 6;
-                    return {
-                        width: cellSize,
-                        height: cellSize,
-                        frameWidth: cellSize,
-                        frameHeight: cellSize,
-                    };
-                }
-                else {
-                    // 標準のSVアクター（9x6）
-                    const frameWidth = bitmap.width / 9;
-                    const frameHeight = bitmap.height / 6;
-                    return {
-                        width: frameWidth,
-                        height: frameHeight,
-                        frameWidth: frameWidth,
-                        frameHeight: frameHeight,
-                    };
-                }
+            const actualSize = this._svActorSprite.getActualSize();
+            const frameSize = this._svActorSprite.getFrameSize();
+            if (actualSize && frameSize) {
+                return {
+                    width: actualSize.width,
+                    height: actualSize.height,
+                    frameWidth: frameSize.frameWidth,
+                    frameHeight: frameSize.frameHeight,
+                };
             }
         }
         return null;
     };
-    /**
-     * 元の敵スプライトを非表示にする
-     */
+    // 元の敵スプライトを非表示にする
     Sprite_Enemy.prototype.hideOriginalSprite = function () {
         this.visible = false;
         this.bitmap = null;
     };
-    /**
-     * SVアクタースプライトを作成
-     */
+    // SVアクタースプライトを作成
     Sprite_Enemy.prototype.createSvActorSprite = function () {
         // 既に作成済みの場合はスキップ
         if (this._svActorSprite) {
@@ -331,33 +309,6 @@
             this.visible = true;
         }
     };
-    const _Sprite_Enemy_updateStateSprite = Sprite_Enemy.prototype.updateStateSprite;
-    Sprite_Enemy.prototype.updateStateSprite = function () {
-        if (this._isSvActorEnemy && this._svActorSprite) {
-            // SVアクター用のステートアイコン位置調整
-            if (this._stateIconSprite) {
-                // SVアクタースプライトの位置とサイズを基に調整
-                const svSprite = this._svActorSprite;
-                const mainSprite = svSprite._mainSprite;
-                if (mainSprite &&
-                    mainSprite.bitmap &&
-                    mainSprite.bitmap.isReady()) {
-                    const frameHeight = mainSprite.bitmap.height / 6; // 1フレームの高さ
-                    // ステートアイコンをSVアクタースプライトの頭上に配置
-                    this._stateIconSprite.x = svSprite.x;
-                    this._stateIconSprite.y = svSprite.y - frameHeight - 20; // 頭上に配置
-                }
-                else {
-                    // ビットマップが読み込まれていない場合のフォールバック
-                    this._stateIconSprite.x = this._svActorSprite.x;
-                    this._stateIconSprite.y = this._svActorSprite.y - 60;
-                }
-            }
-            return;
-        }
-        // 通常の敵の場合は元の処理
-        _Sprite_Enemy_updateStateSprite.call(this);
-    };
     const _Sprite_Enemy_updateBitmap = Sprite_Enemy.prototype.updateBitmap;
     Sprite_Enemy.prototype.updateBitmap = function () {
         if (this._isSvActorEnemy) {
@@ -381,6 +332,28 @@
             return;
         }
         _Sprite_Enemy_updateFrame.call(this);
+    };
+    const _Sprite_Enemy_updateStateSprite = Sprite_Enemy.prototype.updateStateSprite;
+    Sprite_Enemy.prototype.updateStateSprite = function () {
+        if (this._isSvActorEnemy && this._svActorSprite) {
+            if (this._stateIconSprite) {
+                const size = this.getSvActorSpriteSize();
+                if (size) {
+                    // 実際のスプライトサイズに基づく位置調整
+                    this._stateIconSprite.x = this._svActorSprite.x;
+                    this._stateIconSprite.y =
+                        this._svActorSprite.y - size.height - 10;
+                }
+                else {
+                    // フォールバック位置
+                    this._stateIconSprite.x = this._svActorSprite.x;
+                    this._stateIconSprite.y = this._svActorSprite.y - 80;
+                }
+            }
+            return;
+        }
+        // 通常の敵の場合は元の処理
+        _Sprite_Enemy_updateStateSprite.call(this);
     };
     const _Sprite_Enemy_destroy = Sprite_Enemy.prototype.destroy;
     Sprite_Enemy.prototype.destroy = function () {
@@ -416,10 +389,10 @@
             if (mainSprite &&
                 mainSprite.bitmap &&
                 mainSprite.bitmap.isReady()) {
-                const frameHeight = mainSprite.bitmap.height / 6;
+                const frameHeight = mainSprite.height / 6;
                 return {
                     x: svSprite.x,
-                    y: svSprite.y - frameHeight - 20,
+                    y: svSprite.y - frameHeight,
                 };
             }
             else {
@@ -559,6 +532,8 @@
         _setupComplete;
         _processingMotion;
         _patternDirection;
+        _actualSize; // セットアップ時に計算
+        _frameSize;
         constructor() {
             super();
             this._battler = null;
@@ -568,6 +543,8 @@
             this._setupComplete = false;
             this._processingMotion = false;
             this._patternDirection = 1;
+            this._actualSize = null;
+            this._frameSize = null;
             this.createMainSprite();
             this.createShadowSprite();
             this.createWeaponSprite();
@@ -596,6 +573,80 @@
             this._stateSprite = new Sprite_StateOverlay();
             this.addChild(this._stateSprite);
         }
+        calculateAndCacheActualSize() {
+            const bitmap = this._mainSprite.bitmap;
+            if (!bitmap || !bitmap.isReady()) {
+                this._actualSize = null;
+                this._frameSize = null;
+                return;
+            }
+            let frameWidth, frameHeight;
+            if (hasBattleMotion) {
+                // BattleMotionMZの場合：1セルは正方形（高さ÷6）
+                const cellSize = bitmap.height / 6;
+                frameWidth = cellSize;
+                frameHeight = cellSize;
+            }
+            else {
+                // 標準のSVアクター（9x6）
+                frameWidth = bitmap.width / 9;
+                frameHeight = bitmap.height / 6;
+            }
+            this._frameSize = { frameWidth, frameHeight };
+            // 透明ピクセルを考慮したサイズを計算
+            this._actualSize = this.detectActualSize(bitmap, frameWidth, frameHeight);
+        }
+        // 透明ピクセルを検出して実際のサイズを返す（セットアップ時のみ実行）
+        detectActualSize(bitmap, frameWidth, frameHeight) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = frameWidth;
+            canvas.height = frameHeight;
+            // RPGツクールMZのBitmapからcanvasまたは_imageを取得
+            const source = bitmap.canvas || bitmap._image;
+            if (!source) {
+                return { width: frameWidth, height: frameHeight };
+            }
+            try {
+                // 最初のフレーム（待機モーション）を描画して解析
+                ctx.drawImage(source, 0, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
+                const imageData = ctx.getImageData(0, 0, frameWidth, frameHeight);
+                const data = imageData.data;
+                let minX = frameWidth, minY = frameHeight;
+                let maxX = 0, maxY = 0;
+                // 透明でないピクセルの範囲を検出
+                for (let y = 0; y < frameHeight; y++) {
+                    for (let x = 0; x < frameWidth; x++) {
+                        const alpha = data[(y * frameWidth + x) * 4 + 3];
+                        if (alpha > 0) {
+                            minX = Math.min(minX, x);
+                            minY = Math.min(minY, y);
+                            maxX = Math.max(maxX, x);
+                            maxY = Math.max(maxY, y);
+                        }
+                    }
+                }
+                // 透明でないピクセルが見つからない場合は元のサイズを返す
+                if (minX >= frameWidth || minY >= frameHeight) {
+                    return { width: frameWidth, height: frameHeight };
+                }
+                return {
+                    width: maxX - minX + 1,
+                    height: maxY - minY + 1,
+                };
+            }
+            catch (error) {
+                console.warn('detectActualSize error:', error);
+                return { width: frameWidth, height: frameHeight };
+            }
+        }
+        // キャッシュされたサイズを取得
+        getActualSize() {
+            return this._actualSize || { width: 64, height: 64 };
+        }
+        getFrameSize() {
+            return this._frameSize || { frameWidth: 64, frameHeight: 64 };
+        }
         setup(battler) {
             this._battler = battler;
             this._setupComplete = true;
@@ -605,10 +656,12 @@
             this._pattern = 0;
             const bitmap = this._mainSprite.bitmap;
             if (bitmap && bitmap.isReady()) {
+                this.calculateAndCacheActualSize();
                 this.setupInitialMotion();
             }
             else if (bitmap) {
                 bitmap.addLoadListener(() => {
+                    this.calculateAndCacheActualSize();
                     this.setupInitialMotion();
                 });
             }
@@ -648,7 +701,7 @@
         update() {
             if (!this._battler)
                 return;
-            this.updateBitmap();
+            // this.updateBitmap();
             this.updateFrame();
             this.updateMotion();
             this.updateStateSprite();
@@ -863,48 +916,27 @@
         const _Sprite_Enemy_getBattlerStatePosition = Sprite_Enemy.prototype.getBattlerStatePosition;
         Sprite_Enemy.prototype.getBattlerStatePosition = function () {
             if (this._isSvActorEnemy && this._svActorSprite) {
-                const svSprite = this._svActorSprite;
-                const mainSprite = svSprite._mainSprite;
-                if (mainSprite &&
-                    mainSprite.bitmap &&
-                    mainSprite.bitmap.isReady()) {
-                    const frameHeight = mainSprite.bitmap.height / 6;
-                    const scale = this.getBattlerOverlayConflict
-                        ? this.getBattlerOverlayConflict()
-                        : 1;
+                const size = this.getSvActorSpriteSize();
+                if (size) {
                     const enemyStatePosition = typeof EnemyStatePosition !== 'undefined'
                         ? EnemyStatePosition
                         : 0;
                     if (enemyStatePosition === 0) {
-                        // 敵画像の上 - SVアクターの場合は頭上に表示
-                        return frameHeight * scale - 40; // 頭上に調整
+                        // 敵画像の上
+                        return size.height + 20;
                     }
                     else if (enemyStatePosition === 2) {
                         // 敵画像の中心
-                        return Math.floor((frameHeight * scale) / 2);
+                        return Math.floor(size.height / 2);
                     }
                     else {
                         // 敵画像の下
                         return 0;
                     }
                 }
-                else {
-                    // ビットマップが読み込まれていない場合のフォールバック
-                    const enemyStatePosition = typeof EnemyStatePosition !== 'undefined'
-                        ? EnemyStatePosition
-                        : 0;
-                    if (enemyStatePosition === 0) {
-                        return 80; // 頭上
-                    }
-                    else if (enemyStatePosition === 2) {
-                        return 40; // 中心
-                    }
-                    else {
-                        return 0; // 下
-                    }
-                }
+                // フォールバック
+                return 80;
             }
-            // 通常の敵の場合は元の処理
             return _Sprite_Enemy_getBattlerStatePosition.call(this);
         };
     }
