@@ -4,6 +4,7 @@
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
 // 2025/06/08 1.0.0 公開！
+// 2025/06/20 1.0.1 realMoveSpeedを書き換えてたのはまずそうなので修正
 
 /*:
  * @target MZ
@@ -34,18 +35,7 @@
 
     // Game_Player のダッシュ機能を制御
     Game_Player.prototype.isDashButtonPressed = function () {
-        return false; // ダッシュボタンは常に無効
-    };
-
-    // 常時ダッシュの設定に応じて歩行速度を制御
-    Game_Player.prototype.realMoveSpeed = function () {
-        if (alwaysDash) {
-            // 常時ダッシュが有効な場合、ダッシュ速度を返す
-            return this._moveSpeed + (this.isDashing() ? 1 : 1);
-        } else {
-            // 通常の歩行速度
-            return this._moveSpeed + (this.isDashing() ? 1 : 0);
-        }
+        return alwaysDash;
     };
 
     // Window_Options からalwaysDashオプションを除外
