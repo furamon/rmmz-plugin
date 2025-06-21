@@ -181,6 +181,8 @@ interface Game_Enemy {
     weapon(): { wtypeId: number } | null;
     _damaged: boolean;
     _damageMotionCount: number;
+    originalCollapseId(): number | null;
+    originalCollapseData(): CollapseData | null;
 }
 
 interface Game_Action {
@@ -299,6 +301,15 @@ interface Sprite_SvActorConstructor {
     new (...args: any[]): Sprite_SvActor;
 }
 
+interface Window_BattleLog {
+    showDynamicAnimation(
+        targets: Game_Battler[],
+        action: Game_Action,
+        noWait: boolean,
+        mapAnimation: makeMapAnimation
+    );
+}
+
 interface Window_Options {
     _noTouchSelect: boolean;
     _gamepadOptionIndex: number;
@@ -312,3 +323,29 @@ interface Game_Interpreter {
 declare let Gauge_X: number | undefined;
 declare let Gauge_Y: number | undefined;
 declare let HPPosition: number | undefined;
+
+function makeAction(
+    itemId: number,
+    battleSubject: any,
+    isItem: boolean
+): Game_Action;
+function makeMapAnimationEvent(
+    event: any,
+    skillId: number,
+    action: any
+): {
+    subject: any;
+    noWait: boolean;
+    onScroll: boolean;
+    isDynamicAuto: boolean;
+    skillId: number;
+    isParallel: boolean;
+};
+
+function makeMapAnimation(
+    interpreter: interpreter,
+    subject: Game_Battler,
+    wait: boolean,
+    noScroll: boolean,
+    action: Game_Action
+) {}

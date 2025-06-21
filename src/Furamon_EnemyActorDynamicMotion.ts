@@ -196,7 +196,7 @@
         // CollapseListはstructの配列なので、二重パースが必要
         const collapseListParam = prmEnemyCollapse['CollapseList'] || '[]';
         const parsedArray = JSON.parse(collapseListParam);
-        prmCollapseList = parsedArray.map((item) => JSON.parse(item));
+        prmCollapseList = parsedArray.map((item: string) => JSON.parse(item));
 
         prmDefaultCollapseId = prmEnemyCollapse['DefaultCollapseId'] || '';
         prmDefaultBossCollapseId =
@@ -212,7 +212,7 @@
         if (originalCollapseId != null) {
             // 条件を満たす消滅データを取得
             const foundData = prmCollapseList.find(
-                (collapseData) => collapseData.Id == originalCollapseId
+                (collapseData:any) => collapseData.Id == originalCollapseId
             );
 
             return foundData;
@@ -229,7 +229,6 @@
         // SVアクター敵の場合は完全に独自処理
         if (this._isSvActorEnemy && this._svActorSprite) {
             const collapseData = this._battler.originalCollapseData();
-            console.log('Collapse data for SV enemy:', collapseData);
 
             if (collapseData) {
                 this.startSvActorOriginalCollapse();
@@ -476,32 +475,45 @@
     }
 
     // DynamicAnimation&Motionを呼び出し(NRP様から拝借)
-    function callDynamic(sprite, dynamicId) {
+    function callDynamic(sprite: Sprite_Battler, dynamicId: number) {
         const battler = sprite._battler;
 
         // 実行するDynamicAnimation情報を持ったアクション
-        const dynamicAction = makeAction(dynamicId, battler);
+        const dynamicAction: Game_Action = makeAction(
+            dynamicId,
+            battler,
+            false
+        );
         // バトラーを対象にする。
         const targets = [battler];
         // 引き継ぎたい情報をセット
-        const mapAnimation = [];
+        const mapAnimation: {
+            subject: any;
+            noWait: boolean;
+            onScroll: boolean;
+            isDynamicAuto: boolean;
+            skillId: number;
+            isParallel: boolean;
+        } = makeMapAnimationEvent(battler, dynamicId, dynamicAction);
         // バトラーを行動主体にする。
         mapAnimation.subject = battler;
         // ウェイトしないように並列実行
         mapAnimation.isParallel = true;
         // 空のWindow_BattleLogを作成し、DynamicAnimationを起動
-        const win = new Window_BattleLog(new Rectangle());
+        const win = new Window_BattleLog(
+            new Rectangle(0, 0, 0,0)
+        );
         win.showDynamicAnimation(targets, dynamicAction, false, mapAnimation);
     }
 
-    function makeAction(itemId, battleSubject, isItem) {
+    function makeAction(itemId: number, battleSubject: Game_Actor, isItem: boolean) {
         // 適当に先頭のキャラを行動主体にしてアクションを作成
         // ※行動主体の情報は基本的に使わないので実際はほぼダミー
         let subject = $gameParty.members()[0];
         if (battleSubject) {
             subject = battleSubject;
         }
-        const action = new Game_Action(subject);
+        const action = new Game_Action(subject as unknown as Game_Battler);
         // アイテムかスキルかで分岐
         if (isItem) {
             action.setItem(itemId);

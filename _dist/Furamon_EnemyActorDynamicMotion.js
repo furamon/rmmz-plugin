@@ -188,7 +188,6 @@
         // SVアクター敵の場合は完全に独自処理
         if (this._isSvActorEnemy && this._svActorSprite) {
             const collapseData = this._battler.originalCollapseData();
-            console.log('Collapse data for SV enemy:', collapseData);
             if (collapseData) {
                 this.startSvActorOriginalCollapse();
                 return; // 元の処理をスキップ
@@ -387,17 +386,17 @@
     function callDynamic(sprite, dynamicId) {
         const battler = sprite._battler;
         // 実行するDynamicAnimation情報を持ったアクション
-        const dynamicAction = makeAction(dynamicId, battler);
+        const dynamicAction = makeAction(dynamicId, battler, false);
         // バトラーを対象にする。
         const targets = [battler];
         // 引き継ぎたい情報をセット
-        const mapAnimation = [];
+        const mapAnimation = makeMapAnimationEvent(battler, dynamicId, dynamicAction);
         // バトラーを行動主体にする。
         mapAnimation.subject = battler;
         // ウェイトしないように並列実行
         mapAnimation.isParallel = true;
         // 空のWindow_BattleLogを作成し、DynamicAnimationを起動
-        const win = new Window_BattleLog(new Rectangle());
+        const win = new Window_BattleLog(new Rectangle(0, 0, 0, 0));
         win.showDynamicAnimation(targets, dynamicAction, false, mapAnimation);
     }
     function makeAction(itemId, battleSubject, isItem) {
