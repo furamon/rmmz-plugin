@@ -522,4 +522,22 @@
         }
         return action;
     }
+
+    function makeMapAnimationEvent(event: any, skillId: number, action: any) {
+        // 始点となる行動主体
+        const subject = event;
+        // 引き継ぎたい情報をセット
+        const mapAnimation: any = [];
+        mapAnimation.subject = subject;
+        mapAnimation.noWait = false;
+        mapAnimation.onScroll = true;
+        mapAnimation.isDynamicAuto = true;
+        mapAnimation.skillId = skillId;
+        mapAnimation.isParallel = true;
+        // 開始時間の設定
+        if (typeof (window as any).setStartTiming === 'function') {
+            (window as any).setStartTiming(mapAnimation, action, event);
+        }
+        return mapAnimation;
+    }
 })();

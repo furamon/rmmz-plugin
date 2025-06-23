@@ -416,4 +416,21 @@
         }
         return action;
     }
+    function makeMapAnimationEvent(event, skillId, action) {
+        // 始点となる行動主体
+        const subject = event;
+        // 引き継ぎたい情報をセット
+        const mapAnimation = [];
+        mapAnimation.subject = subject;
+        mapAnimation.noWait = false;
+        mapAnimation.onScroll = true;
+        mapAnimation.isDynamicAuto = true;
+        mapAnimation.skillId = skillId;
+        mapAnimation.isParallel = true;
+        // 開始時間の設定
+        if (typeof window.setStartTiming === 'function') {
+            window.setStartTiming(mapAnimation, action, event);
+        }
+        return mapAnimation;
+    }
 })();
