@@ -2,8 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(rg:*)",
-      "Bash(tsc --noEmit)",
-      "Bash(npx tsc:*)"
+      "Bash(pnpm tsc --noEmit)",
+      "Bash(pnpm tsc:*)"
     ],
     "deny": []
   }

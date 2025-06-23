@@ -24,6 +24,10 @@ pnpm tsc --noEmit
 
 出力ファイルを生成せずに型チェックを行う。
 
+### 注意
+
+use 'bash' instead of '/usr/bin/bash' for Windows compatibility.
+
 ## プロジェクトの構成
 
 - `src/` - プラグイン用の TypeScript ソースファイル
@@ -91,7 +95,3 @@ pnpm tsc --noEmit
 ### バージョン管理
 
 各プラグインは、ヘッダーコメントで日付と変更内容を含む詳細なバージョン履歴を管理する。
-
-### 注意
-
-use 'bash' instead of '/usr/bin/bash' for Windows compatibility.
