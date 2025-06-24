@@ -43,9 +43,6 @@
     const prmNoChargeTpByDamage =
         parameters['noChargeTpByDamage'] === 'true' ? true : false;
     const prmExpRate = parseFloat(parameters['expRate']);
-    const nrpParams = PluginManager.parameters('NRP_CalcResultFirst');
-    const pStateResistToFailure =
-        nrpParams && nrpParams['StateResistToFailure'] === 'true';
 
     // 初期TP
     const _Game_Battler_initTp = Game_Battler.prototype.initTp;
