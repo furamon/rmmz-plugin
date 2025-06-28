@@ -349,3 +349,47 @@ function makeMapAnimation(
     noScroll: boolean,
     action: Game_Action
 ) {}
+
+// 型定義
+type EasingFunc = (n: number) => number;
+
+interface TweenSetting {
+    enable: boolean;
+    moveX: string;
+    moveY: string;
+    alpha: number;
+    easing: EasingFunc;
+    duration: number;
+    delay: number;
+}
+
+interface TorigoyaTween {
+    to(params: object, duration: number, easingFunc: EasingFunc): TorigoyaTween;
+    wait(duration: number): TorigoyaTween;
+    call(func: () => void): TorigoyaTween;
+    start(): TorigoyaTween;
+    stacks: { duration: number; delay: number }[];
+}
+
+interface WindowLike extends PIXI.Container {
+    x: number;
+    y: number;
+    opacity: number;
+    width: number;
+    height: number;
+}
+
+declare const Torigoya: {
+    FrameTween: {
+        create(obj: any, initParams?: object): TorigoyaTween;
+        Easing: { [key: string]: EasingFunc };
+    };
+};
+
+declare module 'rmmz_scenes' {
+    interface Scene_Base {
+        _tweenableWindows: { window: WindowLike; setting: TweenSetting }[];
+        _isPoppingWithTween: boolean;
+    }
+}
+
