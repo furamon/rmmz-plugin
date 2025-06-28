@@ -30,8 +30,8 @@ Bitmap.prototype.drawText = function (text, x, y, maxWidth, lineHeight, align) {
     maxWidth = maxWidth || 0xffffffff;
     let tx = x;
     let ty = Math.round(y + lineHeight / 2 + this.fontSize * 0.35);
-    // align が undefined の場合のデフォルト値を設定
-    const textAlign = align || 'left'; // デフォルト値を 'left' にする
+    // align が undefined や不正値の場合のデフォルト値を設定
+    const textAlign = (align === 'center' || align === 'right') ? align : 'left';
     // textAlign の値に基づいて tx を調整
     if (textAlign === 'center') {
         tx += maxWidth / 2;
@@ -41,7 +41,7 @@ Bitmap.prototype.drawText = function (text, x, y, maxWidth, lineHeight, align) {
     }
     context.save();
     context.font = this._makeFontNameText();
-    // デフォルト値が設定された textAlign を使用し、型アサーションを行う
+    // 検証済みの textAlign を使用
     context.textAlign = textAlign;
     context.textBaseline = 'alphabetic';
     context.globalAlpha = 1;

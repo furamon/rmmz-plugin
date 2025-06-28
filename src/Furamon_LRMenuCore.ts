@@ -74,4 +74,25 @@
             this.drawText(TextManager.file + ' ' + (savefileId - 1), x, y, 180);
         }
     };
+
+    // NRP_AdditionalCCScene競合
+    const _Scene_MenuBase_start = Scene_MenuBase.prototype.start;
+    Scene_MenuBase.prototype.start = function () {
+        // 元の Scene_MenuBase.prototype.start を呼び出す
+        _Scene_MenuBase_start.call(this);
+
+        // 現在のシーンインスタンス (this) が Scene_AdditionalCC かどうかを判定
+        // (constructor.name を使う方法。コード圧縮に注意)
+        if (this.constructor.name === 'Scene_AdditionalCC') {
+            // _statusWindow, _slotWindowを無理やり画面外に
+            if (this._statusWindow && this._statusWindow.visible) {
+                const statusWindowX = 9999 // 画面外
+                this._statusWindow.x = statusWindowX;
+            }
+            if (this._slotWindow && this._slotWindow.visible) {
+                const slotWindowX = 9999; // 画面外
+                this._slotWindow.x = slotWindowX;
+            }
+        }
+    };
 })();

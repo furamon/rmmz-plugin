@@ -104,9 +104,20 @@ interface BattleManager {
     rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
 }
 
+// For Furamon_TorigoyaMZ_FrameTween
+interface TweenableWindowSetting {
+    openSetting: TweenSetting;
+    closeSetting: TweenSetting;
+}
+
+interface TweenableWindow {
+    window: WindowLike;
+    setting: TweenableWindowSetting;
+}
+
 interface Scene_Base {
-    _partyCommandWindow: Window_PartyCommand;
-    _actorCommandWindow: Window_ActorCommand;
+    _tweenableWindows: TweenableWindow[];
+    _isPoppingWithTween: boolean;
 }
 
 interface Scene_Battle {
@@ -118,6 +129,11 @@ declare class Scene_KeyConfig {
     drawItemBackground(): void;
     maxVisibleItems(): number;
     itemRectWithPadding(): Rectangle;
+}
+
+interface Scene_MenuBase{
+    _statusWindow: Window_Status
+    _slotWindow: Window_Selectable
 }
 
 interface Game_Map {
@@ -301,6 +317,22 @@ interface Sprite_SvActorConstructor {
     new (...args: any[]): Sprite_SvActor;
 }
 
+interface WindowLike extends Window_Base {
+
+}
+
+
+interface Window_Base {
+  window: WindowLike;
+  setting: TweenSetting;
+  enable: boolean;
+  moveX: string;
+  moveY: string;
+  easing: EasingFunc;
+  duration: number;
+  delay: number;
+}
+
 interface Window_BattleLog {
     showDynamicAnimation(
         targets: Game_Battler[],
@@ -385,11 +417,3 @@ declare const Torigoya: {
         Easing: { [key: string]: EasingFunc };
     };
 };
-
-declare module 'rmmz_scenes' {
-    interface Scene_Base {
-        _tweenableWindows: { window: WindowLike; setting: TweenSetting }[];
-        _isPoppingWithTween: boolean;
-    }
-}
-
