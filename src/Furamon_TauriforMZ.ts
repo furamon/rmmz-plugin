@@ -79,8 +79,8 @@
         checkTauri(); // 初回チェック
     });
 
-    // 初期ウィンドウサイズ変更処理
-    async function applyInitialWindowSize() {
+    // 初期ウィンドウサイズ変更処理およびタッチイベントのリスナー追加
+    async function setupTauriAndTouchEvents() {
         try {
             await Promise.race([
                 tauriReady,
@@ -90,30 +90,58 @@
                         5000
                     )
                 ),
-            ]); // Tauriの初期化を待つ, 5秒タイムアウト
-            DataManager.loadGlobalInfo();
-            if (platform !== 'android' && platform !== 'ios') {
-                changeWindowSize();
+            ]);
+
+            // Tauri が利用可能になった後でプラットフォームを取得
+            platform = window.__TAURI__.os.platform();
+
+            // モバイルOSの場合のみ、タッチイベントのデフォルト挙動を抑制
+            if (platform === 'android' || platform === 'ios') {
+                console.log(
+                    'Mobile device detected. Preventing default touch behavior.'
+                );
+
+                document.addEventListener(
+                    'touchstart',
+                    (e) => {
+                        e.preventDefault();
+                    },
+                    { passive: false }
+                );
+
+                document.addEventListener(
+                    'touchmove',
+                    (e) => {
+                        e.preventDefault();
+                    },
+                    { passive: false }
+                );
+
+                document.addEventListener(
+                    'touchend',
+                    (e) => {
+                        e.preventDefault();
+                    },
+                    { passive: false }
+                );
+            } else {
+                // PCの場合の処理（ウィンドウサイズ変更など）
+                DataManager.loadGlobalInfo();
+                changeWindowSize(); // changeWindowSize が定義されている前提
             }
         } catch (error) {
             console.error(
-                'Failed to initialize Tauri or load window size:',
+                'Error during Tauri setup or touch event prevention:',
                 error
             );
         }
-    }
-
-    // モバイルOSの場合はここで終了
-    if (platform === 'android' || platform === 'ios') {
-        console.log('This is a mobile device. Aborted.');
-        return;
     }
 
     // 起動時
     const _Scene_Boot_start = Scene_Boot.prototype.start;
     Scene_Boot.prototype.start = function () {
         _Scene_Boot_start.apply(this, []);
-        applyInitialWindowSize(); // Tauriが初期化されていればウィンドウサイズを変更
+        setupTauriAndTouchEvents(); // Tauriが初期化されていればウィンドウサイズを変更
     };
 
     /**
