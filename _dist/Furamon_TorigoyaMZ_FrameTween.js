@@ -51,13 +51,19 @@
  * @text カスタム対象
  * @desc 汎用的なトゥイーン設定です。ウィンドウのクラス名をキーにアニメーションを設定します。
  * @type struct<CustomTween>[]
- * @default ["{\"WindowClass\":\"Window_MenuStatus\",\"openEnable\":\"true\",\"openMoveX\":\"100%\",\"openMoveY\":\"0\",\"openAlpha\":\"0\",\"openEasing\":\"easeOutCircular\",\"openDuration\":\"15\",\"openDelay\":\"0\",\"closeEnable\":\"true\",\"closeMoveX\":\"-100%\",\"closeMoveY\":\"0\",\"closeAlpha\":\"0\",\"closeEasing\":\"easeInCircular\",\"closeDuration\":\"15\",\"closeDelay\":\"0\"}"]
+ * @default ["{\"WindowClass\":\"Window_MenuStatus\",\"SceneClass\":\"\",\"openEnable\":\"true\",\"openMoveX\":\"100%\",\"openMoveY\":\"0\",\"openAlpha\":\"0\",\"openEasing\":\"easeOutCircular\",\"openDuration\":\"15\",\"openDelay\":\"0\",\"closeEnable\":\"true\",\"closeMoveX\":\"-100%\",\"closeMoveY\":\"0\",\"closeAlpha\":\"0\",\"closeEasing\":\"easeInCircular\",\"closeDuration\":\"15\",\"closeDelay\":\"0\"}","{\"WindowClass\":\"Window_Help\",\"SceneClass\":\"Scene_Menu\",\"openEnable\":\"true\",\"openMoveX\":\"0\",\"openMoveY\":\"-100%\",\"openAlpha\":\"0\",\"openEasing\":\"easeOutCircular\",\"openDuration\":\"15\",\"openDelay\":\"0\",\"closeEnable\":\"true\",\"closeMoveX\":\"0\",\"closeMoveY\":\"-100%\",\"closeAlpha\":\"0\",\"closeEasing\":\"easeInCircular\",\"closeDuration\":\"15\",\"closeDelay\":\"0\"}"]
  */
 /*~struct~CustomTween:
  * @param WindowClass
  * @text ウィンドウクラス名
  * @desc 対象のウィンドウのクラス名（コンストラクタ名）を指定します。例: Window_Help
  * @type string
+ *
+ * @param SceneClass
+ * @text シーンクラス名
+ * @desc 対象のシーンのクラス名を指定します。空欄の場合は全てのシーンが対象です。例: Scene_Menu
+ * @type string
+ * @default
  *
  * @param openEnable
  * @text 開くアニメーションを有効にする
@@ -186,6 +192,7 @@
         const obj = JSON.parse(json);
         return {
             windowClass: String(obj.WindowClass),
+            sceneClass: String(obj.SceneClass || ''),
             openSetting: {
                 enable: obj.openEnable === 'true',
                 moveX: obj.openMoveX || '0',
@@ -209,8 +216,15 @@
     function findSettingForWindow(windowObject) {
         if (!windowObject)
             return null;
-        const className = windowObject.constructor.name;
-        const customSetting = parsedCustomSettings.find(s => s.windowClass === className);
+        const windowClassName = windowObject.constructor.name;
+        const sceneClassName = SceneManager._scene.constructor.name;
+        const customSetting = parsedCustomSettings.find(s => {
+            if (s.windowClass !== windowClassName)
+                return false;
+            if (s.sceneClass && s.sceneClass !== sceneClassName)
+                return false;
+            return true;
+        });
         return customSetting ? { openSetting: customSetting.openSetting, closeSetting: customSetting.closeSetting } : null;
     }
     // -------------------------------------------------------------------------
