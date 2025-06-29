@@ -14,8 +14,7 @@
 | 壁越えジャンプ              | [Furamon_SmartJump](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_SmartJump.js)                 | 障害物を飛び越せるジャンプができるようになります。                                                                                               |
 | 汎用ウィンドウ | [Furamon_VariableWindow](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_VariableWindow.js) | プラグインコマンドで指定したテキストを指定時間表示します。 |
 | メニュー高さ調整            | [Furamon_MenuHeight](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_MenuHeight.js)               | メニュー画面の各項目の高さをフォントサイズに合わせて変えられるようにします。                                                                     |
-| ダッシュボタン無効化        | [Furamon_DashButtonDisable](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_DashButtonDisable.js) | ダッシュボタンを押したときに何も起きなくし、常時ダッシュを固定化します。                                                                         |
-| Tauri時ウィンドウサイズ調整 | [Furamon_TauriforMZ](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_TauriforMZ.js)               | Tauriでツクールを動かすのにいろいろ便利な機能を追加します。<br> これだけでは動かず、src-tauri/src/lib.rsを弄る必要があります。追って追記します。 |
+| ダッシュボタン無効化        | [Furamon_DashButtonDisable](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_DashButtonDisable.js) | ダッシュボタンを押したときに何も起きなくし、常時ダッシュを固定化します。|
 
 ## Thanks!
 
