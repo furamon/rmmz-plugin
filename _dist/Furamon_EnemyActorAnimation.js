@@ -9,13 +9,13 @@
 // 2025/06/16 1.0.2 BattleMotionMZに実は対応してなかったのを直した
 // 2025/06/17 1.1.0 BattleMotionMZ関連を分離した
 // 2025/06/19 1.2.0 BattleMotionMZの透明ピクセルを考慮するよう修正
+// 2025/06/29 1.3.0 BattleMotionMZ対応部分を統合
 /*:
  * @target MZ
  * @plugindesc 敵キャラにSV_Actorsのスプライトシートを適用します。
  * @author Furamon
  * @orderAfter BattleMotionMZ
  * @orderAfter NRP_DynamicMotionMZ
- * @orderBefore Furamon_EnemyActorBattleMotion
  * @orderBefore Furamon_EnemyActorDynamicMotion
  * @help 敵キャラにSV_Actorsのスプライトシートを適用します。
  *
@@ -39,9 +39,7 @@
  * 9x6に並べ、SV敵にしてください。ごめんね。
  *
  * BattleMotionMZ(Lib様)、及びNRP_DynamicMotionMZ(砂川赳様)と併用できます。
- * Furamon_EnemyActorBattleMotion、Furamon_EnemyActorDynamicMotionをこのプラグインの下に置いてください。
- * なお、BattleMotionMZのモーションカラー右上で次モーションにつなげる機能には
- * 対応していません。DynamicMotionMZをうまく使って代用してください。
+ * 後者はFuramon_EnemyActorDynamicMotionをこのプラグインの下に置いてください。
  *
  * -----------------------------------------------------------------------------
  * # 謝辞 #
@@ -66,6 +64,10 @@
     const parameters = PluginManager.parameters(pluginName);
     const prmAutoMirror = parameters['autoMirror'] === 'true';
     const hasBattleMotion = PluginManager._scripts.includes('BattleMotionMZ');
+    const prmBattleMotion = PluginManager._scripts.includes('BattleMotionMZ') &&
+        PluginManager.parameters('BattleMotionMZ');
+    const prmMotionCol = prmBattleMotion && prmBattleMotion['motionCol'] === 'true';
+    const prmBlueFps = prmBattleMotion && prmBattleMotion['blueFps'] === 'true';
     // NUUN_ButlerHPGaugeのパラメータを取得
     let nuunHpGaugeParams = {};
     try {
@@ -97,7 +99,7 @@
     function getSvActorFileName(enemy) {
         const meta = enemy.meta;
         const fileName = meta['SVActor'] || meta['SVアクター'];
-        // 値が空でない文字列の場合のみファイル名を返すように修正
+        // 値が空でない文字列の場合のSVファイル名を返すように修正
         // タグのみ (<SVActor>) が記述された場合に true が返るのを防ぐ
         if (typeof fileName === 'string' && fileName.length > 0) {
             return fileName;
@@ -742,40 +744,51 @@
             if (!this._motion)
                 return;
             if (hasBattleMotion) {
-                // BattleMotionMZ用のフレーム計算
-                const cellSize = bitmap.height / 6; // 1セルのサイズ（正方形）
-                const motionIndex = this._motion.index;
-                const pattern = this._pattern;
-                // BattleMotionMZでは横並びでモーションが配置される
-                const col = motionIndex * 3 + pattern; // 各モーション3フレーム
-                const row = 0; // とりあえず1行目を使用
-                // 範囲チェック
-                const maxCols = Math.floor(bitmap.width / cellSize);
-                if (col >= maxCols) {
-                    console.warn('BattleMotionMZ frame out of bounds, using fallback');
-                    this._mainSprite.setFrame(0, 0, cellSize, cellSize);
-                    return;
-                }
-                this._mainSprite.setFrame(col * cellSize, row * cellSize, cellSize, cellSize);
+                this.updateFrameBMMZ(bitmap);
             }
             else {
-                // 標準SVアクター用のフレーム計算
-                const cw = bitmap.width / 9;
-                const ch = bitmap.height / 6;
-                const motionIndex = this._motion.index;
-                const pattern = this._pattern;
-                const motionsPerColumn = 6;
-                const patternsPerMotion = 3;
-                const column = Math.floor(motionIndex / motionsPerColumn);
-                const row = motionIndex % motionsPerColumn;
-                const col = column * patternsPerMotion + pattern;
-                if (col >= 9 || row >= 6) {
-                    console.warn('Frame out of bounds, using fallback');
-                    this._mainSprite.setFrame(0, 0, cw, ch);
-                    return;
-                }
-                this._mainSprite.setFrame(col * cw, row * ch, cw, ch);
+                this.updateFrameStandard(bitmap);
             }
+        }
+        updateFrameStandard(bitmap) {
+            // 標準SVアクター用のフレーム計算
+            const cw = bitmap.width / 9;
+            const ch = bitmap.height / 6;
+            const motionIndex = this._motion.index;
+            const pattern = this._pattern;
+            const motionsPerColumn = 6;
+            const patternsPerMotion = 3;
+            const column = Math.floor(motionIndex / motionsPerColumn);
+            const row = motionIndex % motionsPerColumn;
+            const col = column * patternsPerMotion + pattern;
+            if (col >= 9 || row >= 6) {
+                console.warn('Frame out of bounds, using fallback');
+                this._mainSprite.setFrame(0, 0, cw, ch);
+                return;
+            }
+            this._mainSprite.setFrame(col * cw, row * ch, cw, ch);
+        }
+        updateFrameBMMZ(bitmap) {
+            const cellSize = bitmap.height / 6;
+            let cx = 0, cy = 0;
+            const motionIndex = this._motion ? this._motion.index : 0;
+            const pattern = this._pattern || 0;
+            const totalFrames = bitmap.width / cellSize;
+            const motionCount = Object.keys(Sprite_Battler.MOTIONS).length;
+            const motionsPerRow = 6;
+            const totalColumns = motionCount / motionsPerRow;
+            const actualFramesPerMotion = Math.floor(totalFrames / totalColumns);
+            const motionColumn = Math.floor(motionIndex / motionsPerRow);
+            const motionRow = motionIndex % motionsPerRow;
+            cx = motionColumn * actualFramesPerMotion + pattern;
+            cy = motionRow;
+            const maxCx = Math.floor(bitmap.width / cellSize);
+            if (cx >= maxCx || cy >= 6 || cx < 0 || cy < 0) {
+                console.warn(`Frame out of bounds: cx=${cx}, cy=${cy}, maxCx=${maxCx}, resetting to 0,0`);
+                cx = 0;
+                cy = 0;
+            }
+            this._mainSprite.setFrame(cx * cellSize, cy * cellSize, cellSize, cellSize);
         }
         updateMotion() {
             const battlerAny = this._battler;
@@ -784,36 +797,231 @@
                 this.refreshMotion();
             }
             if (this._motion) {
-                this._motionCount++;
-                const speed = 12;
-                if (this._motionCount >= speed) {
-                    if (this._motion.loop) {
-                        if (this._patternDirection === undefined) {
-                            this._patternDirection = 1;
-                        }
-                        if (this._pattern === 0) {
+                if (hasBattleMotion) {
+                    this.updateMotionBMMZ();
+                }
+                else {
+                    this.updateMotionStandard();
+                }
+            }
+        }
+        updateMotionStandard() {
+            this._motionCount++;
+            const speed = 12;
+            if (this._motionCount >= speed) {
+                if (this._motion.loop) {
+                    if (this._patternDirection === undefined) {
+                        this._patternDirection = 1;
+                    }
+                    if (this._pattern === 0) {
+                        this._pattern = 1;
+                        this._patternDirection = 1;
+                    }
+                    else if (this._pattern === 1) {
+                        this._pattern =
+                            this._patternDirection === 1 ? 2 : 0;
+                    }
+                    else if (this._pattern === 2) {
+                        this._pattern = 1;
+                        this._patternDirection = -1;
+                    }
+                }
+                else {
+                    if (this._pattern < 2) {
+                        this._pattern++;
+                    }
+                    else {
+                        this._pattern = 2;
+                    }
+                }
+                this._motionCount = 0;
+            }
+        }
+        updateMotionBMMZ() {
+            this._motionCount++;
+            let speed = this.getCustomMotionSpeed();
+            if (this._motionCount >= speed) {
+                const bitmap = this._mainSprite.bitmap;
+                if (!bitmap || !bitmap.isReady())
+                    return;
+                const cellSize = bitmap.height / 6;
+                const motionIndex = this._motion ? this._motion.index : 0;
+                const frameInfo = this.getMotionFrameInfo(bitmap, cellSize, motionIndex);
+                const frameCount = frameInfo.frameCount;
+                const animType = frameInfo.animType;
+                if (animType === 'freeze') {
+                    if (this._pattern < frameCount - 1) {
+                        this._pattern++;
+                    }
+                    else {
+                        this._pattern = frameCount > 0 ? frameCount - 1 : 0;
+                    }
+                }
+                else if (animType === 'pingpong') {
+                    if (this._patternDirection === undefined) {
+                        this._patternDirection = 1;
+                    }
+                    if (frameCount > 1) {
+                        if (this._pattern <= 0) {
                             this._pattern = 1;
                             this._patternDirection = 1;
                         }
-                        else if (this._pattern === 1) {
-                            this._pattern =
-                                this._patternDirection === 1 ? 2 : 0;
-                        }
-                        else if (this._pattern === 2) {
-                            this._pattern = 1;
+                        else if (this._pattern >= frameCount - 1) {
+                            this._pattern = frameCount - 2;
                             this._patternDirection = -1;
+                        }
+                        else {
+                            this._pattern += this._patternDirection;
                         }
                     }
                     else {
-                        if (this._pattern < 2) {
+                        this._pattern = 0;
+                    }
+                }
+                else if (animType === 'loop') {
+                    if (frameCount > 0) {
+                        this._pattern = (this._pattern + 1) % frameCount;
+                    }
+                    else {
+                        this._pattern = 0;
+                    }
+                }
+                else {
+                    if (this._motion && this._motion.loop) {
+                        if (frameCount > 0) {
+                            this._pattern = (this._pattern + 1) % frameCount;
+                        }
+                        else {
+                            this._pattern = 0;
+                        }
+                    }
+                    else {
+                        if (this._pattern < frameCount - 1) {
                             this._pattern++;
                         }
                         else {
-                            this._pattern = 2;
+                            this._pattern = frameCount > 0 ? frameCount - 1 : 0;
                         }
                     }
-                    this._motionCount = 0;
                 }
+                this._motionCount = 0;
+            }
+        }
+        getMotionFrameInfo(bitmap, cellSize, motionIndex) {
+            const totalFrames = bitmap.width / cellSize;
+            const motionCount = Object.keys(Sprite_Battler.MOTIONS).length;
+            const motionsPerRow = 6;
+            const totalColumns = motionCount / motionsPerRow;
+            const maxFramesPerMotion = Math.floor(totalFrames / totalColumns);
+            if (!prmMotionCol) {
+                return { frameCount: maxFramesPerMotion, animType: 'normal' };
+            }
+            const motionColumn = Math.floor(motionIndex / motionsPerRow);
+            const motionRow = motionIndex % motionsPerRow;
+            const motionStartX = motionColumn * maxFramesPerMotion * cellSize;
+            const motionStartY = motionRow * cellSize;
+            let endFrameIndex = maxFramesPerMotion;
+            for (let i = 1; i <= maxFramesPerMotion; i++) {
+                const frameX = motionStartX + (i - 1) * cellSize;
+                if (this.isEndFrame(bitmap, frameX, motionStartY)) {
+                    endFrameIndex = i - 1;
+                    break;
+                }
+            }
+            const endFrameX = motionStartX + endFrameIndex * cellSize;
+            const colorInfo = this.getEndFrameColorInfo(bitmap, endFrameX, motionStartY);
+            return {
+                frameCount: endFrameIndex,
+                animType: colorInfo.animType,
+            };
+        }
+        isEndFrame(bitmap, frameX, frameY) {
+            try {
+                const checkX = frameX + 1;
+                const checkY = frameY + 1;
+                const canvas = bitmap.canvas || bitmap._canvas;
+                if (!canvas)
+                    return false;
+                const context = canvas.getContext('2d');
+                const imageData = context.getImageData(checkX, checkY, 1, 1);
+                const [r, g, b, a] = imageData.data;
+                return a > 128 && !(r === 0 && g === 0 && b === 0);
+            }
+            catch (e) {
+                console.warn('isEndFrame check failed:', e);
+                return false;
+            }
+        }
+        getEndFrameColorInfo(bitmap, x, y) {
+            try {
+                const canvas = bitmap.canvas || bitmap._canvas;
+                if (!canvas)
+                    return { animType: 'normal' };
+                const context = canvas.getContext('2d');
+                const sampleX = x + 1;
+                const sampleY = y + 1;
+                const imageData = context.getImageData(sampleX, sampleY, 1, 1);
+                const [r, g, b, a] = imageData.data;
+                if (a > 128) {
+                    if (r === 255 && g === 255)
+                        return { animType: 'pingpong' };
+                    if (r === 255)
+                        return { animType: 'freeze' };
+                    if (g === 255)
+                        return { animType: 'loop' };
+                }
+                return { animType: 'normal' };
+            }
+            catch (e) {
+                console.warn('Color detection failed:', e);
+                return { animType: 'normal' };
+            }
+        }
+        getCustomMotionSpeed() {
+            if (!prmBlueFps)
+                return 12;
+            const bitmap = this._mainSprite.bitmap;
+            if (!bitmap || !bitmap.isReady())
+                return 12;
+            try {
+                const motionIndex = this._motion ? this._motion.index : 0;
+                const cellSize = bitmap.height / 6;
+                const motionsPerRow = 6;
+                const motionCount = Object.keys(Sprite_Battler.MOTIONS).length;
+                const totalColumns = motionCount / motionsPerRow;
+                const maxFramesPerMotion = Math.floor(bitmap.width / cellSize / totalColumns);
+                const motionColumn = Math.floor(motionIndex / motionsPerRow);
+                const motionRow = motionIndex % motionsPerRow;
+                const motionStartX = motionColumn * maxFramesPerMotion * cellSize;
+                const motionStartY = motionRow * cellSize;
+                for (let i = 1; i <= maxFramesPerMotion; i++) {
+                    const frameX = motionStartX + (i - 1) * cellSize;
+                    if (this.isEndFrame(bitmap, frameX, motionStartY)) {
+                        const blueValue = this.getEndFrameBlueValue(bitmap, frameX, motionStartY);
+                        if (blueValue > 0)
+                            return blueValue;
+                        break;
+                    }
+                }
+            }
+            catch (e) {
+                console.warn('Custom motion speed calculation failed:', e);
+            }
+            return 12;
+        }
+        getEndFrameBlueValue(bitmap, x, y) {
+            try {
+                const canvas = bitmap.canvas || bitmap._canvas;
+                if (!canvas)
+                    return 0;
+                const context = canvas.getContext('2d');
+                const imageData = context.getImageData(x + 1, y + 1, 1, 1);
+                const [, , b, a] = imageData.data;
+                return a > 128 ? b : 0;
+            }
+            catch (e) {
+                console.warn('Blue value detection failed:', e);
+                return 0;
             }
         }
         updateStateSprite() {

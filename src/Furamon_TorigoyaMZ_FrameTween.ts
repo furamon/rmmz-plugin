@@ -1,16 +1,21 @@
+//------------------------------------------------------------------------------
+// Furamon_TorigoyaMZ_FrameTween.js
+// This software is released under the MIT License.
+// http://opensource.org/licenses/mit-license.php
+//------------------------------------------------------------------------------
+
 /*:
  * @target MZ
- * @plugindesc [Torigoya_FrameTween] ウィンドウに汎用的なトゥイーンアニメーションを追加します。
+ * @plugindesc Torigoya_FrameTweenをパラメータ指定して扱えるようにします。
  * @author Furamon
  * @base TorigoyaMZ_FrameTween
  * @orderAfter TorigoyaMZ_FrameTween
  *
- * @help
- * TorigoyaMZ_FrameTween.js をベースに、各シーンのウィンドウが開閉する際に
- * トゥイーンアニメーションを再生します。
- *
- * このプラグインは、ウィンドウがシーンに追加されたときに開くアニメーションを、
- * シーンが閉じられるときに閉じるアニメーションを再生します。
+ * @help Torigoya_FrameTween(https://torigoya-plugin.rutan.dev/base/tween/)を
+ * パラメータ指定して扱えるようにします。
+ * ウィンドウクラスを指定してトゥイーンアニメーションを再生します。
+ * ウィンドウがシーンに追加されたときとアニメーションを、
+ * シーンが閉じられるときのアニメーションを指定できます。
  *
  * どのウィンドウにどのアニメーションを適用するかは、プラグインパラメータ
  * 「カスタム対象」で設定します。
@@ -29,6 +34,15 @@
  *   width, height: 対象ウィンドウの幅・高さ
  *   Graphics, g: Graphicsクラス
  *   boxWidth, boxHeight: ゲーム画面の幅・高さ
+ *
+ * -----------------------------------------------------------------------------
+ * # 謝辞 #
+ * -----------------------------------------------------------------------------
+ * 以下のプラグインをベースにしています。m（＿ ＿）m ﾏｲﾄﾞ
+ * - Ruたん様 ー Tweenアニメーション
+ * (https://torigoya-plugin.rutan.dev/base/tween/)
+ *
+ * Geminiの力を盛大に借りました。
  *
  * @-----------------------------------------------------------
  * @ プラグインパラメータ

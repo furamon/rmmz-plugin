@@ -32,29 +32,12 @@
                 : 1 / 3;
     };
 
-    // // Window_MenuStatusならカーソル透明
-    // Window_MenuStatus.prototype._refreshCursor = function () {
-    //     if (this.constructor.name === 'Window_MenuStatus') {
-    //         this._cursorSprite.alpha = 0;
-    //     }
-    // }
-
-    // ZinCursorTween.jsをWindow_MenuStatusでだけ無効にする
-    if (Window_Selectable.prototype.setCursorRect) {
-        const _Window_Selectable_setCursorRect = Window_Selectable.prototype.setCursorRect;
-         Window_Selectable.prototype.setCursorRect = function(x, y, width, height) {
-            if (this instanceof Window_MenuStatus) {
-                return;
-            }
-            _Window_Selectable_setCursorRect.call(this,x,y,width,height);
-        };
+    // Window_MenuStatusならカーソル透明
+    Window_MenuStatus.prototype._refreshCursor = function () {
+        if (this.constructor.name === 'Window_MenuStatus') {
+            this._cursorSprite.alpha = 0;
+        }
     }
-
-	const _Window_MenuStatus_prototype_processOk = Window_MenuStatus.prototype.processOk;
-	Window_MenuStatus.prototype.processOk = function() {
-		_Window_MenuStatus_prototype_processOk.call(this);
-		// this._cursorSprite.ztSetHandler(this.doLoopCursorTween.bind(this));
-	};
 
     // WASD移動デフォ
     Input.keyMapper[87] = 'up'; //Wキー
@@ -86,7 +69,7 @@
         if (this.constructor.name === 'Scene_AdditionalCC') {
             // _statusWindow, _slotWindowを無理やり画面外に
             if (this._statusWindow && this._statusWindow.visible) {
-                const statusWindowX = 9999 // 画面外
+                const statusWindowX = 9999; // 画面外
                 this._statusWindow.x = statusWindowX;
             }
             if (this._slotWindow && this._slotWindow.visible) {
