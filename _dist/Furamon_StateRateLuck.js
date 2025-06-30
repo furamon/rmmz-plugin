@@ -4,7 +4,7 @@
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
 // 2025/06/23 v1.0.0 公開！（Furamon_LRBattleCoreから改良して分割）
-// 2025/06/30 v1.0.1 計算式が100バイで反映されるひどすぎる不具合修正
+// 2025/06/30 v1.0.1 計算式が100倍で反映される上スキルのステート付与率が機能してなかったひどすぎる不具合修正
 /*:
  * @target MZ
  * @plugindesc ステート付与率の仕様を改造します。
@@ -175,7 +175,7 @@
         if (isNrpPreCalc) {
             const initialSuccess = result.success; // StateResistToFailure 用
             let chance = effect.value1;
-            chance *= this.subject().attackStatesRate(effect.dataId);
+            chance *= this.subject().stateRate(effect.dataId);
             if (prmEvalStateRateMethod === 'add') {
                 // 指定計算式をchanceに加える
                 chance += evaluateStateRate(this.subject(), target);
