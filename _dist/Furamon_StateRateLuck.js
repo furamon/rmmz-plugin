@@ -184,7 +184,6 @@
                 // 指定計算式をchanceにかける
                 chance *= evaluateStateRate(this.subject(), target);
             }
-            console.log(chance);
             chance *= target.stateRate(effect.dataId);
             chance = Math.max(chance, 0);
             // isCertainHit() が true の場合の分岐を追加 (コアスクリプトの挙動に合わせる)
