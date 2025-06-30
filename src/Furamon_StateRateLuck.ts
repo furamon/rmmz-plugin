@@ -1,9 +1,10 @@
 //------------------------------------------------------------------------------
-// Furamon_LP.js
+// Furamon_StateRateLuck.js
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
 // 2025/06/23 v1.0.0 公開！（Furamon_LRBattleCoreから改良して分割）
+// 2025/06/30 v1.0.1 計算式が100バイで反映されるひどすぎる不具合修正
 
 /*:
  * @target MZ
@@ -94,7 +95,7 @@
         const a = subject; // 行動者
         const b = target; // 対象
         try {
-            return eval(prmEvalStateRate);
+            return eval(prmEvalStateRate) / 100;
         } catch (e) {
             console.warn(
                 `StateRateLuck: 計算式エラー - ${prmEvalStateRate}`,
@@ -198,6 +199,7 @@
                 // 指定計算式をchanceにかける
                 chance *= evaluateStateRate(this.subject(), target);
             }
+            console.log(chance);
             chance *= target.stateRate(effect.dataId);
             chance = Math.max(chance, 0);
             // isCertainHit() が true の場合の分岐を追加 (コアスクリプトの挙動に合わせる)
