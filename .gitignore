@@ -25,4 +25,4 @@ pnpm-lock.yaml
 *.sw?
 
 **_Template.js
-.claude/*
+.env
