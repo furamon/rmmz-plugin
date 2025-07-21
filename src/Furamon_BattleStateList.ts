@@ -11,7 +11,7 @@
  * @help 戦闘中に発動しているステートの説明リストを出す機能を実装します。
  * プラグインパラメータで指定したボタンを戦闘中に押すことでウィンドウが開閉します。
  * 説明文が設定されているステートのみがリストに表示されます。
- * 
+ *
  * ウィンドウは同じボタンか、キャンセルボタンで閉じることができます。
  *
  * @param StateButton
@@ -33,19 +33,19 @@
  * @desc ステートの説明文を設定します。説明文が空のステートは表示されません。
  * @type struct<StateDescription>[]
  * @default []
- * 
+ *
  * @param WindowWidth
  * @text ウィンドウ幅
  * @desc ウィンドウの幅をピクセル単位で指定します。0を指定すると画面幅の90%になります。
  * @type number
  * @default 0
- * 
+ *
  * @param WindowHeight
  * @text ウィンドウ高さ
  * @desc ウィンドウの高さをピクセル単位で指定します。0を指定すると画面高さの90%になります。
  * @type number
  * @default 0
- * 
+ *
  * @param ItemSpacing
  * @text 項目間の間隔
  * @desc 各ステートの説明の間の縦の間隔をピクセル単位で指定します。
@@ -90,7 +90,7 @@
     //
     // 戦闘中のステート説明ウィンドウです。
 
-    class Window_BattleStateList extends Window_Base {
+    class Window_BattleStateList extends Window_Selectable {
         _dataStates: MZ.State[];
 
         constructor(rect: Rectangle) {
@@ -109,7 +109,7 @@
 
             const allStates = actorStates.concat(enemyStates);
             const uniqueStateIds = [...new Set(allStates.map(state => state.id))];
-            
+
             this._dataStates = uniqueStateIds
                 .filter(id => {
                     const desc = stateDescMap.get(id);
@@ -122,21 +122,21 @@
         refresh() {
             this.contents.clear();
             this.makeItemList();
-            
+
             let y = 0;
             for (const state of this._dataStates) {
                 const description = stateDescMap.get(state.id) || '';
                 const lineHeight = this.lineHeight();
-                
+
                 // アイコンと名前を描画
                 this.drawIcon(state.iconIndex, 0, y + 2);
                 this.drawText(state.name, 36, y, this.contentsWidth() - 36);
-                
+
                 // 説明文を描画し、その高さを計算
                 const textState = this.createTextState(description, 0, y + lineHeight, this.contentsWidth());
                 this.processAllText(textState);
                 const itemHeight = textState.y - y;
-                
+
                 y += itemHeight + itemSpacing + this.contents.fontSize;
             }
         }
@@ -182,8 +182,12 @@
     Scene_Battle.prototype.updateStateListWindow = function() {
         if (this.isStateListTriggered()) {
             this.toggleStateListWindow();
-        } else if (this._stateListWindow.isOpen() && Input.isTriggered("cancel")) {
-            this.closeStateListWindow();
+        } else if (this._stateListWindow.isOpen()) {
+            if (Input.isTriggered("cancel")) {
+                this.closeStateListWindow();
+            } else if (!this._stateListWindow.active && this._openedStateListFrom) {
+                this.closeStateListWindow();
+            }
         }
     };
 
@@ -194,7 +198,7 @@
     Scene_Battle.prototype.toggleStateListWindow = function() {
         if (this._stateListWindow.isOpen()) {
             this.closeStateListWindow();
-        } else if (!this.isAnyInputWindowActive() || this._partyCommandWindow.active || this._actorCommandWindow.active) {
+        } else if (this._partyCommandWindow.active || this._actorCommandWindow.active) {
             this.openStateListWindow();
         }
     };
@@ -203,12 +207,10 @@
         this._openedStateListFrom = null;
         if (this._partyCommandWindow.active) {
             this._openedStateListFrom = "party";
-            this._partyCommandWindow.deactivate();
-            this._partyCommandWindow.close();
+            this._partyCommandWindow.hide();
         } else if (this._actorCommandWindow.active) {
             this._openedStateListFrom = "actor";
-            this._actorCommandWindow.deactivate();
-            this._actorCommandWindow.close();
+            this._actorCommandWindow.hide();
         }
 
         this._stateListWindow.refresh();
@@ -225,21 +227,19 @@
         this._stateListWindow.close();
         this._stateListWindow.deactivate();
         if (this._openedStateListFrom === "party") {
-            this._partyCommandWindow.open();
-            this._partyCommandWindow.activate();
+            this._partyCommandWindow.show();
         } else if (this._openedStateListFrom === "actor") {
-            this._actorCommandWindow.open();
-            this._actorCommandWindow.activate();
+            this._actorCommandWindow.show();
         }
         this._openedStateListFrom = null;
     };
-    
-    const _Scene_Battle_isAnyInputWindowActive = Scene_Battle.prototype.isAnyInputWindowActive;
-    Scene_Battle.prototype.isAnyInputWindowActive = function() {
-        if (this._stateListWindow && this._stateListWindow.active) {
-            return true;
-        }
-        return _Scene_Battle_isAnyInputWindowActive.call(this);
-    };
+
+    // const _Scene_Battle_isAnyInputWindowActive = Scene_Battle.prototype.isAnyInputWindowActive;
+    // Scene_Battle.prototype.isAnyInputWindowActive = function() {
+    //     if (this._stateListWindow && this._stateListWindow.active) {
+    //         return true;
+    //     }
+    //     return _Scene_Battle_isAnyInputWindowActive.call(this);
+    // };
 
 })();
