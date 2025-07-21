@@ -164,7 +164,7 @@ declare class Sprite_EnemyHPGauge extends Sprite {
     constructor();
     setup(battler: Game_Battler, type: string): void;
     show(): void;
-    hide(): void;
+hide(): void;
     update(): void;
 }
 
@@ -417,3 +417,21 @@ declare const Torigoya: {
         Easing: { [key: string]: EasingFunc };
     };
 };
+
+// For Furamon_BattleStateList.ts
+declare class Window_BattleStateList extends Window_Base {
+    constructor(rect: Rectangle);
+    _dataStates: MZ.State[];
+    makeItemList(): void;
+    refresh(): void;
+}
+
+declare interface Scene_Battle {
+    _stateListWindow: Window_BattleStateList;
+    createStateListWindow(): void;
+    stateListWindowRect(): Rectangle;
+    updateStateListWindow(): void;
+    isStateListTriggered(): boolean;
+    toggleStateListWindow(): void;
+    openStateListWindow(): void;
+}
