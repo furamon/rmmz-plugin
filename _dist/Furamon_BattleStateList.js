@@ -130,6 +130,11 @@
     // Scene_Battle
     //
     // ステートリストウィンドウの呼び出し処理を追加します。
+    const _Scene_Battle_initialize = Scene_Battle.prototype.initialize;
+    Scene_Battle.prototype.initialize = function () {
+        _Scene_Battle_initialize.call(this);
+        this._openedStateListFrom = null;
+    };
     const _Scene_Battle_createAllWindows = Scene_Battle.prototype.createAllWindows;
     Scene_Battle.prototype.createAllWindows = function () {
         _Scene_Battle_createAllWindows.call(this);
@@ -157,7 +162,7 @@
             this.toggleStateListWindow();
         }
         else if (this._stateListWindow.isOpen() && Input.isTriggered("cancel")) {
-            this._stateListWindow.close();
+            this.closeStateListWindow();
         }
     };
     Scene_Battle.prototype.isStateListTriggered = function () {
@@ -165,26 +170,46 @@
     };
     Scene_Battle.prototype.toggleStateListWindow = function () {
         if (this._stateListWindow.isOpen()) {
-            this._stateListWindow.close();
+            this.closeStateListWindow();
         }
         else if (!this.isAnyInputWindowActive() || this._partyCommandWindow.active || this._actorCommandWindow.active) {
             this.openStateListWindow();
         }
     };
     Scene_Battle.prototype.openStateListWindow = function () {
-        if (this._partyCommandWindow.active || this._actorCommandWindow.active) {
+        this._openedStateListFrom = null;
+        if (this._partyCommandWindow.active) {
+            this._openedStateListFrom = "party";
             this._partyCommandWindow.deactivate();
-            this._actorCommandWindow.deactivate();
             this._partyCommandWindow.close();
+        }
+        else if (this._actorCommandWindow.active) {
+            this._openedStateListFrom = "actor";
+            this._actorCommandWindow.deactivate();
             this._actorCommandWindow.close();
         }
         this._stateListWindow.refresh();
         if (this._stateListWindow._dataStates.length > 0) {
             this._stateListWindow.open();
+            this._stateListWindow.activate();
         }
         else {
             SoundManager.playBuzzer();
+            this.closeStateListWindow();
         }
+    };
+    Scene_Battle.prototype.closeStateListWindow = function () {
+        this._stateListWindow.close();
+        this._stateListWindow.deactivate();
+        if (this._openedStateListFrom === "party") {
+            this._partyCommandWindow.open();
+            this._partyCommandWindow.activate();
+        }
+        else if (this._openedStateListFrom === "actor") {
+            this._actorCommandWindow.open();
+            this._actorCommandWindow.activate();
+        }
+        this._openedStateListFrom = null;
     };
     const _Scene_Battle_isAnyInputWindowActive = Scene_Battle.prototype.isAnyInputWindowActive;
     Scene_Battle.prototype.isAnyInputWindowActive = function () {

@@ -427,6 +427,7 @@ declare class Window_BattleStateList extends Window_Base {
 }
 
 declare interface Scene_Battle {
+    _openedStateListFrom: string | null;
     _stateListWindow: Window_BattleStateList;
     createStateListWindow(): void;
     stateListWindowRect(): Rectangle;
@@ -434,4 +435,5 @@ declare interface Scene_Battle {
     isStateListTriggered(): boolean;
     toggleStateListWindow(): void;
     openStateListWindow(): void;
+    closeStateListWindow(): void;
 }
