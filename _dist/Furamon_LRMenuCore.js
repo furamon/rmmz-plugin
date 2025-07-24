@@ -74,4 +74,27 @@
             }
         }
     };
+    //
+    // 装備選択時のウィンドウに「空」表示を追加
+    //
+    const _Window_EquipItem_isEnabled = Window_EquipItem.prototype.isEnabled;
+    Window_EquipItem.prototype.isEnabled = function (item) {
+        if (item === null) {
+            return true;
+        }
+        return _Window_EquipItem_isEnabled.call(this, item);
+    };
+    const _Window_EquipItem_drawItem = Window_EquipItem.prototype.drawItem;
+    Window_EquipItem.prototype.drawItem = function (index) {
+        const item = this.itemAt(index);
+        if (item === null) {
+            const rect = this.itemLineRect(index);
+            this.resetTextColor();
+            this.changePaintOpacity(true);
+            this.drawText('空', rect.x, rect.y, rect.width);
+        }
+        else {
+            _Window_EquipItem_drawItem.call(this, index);
+        }
+    };
 })();
