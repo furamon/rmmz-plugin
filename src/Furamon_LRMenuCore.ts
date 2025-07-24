@@ -26,10 +26,7 @@
         this._contentsBackSprite.alpha =
             SceneManager._scene?.constructor?.name === 'Scene_KeyConfig_V10'
                 ? 1
-                : // Window_MenuStatusなら完全透明
-                this.constructor.name === 'Window_MenuStatus'
-                ? 0
-                : 1 / 3;
+                : 0;
     };
 
     // Window_MenuStatusならカーソル透明
@@ -37,7 +34,7 @@
         if (this.constructor.name === 'Window_MenuStatus') {
             this._cursorSprite.alpha = 0;
         }
-    }
+    };
 
     // WASD移動デフォ
     Input.keyMapper[87] = 'up'; //Wキー
@@ -55,6 +52,13 @@
             this.drawText('クイックセーブ', x, y, 240);
         } else {
             this.drawText(TextManager.file + ' ' + (savefileId - 1), x, y, 180);
+        }
+    };
+
+    // Window_SavefileListならカーソル透明
+    Window_SavefileList.prototype._refreshCursor = function () {
+        if (this.constructor.name === 'Window_SavefileList') {
+            this._cursorSprite.alpha = 0;
         }
     };
 

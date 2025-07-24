@@ -38,8 +38,8 @@
  * @desc ほにゃらら
  */
 (function () {
-    const pluginName = 'Furamon_xxx';
-    const parameters = PluginManager.parameters(pluginName);
+    const PLUGIN_NAME = 'Furamon_xxx';
+    const parameters = PluginManager.parameters(PLUGIN_NAME);
 
-    console.log(`[Furamon] ${pluginName} is loaded.`);
+    console.log(`[Furamon] ${PLUGIN_NAME} is loaded.`);
 })();
