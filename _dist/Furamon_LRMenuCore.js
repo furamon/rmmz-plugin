@@ -24,11 +24,16 @@
                 ? 1
                 : 0;
     };
-    // Window_MenuStatusならカーソル透明
-    Window_MenuStatus.prototype._refreshCursor = function () {
-        if (this.constructor.name === 'Window_MenuStatus') {
-            this._cursorSprite.alpha = 0;
+    // カーソルを9patch風に拡縮
+    Window.prototype._refreshCursor = function () {
+        const drect = this._cursorRect.clone();
+        const srect = new Rectangle(96, 96, 48, 48);
+        const m = 4;
+        for (const child of this._cursorSprite.children) {
+            child.bitmap = this._windowskin;
         }
+        // 四隅の角は拡縮しない、辺のみ拡縮
+        this._setRectPartsGeometry(this._cursorSprite, srect, drect, m);
     };
     // WASD移動デフォ
     Input.keyMapper[87] = 'up'; //Wキー
@@ -47,12 +52,6 @@
         }
         else {
             this.drawText(TextManager.file + ' ' + (savefileId - 1), x, y, 180);
-        }
-    };
-    // Window_SavefileListならカーソル透明
-    Window_SavefileList.prototype._refreshCursor = function () {
-        if (this.constructor.name === 'Window_SavefileList') {
-            this._cursorSprite.alpha = 0;
         }
     };
     // NRP_AdditionalCCScene競合
