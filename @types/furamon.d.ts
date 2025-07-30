@@ -136,8 +136,12 @@ interface Scene_MenuBase {
     _slotWindow: Window_Selectable;
 }
 
+interface Scene_Map{
+    _mapResumeEffectDuration: number;
+}
+
 interface Game_Map {
-    tileUnit: any; // または適切な型を指定してください
+    tileUnit: any;
 }
 
 interface Game_Player {
@@ -433,4 +437,8 @@ declare interface Scene_Battle {
     toggleStateListWindow(): void;
     openStateListWindow(): void;
     closeStateListWindow(): void;
+}
+
+interface Bitmap {
+    getAlphaPixel(x: number, y: number)
 }

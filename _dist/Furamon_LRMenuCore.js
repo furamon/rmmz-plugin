@@ -4,6 +4,11 @@
  * @author Furamon
  */
 (function () {
+    // getAlphaPixelに整数でない値が渡されることへの対策
+    const _Bitmap_getAlphaPixel = Bitmap.prototype.getAlphaPixel;
+    Bitmap.prototype.getAlphaPixel = function (x, y) {
+        return _Bitmap_getAlphaPixel.call(this, Math.round(x), Math.round(y));
+    };
     // ショップ画面のレイアウト調整
     Scene_Shop.prototype.statusWidth = function () {
         return Graphics.boxWidth / 2 - 40;
@@ -73,9 +78,7 @@
             }
         }
     };
-    //
     // 装備選択時のウィンドウに「空」表示を追加
-    //
     const _Window_EquipItem_isEnabled = Window_EquipItem.prototype.isEnabled;
     Window_EquipItem.prototype.isEnabled = function (item) {
         if (item === null) {
@@ -102,5 +105,34 @@
     };
     Scene_Base.prototype.slowFadeSpeed = function () {
         return this.fadeSpeed() * 1.5;
+    };
+    // 戦闘終了時にズームアウトで戻るようにする
+    const _Scene_Map_startFadeIn = Scene_Map.prototype.startFadeIn;
+    Scene_Map.prototype.startFadeIn = function (duration, white) {
+        // 戦闘勝利からの移行でないならもとの処理
+        if (SceneManager.isPreviousScene(Scene_Battle)) {
+            const zoomX = $gamePlayer.screenX();
+            const zoomY = $gamePlayer.screenY();
+            this._mapResumeEffectDuration = 24;
+            $gameScreen.setZoom(zoomX, zoomY, this._mapResumeEffectDuration);
+        }
+        _Scene_Map_startFadeIn.call(this, duration, white);
+    };
+    const _Scene_Map_updateFade = Scene_Map.prototype.updateFade;
+    Scene_Map.prototype.updateFade = function () {
+        if (SceneManager.isPreviousScene(Scene_Battle)) {
+            if (this._mapResumeEffectDuration > 0) {
+                this._mapResumeEffectDuration--;
+                const zoomX = $gamePlayer.screenX();
+                const zoomY = $gamePlayer.screenY() - 24;
+                if (this._mapResumeEffectDuration < 1) {
+                    $gameScreen.setZoom(zoomX, zoomY, 1);
+                }
+                else {
+                    $gameScreen.setZoom(zoomX, zoomY, this._mapResumeEffectDuration);
+                }
+            }
+        }
+        _Scene_Map_updateFade.call(this);
     };
 })();
