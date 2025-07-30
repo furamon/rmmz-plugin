@@ -131,9 +131,9 @@ declare class Scene_KeyConfig {
     itemRectWithPadding(): Rectangle;
 }
 
-interface Scene_MenuBase{
-    _statusWindow: Window_Status
-    _slotWindow: Window_Selectable
+interface Scene_MenuBase {
+    _statusWindow: Window_Status;
+    _slotWindow: Window_Selectable;
 }
 
 interface Game_Map {
@@ -164,7 +164,7 @@ declare class Sprite_EnemyHPGauge extends Sprite {
     constructor();
     setup(battler: Game_Battler, type: string): void;
     show(): void;
-hide(): void;
+    hide(): void;
     update(): void;
 }
 
@@ -317,20 +317,17 @@ interface Sprite_SvActorConstructor {
     new (...args: any[]): Sprite_SvActor;
 }
 
-interface WindowLike extends Window_Base {
-
-}
-
+interface WindowLike extends Window_Base {}
 
 interface Window_Base {
-  window: WindowLike;
-  setting: TweenSetting;
-  enable: boolean;
-  moveX: string;
-  moveY: string;
-  easing: EasingFunc;
-  duration: number;
-  delay: number;
+    window: WindowLike;
+    setting: TweenSetting;
+    enable: boolean;
+    moveX: string;
+    moveY: string;
+    easing: EasingFunc;
+    duration: number;
+    delay: number;
 }
 
 interface Window_BattleLog {

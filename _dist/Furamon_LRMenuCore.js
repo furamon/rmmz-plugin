@@ -96,4 +96,11 @@
             _Window_EquipItem_drawItem.call(this, index);
         }
     };
+    // トランジションを高速化
+    Scene_Base.prototype.fadeSpeed = function () {
+        return 16;
+    };
+    Scene_Base.prototype.slowFadeSpeed = function () {
+        return this.fadeSpeed() * 1.5;
+    };
 })();

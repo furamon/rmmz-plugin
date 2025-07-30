@@ -35,7 +35,7 @@
         const srect = new Rectangle(96, 96, 48, 48);
         const m = 4;
         for (const child of this._cursorSprite.children) {
-            child.bitmap = this._windowskin;
+            (child as Sprite).bitmap = this._windowskin as Bitmap ;
         }
         // 四隅の角は拡縮しない、辺のみ拡縮
         this._setRectPartsGeometry(this._cursorSprite, srect, drect, m);
@@ -104,5 +104,14 @@
         } else {
             _Window_EquipItem_drawItem.call(this, index);
         }
+    };
+
+    // トランジションを高速化
+    Scene_Base.prototype.fadeSpeed = function () {
+        return 16;
+    };
+
+    Scene_Base.prototype.slowFadeSpeed = function () {
+        return this.fadeSpeed() * 1.5;
     };
 })();
