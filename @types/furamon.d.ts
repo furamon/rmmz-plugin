@@ -137,8 +137,7 @@ interface Scene_MenuBase {
 }
 
 interface Scene_Map{
-    _mapResumeEffect: MapResumeEffect | null;
-    _startMapResumeEffect?: boolean;
+    _mapResumeEffectDuration: number;
 }
 
 interface MapResumeEffect {
