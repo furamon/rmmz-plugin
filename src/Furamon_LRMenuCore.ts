@@ -119,37 +119,14 @@
         return this.fadeSpeed() * 1.5;
     };
 
-    // 戦闘終了時にズームアウトで戻るようにする
+    // 戦闘終了後のフェードアウトなくす
+
     const _Scene_Map_startFadeIn = Scene_Map.prototype.startFadeIn;
     Scene_Map.prototype.startFadeIn = function (duration, white) {
         // 戦闘勝利からの移行でないならもとの処理
         if (SceneManager.isPreviousScene(Scene_Battle)) {
-            const zoomX = $gamePlayer.screenX();
-            const zoomY = $gamePlayer.screenY();
-            this._mapResumeEffectDuration = 24;
-            $gameScreen.setZoom(zoomX, zoomY, this._mapResumeEffectDuration);
+            return;
         }
         _Scene_Map_startFadeIn.call(this, duration, white);
-    };
-
-    const _Scene_Map_updateFade = Scene_Map.prototype.updateFade;
-    Scene_Map.prototype.updateFade = function () {
-        if (SceneManager.isPreviousScene(Scene_Battle)) {
-            if (this._mapResumeEffectDuration > 0) {
-                this._mapResumeEffectDuration--;
-                const zoomX = $gamePlayer.screenX();
-                const zoomY = $gamePlayer.screenY() - 24;
-                if (this._mapResumeEffectDuration < 1) {
-                    $gameScreen.setZoom(zoomX, zoomY, 1);
-                } else {
-                    $gameScreen.setZoom(
-                        zoomX,
-                        zoomY,
-                        this._mapResumeEffectDuration
-                    );
-                }
-            }
-        }
-        _Scene_Map_updateFade.call(this);
     };
 })();

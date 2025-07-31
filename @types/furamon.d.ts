@@ -137,7 +137,17 @@ interface Scene_MenuBase {
 }
 
 interface Scene_Map{
-    _mapResumeEffectDuration: number;
+    _mapResumeEffect: MapResumeEffect | null;
+    _startMapResumeEffect?: boolean;
+}
+
+interface MapResumeEffect {
+    duration: number;
+    maxDuration: number;
+    startX: number;
+    startY: number;
+    startScale: number;
+    initialized: boolean;
 }
 
 interface Game_Map {
