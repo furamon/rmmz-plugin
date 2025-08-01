@@ -106,7 +106,7 @@
     Scene_Base.prototype.slowFadeSpeed = function () {
         return this.fadeSpeed() * 1.5;
     };
-    // 戦闘終了時にズームアウトで戻るようにする
+    // 戦闘後ズームアウトで戻る
     const _Scene_Map_startFadeIn = Scene_Map.prototype.startFadeIn;
     Scene_Map.prototype.startFadeIn = function (duration, white) {
         // 戦闘勝利からの移行でないならもとの処理

@@ -140,6 +140,15 @@ interface Scene_Map{
     _mapResumeEffectDuration: number;
 }
 
+interface MapResumeEffect {
+    duration: number;
+    maxDuration: number;
+    startX: number;
+    startY: number;
+    startScale: number;
+    initialized: boolean;
+}
+
 interface Game_Map {
     tileUnit: any;
 }
