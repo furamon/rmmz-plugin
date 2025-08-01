@@ -113,8 +113,8 @@
         if (SceneManager.isPreviousScene(Scene_Battle)) {
             const zoomX = $gamePlayer.screenX();
             const zoomY = $gamePlayer.screenY();
-            this._mapResumeEffectDuration = 24;
-            $gameScreen.setZoom(zoomX, zoomY, this._mapResumeEffectDuration / 2);
+            this._mapResumeEffectDuration = 32;
+            $gameScreen.setZoom(zoomX, zoomY, this._mapResumeEffectDuration / 8);
         }
         _Scene_Map_startFadeIn.call(this, duration, white);
     };
@@ -125,11 +125,11 @@
                 this._mapResumeEffectDuration--;
                 const zoomX = $gamePlayer.screenX();
                 const zoomY = $gamePlayer.screenY() - 24;
-                if (this._mapResumeEffectDuration < 2) {
+                if (this._mapResumeEffectDuration < 8) {
                     $gameScreen.setZoom(zoomX, zoomY, 1);
                 }
                 else {
-                    $gameScreen.setZoom(zoomX, zoomY, this._mapResumeEffectDuration / 2);
+                    $gameScreen.setZoom(zoomX, zoomY, this._mapResumeEffectDuration / 8);
                 }
             }
         }
