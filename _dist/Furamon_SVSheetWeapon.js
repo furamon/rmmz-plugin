@@ -22,6 +22,11 @@
  * 画像ファイル名（拡張子なし）に置き換えてください。
  * 例: `img/sv_weapons/Broadsword.png` を使いたい場合
  *   <SVWeapon:Broadsword>
+ * 武器の描画位置をオフセットすることも可能です。
+ * <SVWeaponOffset:x,y>
+ *
+ * xとyにはピクセル単位の数値を指定してください。
+ * 例: <SVWeaponOffset:10,-5>
  */
 (() => {
     const PLUGIN_NAME = 'Furamon_SVSheetWeapon';
@@ -42,6 +47,8 @@
         _weaponName;
         _motion;
         _pattern;
+        _offsetX;
+        _offsetY;
         constructor() {
             super();
             this.initMembers();
@@ -53,6 +60,8 @@
             this._weaponName = '';
             this._motion = null;
             this._pattern = 0;
+            this._offsetX = 0;
+            this._offsetY = 0;
         }
         setup(battler) {
             this._battler = battler;
@@ -62,6 +71,8 @@
             if (this._battler) {
                 this.updateBitmap();
                 this.updateFrame();
+                this.x = this._offsetX;
+                this.y = this._offsetY;
             }
         }
         updateBitmap() {
@@ -74,8 +85,21 @@
                 const weaponName = weapon && weapon.meta.SVWeapon ? String(weapon.meta.SVWeapon) : '';
                 if (this._weaponName !== weaponName) {
                     this._weaponName = weaponName;
+                    this._offsetX = 0;
+                    this._offsetY = 0;
                     if (this._weaponName) {
                         this.bitmap = ImageManager.loadSvWeapon(this._weaponName);
+                        if (weapon && weapon.meta.SVWeaponOffset) {
+                            const offsetData = String(weapon.meta.SVWeaponOffset).split(',');
+                            if (offsetData.length === 2) {
+                                const ox = parseInt(offsetData[0].trim(), 10);
+                                const oy = parseInt(offsetData[1].trim(), 10);
+                                if (!isNaN(ox) && !isNaN(oy)) {
+                                    this._offsetX = ox;
+                                    this._offsetY = oy;
+                                }
+                            }
+                        }
                     }
                     else {
                         this.bitmap = null;
