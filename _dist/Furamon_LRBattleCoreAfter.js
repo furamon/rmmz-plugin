@@ -5,7 +5,6 @@
  *
  * @help 以下の処理を加えます。
  * - NRP_EquipItemのキャラ入れ替えでnullエラー修正
- * - NRP_HealAssistのLPが残っているなら戦闘不能者も選択
  *
  */
 (function () {

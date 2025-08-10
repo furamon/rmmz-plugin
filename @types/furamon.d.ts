@@ -64,6 +64,7 @@ declare class TextManager {
 
 declare namespace ImageManager {
     export function loadSvEnemy(filename: string, hue?: number): Bitmap;
+    export function loadSvWeapon(filename: string): Bitmap;
 }
 
 declare namespace ConfigManager {
@@ -259,6 +260,7 @@ interface Sprite_Battler {
     _motionCount: number;
     motionSpeed(): number;
     startMove(x: number, y: number, duration: number): void;
+    _motionType: string;
     [key: string]: any; // インデックスシグネチャを追加
 }
 
@@ -450,4 +452,16 @@ declare interface Scene_Battle {
 
 interface Bitmap {
     getAlphaPixel(x: number, y: number)
+}
+
+declare class Sprite_SVWeapon extends Sprite {
+    _battler: Sprite_Actor | null;
+    _weaponName: string;
+    _motion: any;
+    _pattern: number;
+    setup(battler: Sprite_Actor): void;
+}
+
+declare interface Sprite_Actor extends Sprite_Battler {
+    _weaponSprite: Sprite_SVWeapon;
 }
