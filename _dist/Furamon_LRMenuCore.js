@@ -135,4 +135,14 @@
         }
         _Scene_Map_updateFade.call(this);
     };
+    // NUUN_SaveScreen_3.js 競合対策
+    const _Scene_File_start = Scene_File.prototype.start;
+    Scene_File.prototype.start = function () {
+        _Scene_File_start.call(this);
+        // _listWindowの存在と、NUUN_SaveScreen_3.jsの有効性を確認
+        if (this._listWindow && typeof this._listWindow.isSaveFileShowAutoSave === 'function') {
+            // selectLast() によって設定された index を元にスクロールさせる
+            this._listWindow.ensureCursorVisible(false);
+        }
+    };
 })();

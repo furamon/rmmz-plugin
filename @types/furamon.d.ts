@@ -361,6 +361,10 @@ interface Window_Options {
     changeWindowSizeValue(symbol: string, value: number): void;
 }
 
+interface Window_SavefileList{
+    isSaveFileShowAutoSave: boolean
+}
+
 interface Game_Interpreter {
     _temporaryWindow: Window_TemporaryText;
 }
