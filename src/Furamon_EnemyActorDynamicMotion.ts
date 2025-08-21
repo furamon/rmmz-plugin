@@ -7,6 +7,7 @@
 // 2025/06/20 1.1.0 NRP_EnemyCollapse対応
 // 2025/06/24 1.1.1 関数参照が抜けておりSVアクターを倒すとエラーで止まることがあるのを修正
 // 2025/06/29 1.2.0 NRP_DynamicMotionMZとの連携を再実装
+// 2025/08/22 1.3.0 複数のSVアクター画像を連結する機能を追加
 
 /*:
  * @target MZ
@@ -210,22 +211,53 @@
         svSprite.opacity = 255 * (1 - progress);
 
         if (collapseData.CollapseType === 'Sink') {
-            const mainSprite = svSprite._mainSprite;
-            if (mainSprite?.bitmap?.isReady()) {
-                const frame = mainSprite._frame;
-                const frameSize = svSprite.getFrameSize(); // from Furamon_EnemyActorAnimation
-                if (frame && frameSize) {
-                    const originalHeight = frameSize.frameHeight;
-                    const newHeight = Math.max(
-                        0,
-                        originalHeight * (1 - progress)
-                    );
-                    mainSprite.setFrame(
-                        frame.x,
-                        frame.y,
-                        frame.width,
-                        newHeight
-                    );
+            const cols = svSprite.getCols();
+            if (cols > 0 && svSprite.getNumRows() > 1) {
+                const sprites = [svSprite._mainSprite, ...svSprite._additionalSprites];
+                const frameHeight = svSprite.getFrameHeight(svSprite._mainSprite.bitmap);
+                const numRows = svSprite.getNumRows();
+                const totalGridHeight = numRows * frameHeight;
+                const sunkHeight = totalGridHeight * progress;
+
+                for (let i = 0; i < sprites.length; i++) {
+                    const sprite = sprites[i];
+                    if (!sprite.bitmap?.isReady()) continue;
+
+                    const row = Math.floor(i / cols);
+                    const rowFromBottom = numRows - 1 - row;
+                    
+                    const spriteTopYInGrid = (rowFromBottom + 1) * frameHeight;
+                    const newHeight = Math.max(0, spriteTopYInGrid - sunkHeight);
+
+                    const frame = sprite._frame;
+                    if (frame) {
+                        sprite.setFrame(
+                            frame.x,
+                            frame.y,
+                            frame.width,
+                            Math.min(frameHeight, newHeight)
+                        );
+                    }
+                }
+            } else {
+                const allSprites = [svSprite._mainSprite, ...(svSprite._additionalSprites || [])];
+                for (const sprite of allSprites) {
+                    if (sprite?.bitmap?.isReady()) {
+                        const frame = sprite._frame;
+                        if (frame) {
+                            const originalHeight = sprite.bitmap.height / 6;
+                            const newHeight = Math.max(
+                                0,
+                                originalHeight * (1 - progress)
+                            );
+                            sprite.setFrame(
+                                frame.x,
+                                frame.y,
+                                frame.width,
+                                newHeight
+                            );
+                        }
+                    }
                 }
             }
         }
