@@ -104,6 +104,9 @@
                 // NRP_EnemyCollapse.jsのupdateEffectを呼び出さずに、
                 // 独自の更新処理に切り替える
                 this.setupEffect();
+                if (this._svActorSprite && this._svActorSprite._collapseStartY == null) {
+                    this._svActorSprite._collapseStartY = this._svActorSprite.y;
+                }
                 if (this._effectDuration > 0) {
                     this._effectDuration--;
                     this.updateSvActorCollapse();
@@ -111,6 +114,13 @@
                         this.opacity = 0;
                         if (this._svActorSprite) {
                             this._svActorSprite.opacity = 0;
+                            this._svActorSprite._collapseStartY = null;
+                        }
+                        if (this._svActorSprite?._collapseMask) {
+                            this._svActorSprite.mask = null;
+                            this._svActorSprite.removeChild(this._svActorSprite._collapseMask);
+                            this._svActorSprite._collapseMask.destroy();
+                            this._svActorSprite._collapseMask = null;
                         }
                         this._effectType = null;
                     }
@@ -188,40 +198,27 @@
         }
         svSprite.opacity = 255 * (1 - progress);
         if (collapseData.CollapseType === 'Sink') {
-            const cols = svSprite.getCols();
-            if (cols > 0 && svSprite.getNumRows() > 1) {
-                const sprites = [svSprite._mainSprite, ...svSprite._additionalSprites];
-                const frameHeight = svSprite.getFrameHeight(svSprite._mainSprite.bitmap);
-                const numRows = svSprite.getNumRows();
-                const totalGridHeight = numRows * frameHeight;
-                const sunkHeight = totalGridHeight * progress;
-                for (let i = 0; i < sprites.length; i++) {
-                    const sprite = sprites[i];
-                    if (!sprite.bitmap?.isReady())
-                        continue;
-                    const row = Math.floor(i / cols);
-                    const rowFromBottom = numRows - 1 - row;
-                    const spriteTopYInGrid = (rowFromBottom + 1) * frameHeight;
-                    const newHeight = Math.max(0, spriteTopYInGrid - sunkHeight);
-                    const frame = sprite._frame;
-                    if (frame) {
-                        sprite.setFrame(frame.x, frame.y, frame.width, Math.min(frameHeight, newHeight));
-                    }
-                }
+            // マスクがなければ作成
+            if (!svSprite._collapseMask) {
+                svSprite._collapseMask = new PIXI.Graphics();
+                svSprite.addChild(svSprite._collapseMask);
+                svSprite.mask = svSprite._collapseMask;
             }
-            else {
-                const allSprites = [svSprite._mainSprite, ...(svSprite._additionalSprites || [])];
-                for (const sprite of allSprites) {
-                    if (sprite?.bitmap?.isReady()) {
-                        const frame = sprite._frame;
-                        if (frame) {
-                            const originalHeight = sprite.bitmap.height / 6;
-                            const newHeight = Math.max(0, originalHeight * (1 - progress));
-                            sprite.setFrame(frame.x, frame.y, frame.width, newHeight);
-                        }
-                    }
-                }
-            }
+            const totalHeight = this.height; // Sprite_Enemyのheight getter
+            const totalWidth = this.width; // Sprite_Enemyのwidth getter
+            const startY = svSprite._collapseStartY ?? this.y;
+            const sinkAmount = totalHeight * progress;
+            svSprite.y = startY + sinkAmount; // スプライト全体を下に移動させる
+            const maskHeight = Math.max(0, totalHeight * (1 - progress));
+            // Sprite_SvActorのアンカーは(0.5, 1)なので、原点は最下段の中央足元。
+            // マスクの矩形は、この原点を基準に描画する必要がある。
+            const maskStartX = -totalWidth / 2;
+            const maskStartY = -totalHeight;
+            svSprite._collapseMask.clear();
+            svSprite._collapseMask.beginFill(0xffffff);
+            // マスクの開始Y座標を固定し、高さを変えることで下から消えるように見せる
+            svSprite._collapseMask.drawRect(maskStartX, maskStartY, totalWidth, maskHeight);
+            svSprite._collapseMask.endFill();
         }
         if (collapseData.Sound2 && collapseData.Sound2Interval) {
             try {

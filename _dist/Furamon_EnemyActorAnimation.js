@@ -551,6 +551,8 @@
         _actualSize; // セットアップ時に計算
         _frameSize;
         _svActorFileNames;
+        _collapseMask;
+        _collapseStartY;
         isReady() {
             return this._mainSprite && this._mainSprite.bitmap && this._mainSprite.bitmap.isReady();
         }
@@ -583,6 +585,8 @@
             this._frameSize = null;
             this._additionalSprites = [];
             this._svActorFileNames = undefined;
+            this._collapseMask = null;
+            this._collapseStartY = null;
             this.createMainSprite();
             this.createShadowSprite();
             this.createWeaponSprite();
@@ -1128,17 +1132,20 @@
             }
         }
         getTotalActualWidth() {
-            if (!this._svActorFileNames) {
+            if (!this._battler || !this._mainSprite.bitmap?.isReady()) {
                 return this.getActualSize().width;
             }
-            const sprites = [this._mainSprite, ...this._additionalSprites];
-            const totalWidth = sprites.reduce((acc, s) => {
-                if (s.bitmap && s.bitmap.isReady()) {
-                    return acc + this.getFrameWidth(s.bitmap);
-                }
-                return acc;
-            }, 0);
-            return totalWidth;
+            const cols = this.getCols();
+            const frameWidth = this.getFrameWidth(this._mainSprite.bitmap);
+            const numSprites = this._svActorFileNames
+                ? this._svActorFileNames.length
+                : 1;
+            if (cols > 0) {
+                return Math.min(numSprites, cols) * frameWidth;
+            }
+            else {
+                return numSprites * frameWidth;
+            }
         }
         refreshBitmap() {
             // Replaced by refreshSprites

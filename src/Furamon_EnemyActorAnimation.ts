@@ -620,6 +620,8 @@
         _actualSize: { width: number; height: number } | null; // セットアップ時に計算
         _frameSize: { frameWidth: number; frameHeight: number } | null;
         _svActorFileNames: string[] | undefined;
+        _collapseMask: PIXI.Graphics | null;
+        _collapseStartY: number | null;
 
         isReady() {
             return this._mainSprite && this._mainSprite.bitmap && this._mainSprite.bitmap.isReady();
@@ -633,7 +635,7 @@
         getNumRows() {
             const numSprites = this._svActorFileNames ? this._svActorFileNames.length : 0;
             if (numSprites === 0) {
-                return 1; 
+                return 1;
             }
             const cols = this.getCols();
             if (cols <= 0) {
@@ -655,6 +657,8 @@
             this._frameSize = null;
             this._additionalSprites = [];
             this._svActorFileNames = undefined;
+            this._collapseMask = null;
+            this._collapseStartY = null;
             this.createMainSprite();
             this.createShadowSprite();
             this.createWeaponSprite();
@@ -1270,17 +1274,21 @@
         }
 
         getTotalActualWidth() {
-            if (!this._svActorFileNames) {
+            if (!this._battler || !this._mainSprite.bitmap?.isReady()) {
                 return this.getActualSize().width;
             }
-            const sprites = [this._mainSprite, ...this._additionalSprites];
-            const totalWidth = sprites.reduce((acc, s) => {
-                if (s.bitmap && s.bitmap.isReady()) {
-                    return acc + this.getFrameWidth(s.bitmap);
-                }
-                return acc;
-            }, 0);
-            return totalWidth;
+
+            const cols = this.getCols();
+            const frameWidth = this.getFrameWidth(this._mainSprite.bitmap);
+            const numSprites = this._svActorFileNames
+                ? this._svActorFileNames.length
+                : 1;
+
+            if (cols > 0) {
+                return Math.min(numSprites, cols) * frameWidth;
+            } else {
+                return numSprites * frameWidth;
+            }
         }
 
         refreshBitmap() {

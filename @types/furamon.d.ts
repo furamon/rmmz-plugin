@@ -299,6 +299,8 @@ declare class Sprite_SvActor extends Sprite {
     width: number;
     height: number;
     [key: string]: any;
+    _collapseMask: PIXI.Graphics | null;
+    _collapseStartY: number | null;
 }
 
 // Sprite_SvActorのコンストラクタ関数の型定義
