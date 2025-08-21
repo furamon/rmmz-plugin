@@ -8,10 +8,8 @@
  * @plugindesc SVアクターに武器スプライトシートを表示します。
  * @author Furamon
  * @orderAfter BattleMotionMZ
- * @help
- * このプラグインは、サイドビューアクターに、
- * アクターのスプライトと同じ規格のスプライトシートを使って武器を表示します。
- *
+ * @help サイドビューアクターに、アクターのスプライトと同じ規格の
+ * スプライトシートを使って武器を表示します。
  * 武器のスプライトシートを `img/sv_weapons/` フォルダに配置してください。
  *
  * 武器に武器画像を紐づけるには、データベースの武器のメモ欄に
@@ -23,6 +21,8 @@
  * 例: `img/sv_weapons/Broadsword.png` を使いたい場合
  *   <SVWeapon:Broadsword>
  * 武器の描画位置をオフセットすることも可能です。
+ * 武器、またはアクターのメモ欄に記述します。
+ * アクターのメモ欄の設定が優先されます。
  * <SVWeaponOffset:x,y>
  *
  * xとyにはピクセル単位の数値を指定してください。
@@ -89,8 +89,12 @@
                     this._offsetY = 0;
                     if (this._weaponName) {
                         this.bitmap = ImageManager.loadSvWeapon(this._weaponName);
-                        if (weapon && weapon.meta.SVWeaponOffset) {
-                            const offsetData = String(weapon.meta.SVWeaponOffset).split(',');
+                        // アクターのメモ欄を優先し、次に武器のメモ欄を確認
+                        const actorMeta = actor.actor().meta;
+                        const weaponMeta = weapon ? weapon.meta : {};
+                        const offsetString = actorMeta.SVWeaponOffset || weaponMeta.SVWeaponOffset;
+                        if (offsetString) {
+                            const offsetData = String(offsetString).split(',');
                             if (offsetData.length === 2) {
                                 const ox = parseInt(offsetData[0].trim(), 10);
                                 const oy = parseInt(offsetData[1].trim(), 10);

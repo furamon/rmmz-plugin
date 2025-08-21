@@ -46,7 +46,7 @@ pnpm install
 
 ```shell
 pnpm tsc
-xcopy .\\_dist\\* ..\\src\\js\\plugins\\Furamon /E /I /Y
+cp -f ./_dist/* ../src/js/plugins/Furamon
 ```
 
 (注: `package.json`に`scripts`エントリはありませんが、`pnpm`は`node_modules/.bin`にある`tsc`を直接実行できます)
