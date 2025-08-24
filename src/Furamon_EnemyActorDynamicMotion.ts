@@ -83,7 +83,7 @@
     };
 
     /**
-     * ● SVキャラクターモーションの実行���敵版）
+     * ● SVキャラクターモーションの実行（敵版）
      */
     Sprite_Enemy.prototype.startDynamicSvMotion = function (
         dynamicMotion: any

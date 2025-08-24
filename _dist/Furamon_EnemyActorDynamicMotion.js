@@ -69,7 +69,7 @@
         _Sprite_Enemy_startDynamicMotion.apply(this, arguments);
     };
     /**
-     * ● SVキャラクターモーションの実行���敵版）
+     * ● SVキャラクターモーションの実行（敵版）
      */
     Sprite_Enemy.prototype.startDynamicSvMotion = function (dynamicMotion) {
         if (!isSvActorEnemy(this._battler) ||
