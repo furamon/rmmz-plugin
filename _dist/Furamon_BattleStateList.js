@@ -3,6 +3,7 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
+// 2025/07/22 1.0.0 公開！
 /*:
  * @target MZ
  * @plugindesc 戦闘中に発動しているステートの説明リストを表示するウィンドウを追加します。

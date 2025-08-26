@@ -3,6 +3,8 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
+// 2025/08/10 1.0.0 公開！
+// 2025/08/27 1.1.0 モーション毎に武器画像を変更する機能、メニュー画面で武器を描画しない機能(NUUN_MenuScreenEX用)を追加
 /*:
  * @target MZ
  * @plugindesc SVアクターに武器スプライトシートを表示します。
@@ -20,6 +22,16 @@
  * 画像ファイル名（拡張子なし）に置き換えてください。
  * 例: `img/sv_weapons/Broadsword.png` を使いたい場合
  *   <SVWeapon:Broadsword>
+ *
+ * 特定のアクターが特定のモーション中だけ武器画像を変更することもできます。
+ * 武器のメモ欄に以下の書式で記述してください。
+ *   <SVWeaponActor[アクターID]:モーション名,ファイル名>
+ *
+ * モーション名は walk, wait, attack など、SVアクターのモーション名を指定します。
+ * 例: アクターID1がこの武器を装備して待機モーションのときだけ
+ *     Broadsword_1.pngを使いたい場合
+ *     <SVWeaponActor1:walk,Broadsword_1>
+ *
  * 武器の描画位置をオフセットすることも可能です。
  * 武器、またはアクターのメモ欄に記述します。
  * アクターのメモ欄の設定が優先されます。
@@ -68,7 +80,8 @@
         }
         update() {
             super.update();
-            if (this._battler) {
+            // (NUUN_MenuScreenEX用)メニュー画面では描画しない
+            if (this._battler && SceneManager._scene.constructor !== Scene_Menu) {
                 this.updateBitmap();
                 this.updateFrame();
                 this.x = this._offsetX;
@@ -82,7 +95,26 @@
             if (actor) {
                 const weapons = actor.weapons();
                 const weapon = weapons[0];
-                const weaponName = weapon && weapon.meta.SVWeapon ? String(weapon.meta.SVWeapon) : '';
+                // デフォルトの武器画像名
+                let weaponName = weapon && weapon.meta.SVWeapon ? String(weapon.meta.SVWeapon) : '';
+                // アクターIDとモーションに応じた武器画像の上書き処理
+                if (weapon) {
+                    const actorId = actor.actorId();
+                    const motionType = this._battler._motionType;
+                    const dynamicTag = `SVWeaponActor${actorId}`;
+                    if (weapon.meta[dynamicTag] && motionType) {
+                        const motionSettings = Array.isArray(weapon.meta[dynamicTag])
+                            ? weapon.meta[dynamicTag]
+                            : [weapon.meta[dynamicTag]];
+                        for (const setting of motionSettings) {
+                            const [motion, file] = String(setting).split(',').map(s => s.trim());
+                            if (motion === motionType) {
+                                weaponName = file;
+                                break;
+                            }
+                        }
+                    }
+                }
                 if (this._weaponName !== weaponName) {
                     this._weaponName = weaponName;
                     this._offsetX = 0;
