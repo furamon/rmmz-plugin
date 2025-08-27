@@ -106,35 +106,6 @@
     Scene_Base.prototype.slowFadeSpeed = function () {
         return this.fadeSpeed() * 1.5;
     };
-    // 戦闘後ズームアウトで戻る
-    const _Scene_Map_startFadeIn = Scene_Map.prototype.startFadeIn;
-    Scene_Map.prototype.startFadeIn = function (duration, white) {
-        // 戦闘勝利からの移行でないならもとの処理
-        if (SceneManager.isPreviousScene(Scene_Battle)) {
-            const zoomX = $gamePlayer.screenX();
-            const zoomY = $gamePlayer.screenY();
-            this._mapResumeEffectDuration = 32;
-            $gameScreen.setZoom(zoomX, zoomY, this._mapResumeEffectDuration / 8);
-        }
-        _Scene_Map_startFadeIn.call(this, duration, white);
-    };
-    const _Scene_Map_updateFade = Scene_Map.prototype.updateFade;
-    Scene_Map.prototype.updateFade = function () {
-        if (SceneManager.isPreviousScene(Scene_Battle)) {
-            if (this._mapResumeEffectDuration > 0) {
-                this._mapResumeEffectDuration--;
-                const zoomX = $gamePlayer.screenX();
-                const zoomY = $gamePlayer.screenY() - 24;
-                if (this._mapResumeEffectDuration < 8) {
-                    $gameScreen.setZoom(zoomX, zoomY, 1);
-                }
-                else {
-                    $gameScreen.setZoom(zoomX, zoomY, this._mapResumeEffectDuration / 8);
-                }
-            }
-        }
-        _Scene_Map_updateFade.call(this);
-    };
     // NUUN_SaveScreen_3.js 競合対策
     const _Scene_File_start = Scene_File.prototype.start;
     Scene_File.prototype.start = function () {
