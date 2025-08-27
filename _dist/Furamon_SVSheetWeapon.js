@@ -3,8 +3,8 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
-// 2025/08/10 1.0.0 公開！
-// 2025/08/27 1.1.0 モーション毎に武器画像を変更する機能、メニュー画面で武器を描画しない機能(NUUN_MenuScreenEX用)を追加
+// 2025/08/10 1.0.0-Beta 仮作成
+// 2025/08/27 1.1.0-Beta モーション毎に武器画像を変更する機能、メニュー画面で武器を描画しない機能(NUUN_MenuScreenEX用)を追加
 /*:
  * @target MZ
  * @plugindesc SVアクターに武器スプライトシートを表示します。
