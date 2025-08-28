@@ -123,6 +123,7 @@ interface Scene_Base {
 
 interface Scene_Battle {
     _enemyNameWindow: Window_EnemyName;
+    _actorStatus: Window_Status;
 }
 
 declare class Scene_KeyConfig {

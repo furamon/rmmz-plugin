@@ -5,7 +5,8 @@
  *
  * @help 以下の処理を加えます。
  * - NRP_EquipItemのキャラ入れ替えでnullエラー修正
- * - NRP_CountTimeBattleでアクターコマンドキャンセルを差し替え
+ * - NRP_CountTimeBattle.jsでアクターコマンドキャンセルを差し替え
+ * - NRP_CountTimeBattle.jsとNUUN_BattleStyleEX.jsの競合修正
  *
  */
 (function () {
@@ -21,7 +22,8 @@
     const _BattleManager_selectPreviousCommand = BattleManager.selectPreviousCommand;
     BattleManager.selectPreviousCommand = function () {
         // NRP_CountTimeBattle.js が有効な場合
-        if (PluginManager._scripts.includes('NRP_CountTimeBattle') && this.actor()) {
+        if (PluginManager._scripts.includes('NRP_CountTimeBattle') &&
+            this.actor()) {
             // アクションを防御に設定
             const action = this.inputtingAction();
             if (action) {
@@ -33,6 +35,21 @@
         else {
             // 元の処理を呼び出す
             _BattleManager_selectPreviousCommand.call(this);
+        }
+    };
+    // NUUN_BattleStyleEX.js と NRP_CountTimeBattle.js の競合対策
+    // CTBでターンが回ってきたアクターのステータスを点灯させる
+    const _Scene_Battle_startActorCommandSelection = Scene_Battle.prototype.startActorCommandSelection;
+    Scene_Battle.prototype.startActorCommandSelection = function () {
+        _Scene_Battle_startActorCommandSelection.call(this);
+        if (PluginManager._scripts.includes('NRP_CountTimeBattle')) {
+            if (this._statusWindow) {
+                const actor = BattleManager.actor();
+                if (actor) {
+                    this._statusWindow.select(actor.index());
+                    this._statusWindow.activate();
+                }
+            }
         }
     };
 })();
