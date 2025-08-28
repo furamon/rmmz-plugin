@@ -129,4 +129,13 @@
             this._listWindow.ensureCursorVisible(false);
         }
     };
+
+    // NUUN_BattleStyleEX内のアクターステータスはZinTweenのトゥイーンさせない
+    const _Scene_Battle_startActorCommandSelection = Scene_Battle.prototype.startActorCommandSelection;
+    Scene_Battle.prototype.startActorCommandSelection = function() {
+        _Scene_Battle_startActorCommandSelection.call(this);
+        if (this._statusWindow) {
+            this._statusWindow.setCursorRect = Window.prototype.setCursorRect
+        }
+    }
 })();

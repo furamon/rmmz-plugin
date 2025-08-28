@@ -42,43 +42,37 @@
     };
 
     // NUUN_BattleStyleEX.js と NRP_CountTimeBattle.js の競合対策
-    // CTBでターンが回ってきたアクターのステータスを点灯させる
+    // CTBでターンが回ってきたアクターのステータスを点灯させ、行動後も維持する
     const _Scene_Battle_createAllWindows = Scene_Battle.prototype.createAllWindows;
     Scene_Battle.prototype.createAllWindows = function() {
         _Scene_Battle_createAllWindows.call(this);
 
-        // `this._statusWindow` は NUUN_BattleStyleEX によって Window_BsBattleStatus に置き換えられている
-        // このウィンドウインスタンスに入力可否を制御するフラグと、
-        // 入力処理メソッドへのパッチを適用する
         if (this._statusWindow && !this._statusWindow._statusInputPatched) {
             this._statusWindow._statusInputDisabled = false;
 
-            // カーソル移動を無効化
-            const originalProcessCursorMove = this._statusWindow.processCursorMove;
+            // 入力処理を無効化するパッチ
+            const _statusWindow_CursorMove = this._statusWindow.processCursorMove;
             this._statusWindow.processCursorMove = function() {
-                if (this._statusInputDisabled) {
-                    return;
-                }
-                originalProcessCursorMove.call(this);
+                if (this._statusInputDisabled) return;
+                _statusWindow_CursorMove.call(this);
             };
-
-            // 決定・キャンセルなどの操作を無効化
-            const originalProcessHandling = this._statusWindow.processHandling;
+            const _statusWindow_Handling = this._statusWindow.processHandling;
             this._statusWindow.processHandling = function() {
-                if (this._statusInputDisabled) {
-                    return;
-                }
-                originalProcessHandling.call(this);
+                if (this._statusInputDisabled) return;
+                _statusWindow_Handling.call(this);
+            };
+            const _statusWindow_Touch = this._statusWindow.processTouch;
+            this._statusWindow.processTouch = function() {
+                 if (this._statusInputDisabled) return;
+                _statusWindow_Touch.call(this);
             };
 
-            // タッチ操作を無効化
-            const originalProcessTouch = this._statusWindow.processTouch;
-            this._statusWindow.processTouch = function() {
-                 if (this._statusInputDisabled) {
-                    return;
-                }
-                originalProcessTouch.call(this);
-            }
+            // deactivateを無効化するパッチ
+            const _statusWindow_Deactivate = this._statusWindow.deactivate;
+            this._statusWindow.deactivate = function() {
+                if (this._statusInputDisabled) return;
+                _statusWindow_Deactivate.call(this);
+            };
 
             this._statusWindow._statusInputPatched = true;
         }
@@ -95,7 +89,6 @@
                 if (actor) {
                     this._statusWindow.select(actor.index());
                     this._statusWindow.activate();
-                    // フラグを立てて入力を無効化
                     if (this._statusWindow._statusInputPatched) {
                         this._statusWindow._statusInputDisabled = true;
                     }
@@ -107,12 +100,31 @@
         }
     };
 
-    const _Scene_Battle_endCommandSelection = Scene_Battle.prototype.endCommandSelection;
-    Scene_Battle.prototype.endCommandSelection = function() {
-        _Scene_Battle_endCommandSelection.call(this);
-        // コマンド選択が終わったら入力無効化を解除
-        if (this._statusWindow && this._statusWindow._statusInputPatched && this._statusWindow._statusInputDisabled) {
+    // 味方選択を開始するときは、ステータスウィンドウの入力を有効化
+    const _Scene_Battle_startActorSelection = Scene_Battle.prototype.startActorSelection;
+    Scene_Battle.prototype.startActorSelection = function() {
+        if (this._statusWindow && this._statusWindow._statusInputPatched) {
             this._statusWindow._statusInputDisabled = false;
         }
+        _Scene_Battle_startActorSelection.call(this);
+    };
+
+    // 味方選択をキャンセルしたときは、再度ステータスウィンドウの入力を無効化
+    const _Scene_Battle_onActorCancel = Scene_Battle.prototype.onActorCancel;
+    Scene_Battle.prototype.onActorCancel = function() {
+        _Scene_Battle_onActorCancel.call(this);
+        if (this._statusWindow && this._statusWindow._statusInputPatched) {
+            this._statusWindow.select(BattleManager.actor()!.index());
+            this._statusWindow._statusInputDisabled = true;
+        }
+    };
+
+    // 戦闘終了時は入力無効を解除
+    const _Scene_Battle_terminate = Scene_Battle.prototype.terminate;
+    Scene_Battle.prototype.terminate = function() {
+        if (this._statusWindow && this._statusWindow._statusInputPatched) {
+            this._statusWindow._statusInputDisabled = false;
+        }
+        _Scene_Battle_terminate.call(this);
     };
 })();
