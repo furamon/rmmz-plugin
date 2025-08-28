@@ -201,7 +201,7 @@ interface Game_Actor {
 interface Game_Enemy {
     enemy(): MZ.Enemy;
     requestMotion(motionName: string): void;
-    makeSPName?(action: Game_Action): string | null;
+    makeSPName?(action?: Game_Action): string | null;
     _motion?: string;
     _motionRefresh?: boolean;
     getHPGaugePositionX(): number;
@@ -357,6 +357,12 @@ interface Window_BattleLog {
     );
 }
 
+interface Window_BattleStatus {
+    _statusInputPatched: boolean;
+    _statusInputDisabled: boolean;
+    select(index: number): void;
+}
+
 interface Window_Options {
     _noTouchSelect: boolean;
     _gamepadOptionIndex: number;
@@ -472,3 +478,13 @@ declare class Sprite_SVWeapon extends Sprite {
 declare interface Sprite_Actor extends Sprite_Battler {
     _weaponSprite: Sprite_SVWeapon;
 }
+
+// For NUUN_BattleStyleEX
+interface NuunStyleData {
+    isSelectBackShow(): boolean;
+    activeActorWindow(): boolean;
+}
+
+declare const NuunManager: {
+    styleData: NuunStyleData;
+};
