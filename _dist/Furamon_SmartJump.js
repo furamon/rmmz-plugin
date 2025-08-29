@@ -180,30 +180,62 @@
      * 通行判定を行う（HalfMove対応版）
      */
     function canPassToPosition(fromX, fromY, direction, distance) {
-        // 着地予定地点の座標を計算
+        const player = $gamePlayer;
         const [dx, dy] = getDirectionOffset(direction);
         const targetX = fromX + dx * distance;
         const targetY = fromY + dy * distance;
-        if (isHalfMoveActive()) {
-            // HalfMoveがアクティブな場合、着地点での通行可能性をチェック
-            const player = $gamePlayer;
-            const tempX = player._x;
-            const tempY = player._y;
-            // 着地点に一時的に設定して通行可能かチェック
-            player._x = targetX;
-            player._y = targetY;
-            // 着地点が通行可能かチェック（方向は関係ないので適当な方向を指定）
-            const canLand = $gameMap.isPassable(Math.floor(targetX), Math.floor(targetY), 2) ||
-                $gameMap.isPassable(Math.ceil(targetX), Math.ceil(targetY), 2);
-            // 元の位置に戻す
-            player._x = tempX;
-            player._y = tempY;
-            return canLand;
+        // 1. イベントとの衝突チェック
+        if (player.isCollidedWithCharacters(targetX, targetY)) {
+            return false;
+        }
+        // 2. タイルの通行可能性チェック
+        const checkTile = (x, y) => {
+            // タイル自体が通行可能か（壁でないか）をチェックします。
+            // 4方向いずれかに移動可能であれば、完全に閉鎖された壁ではないと判断します。
+            return ($gameMap.isPassable(x, y, 2) ||
+                $gameMap.isPassable(x, y, 4) ||
+                $gameMap.isPassable(x, y, 6) ||
+                $gameMap.isPassable(x, y, 8));
+        };
+        const x_floor = Math.floor(targetX);
+        const y_floor = Math.floor(targetY);
+        if (targetX !== x_floor && targetY !== y_floor) {
+            // XとYが両方半歩の場合（4タイルにまたがる）
+            if (!checkTile(x_floor, y_floor) ||
+                !checkTile(Math.ceil(targetX), y_floor) ||
+                !checkTile(x_floor, Math.ceil(targetY)) ||
+                !checkTile(Math.ceil(targetX), Math.ceil(targetY))) {
+                return false;
+            }
+        }
+        else if (targetX !== x_floor) {
+            // Xが半歩の場合（左右2タイルにまたがる）
+            if (!checkTile(x_floor, y_floor) ||
+                !checkTile(Math.ceil(targetX), y_floor)) {
+                return false;
+            }
+        }
+        else if (targetY !== y_floor) {
+            // Yが半歩の場合（上下2タイルにまたがる）
+            if (!checkTile(x_floor, y_floor) ||
+                !checkTile(x_floor, Math.ceil(targetY))) {
+                return false;
+            }
         }
         else {
-            // 通常の場合、着地点の通行判定
-            return $gameMap.isPassable(targetX, targetY, 2); // 下方向で通行判定
+            // 通常の1タイルの場合
+            if (!checkTile(targetX, targetY)) {
+                return false;
+            }
         }
+        // 3. HalfMove.js の特殊な通行不可設定（リージョン/地形タグ）をチェック
+        if (isHalfMoveActive()) {
+            // @ts-ignore
+            if (!$gameMap.isPassableByHalfRegionAndTag(targetX, targetY)) {
+                return false;
+            }
+        }
+        return true;
     }
     /**
      * ジャンプ効果音を再生
