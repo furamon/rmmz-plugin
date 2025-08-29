@@ -7,7 +7,7 @@
 (function () {
     // getAlphaPixelに整数でない値が渡されることへの対策
     const _Bitmap_getAlphaPixel = Bitmap.prototype.getAlphaPixel;
-    Bitmap.prototype.getAlphaPixel = function(x, y) {
+    Bitmap.prototype.getAlphaPixel = function (x, y) {
         return _Bitmap_getAlphaPixel.call(this, Math.round(x), Math.round(y));
     };
 
@@ -32,7 +32,14 @@
         this._contentsBackSprite.alpha =
             SceneManager._scene?.constructor?.name === 'Scene_KeyConfig_V10'
                 ? 1
-                : 0;
+                : 0.3;
+    };
+
+    // Window_MenuStatusなら背景なし
+    const _Window_MenuStatus_initialize = Window_MenuStatus.prototype.initialize;
+    Window_MenuStatus.prototype.initialize = function (rect) {
+        _Window_MenuStatus_initialize.call(this, rect);
+        this._contentsBackSprite.alpha = 0;
     };
 
     // カーソルを9patch風に拡縮
@@ -119,23 +126,32 @@
         return this.fadeSpeed() * 1.5;
     };
 
+    // 隊列歩行OFFでも隊列メンバーの集合使用可能
+    Game_Followers.prototype.areGathered = function () {
+        return this._data.every((follower) => follower.isGathered());
+    };
+
     // NUUN_SaveScreen_3.js 競合対策
     const _Scene_File_start = Scene_File.prototype.start;
-    Scene_File.prototype.start = function() {
+    Scene_File.prototype.start = function () {
         _Scene_File_start.call(this);
         // _listWindowの存在と、NUUN_SaveScreen_3.jsの有効性を確認
-        if (this._listWindow && typeof this._listWindow.isSaveFileShowAutoSave === 'function') {
+        if (
+            this._listWindow &&
+            typeof this._listWindow.isSaveFileShowAutoSave === 'function'
+        ) {
             // selectLast() によって設定された index を元にスクロールさせる
             this._listWindow.ensureCursorVisible(false);
         }
     };
 
     // NUUN_BattleStyleEX内のアクターステータスはZinTweenのトゥイーンさせない
-    const _Scene_Battle_startActorCommandSelection = Scene_Battle.prototype.startActorCommandSelection;
-    Scene_Battle.prototype.startActorCommandSelection = function() {
+    const _Scene_Battle_startActorCommandSelection =
+        Scene_Battle.prototype.startActorCommandSelection;
+    Scene_Battle.prototype.startActorCommandSelection = function () {
         _Scene_Battle_startActorCommandSelection.call(this);
         if (this._statusWindow) {
-            this._statusWindow.setCursorRect = Window.prototype.setCursorRect
+            this._statusWindow.setCursorRect = Window.prototype.setCursorRect;
         }
-    }
+    };
 })();
