@@ -195,7 +195,7 @@ interface Game_Actor {
     getActorClassParamRate(paramId: number): number;
     getStateParamRate(paramId: number): number;
     getEquipParamRate(paramId: number): number;
-    passiveObject(): any[];
+    getPassiveObject(): any[];
 }
 
 interface Game_Enemy {
