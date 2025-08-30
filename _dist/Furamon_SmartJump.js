@@ -4,6 +4,7 @@
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
 // 2025/06/11 1.0.0 公開！
+// 2025/08/30 1.0.1 HalfMove.js対応が不完全だったので修正
 /*:ja
  * @target MZ
  * @plugindesc 障害物を飛び越えるジャンプを実装します。
@@ -192,10 +193,11 @@
         const checkTile = (x, y) => {
             // タイル自体が通行可能か（壁でないか）をチェックします。
             // 4方向いずれかに移動可能であれば、完全に閉鎖された壁ではないと判断します。
-            return ($gameMap.isPassable(x, y, 2) ||
-                $gameMap.isPassable(x, y, 4) ||
-                $gameMap.isPassable(x, y, 6) ||
-                $gameMap.isPassable(x, y, 8));
+            return ($gameMap.checkPassage(x, y, 1 << 0) || // 下
+                $gameMap.checkPassage(x, y, 1 << 1) || // 左
+                $gameMap.checkPassage(x, y, 1 << 2) || // 右
+                $gameMap.checkPassage(x, y, 1 << 3) // 上
+            );
         };
         const x_floor = Math.floor(targetX);
         const y_floor = Math.floor(targetY);
