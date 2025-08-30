@@ -55,6 +55,7 @@ declare namespace BattleManager {
     interface Spriteset {
         battlerSprites(): Sprite_Battler[];
     }
+
 }
 
 declare class TextManager {
@@ -102,6 +103,7 @@ declare let Imported: {
 };
 
 interface BattleManager {
+    battleCommandRefresh(): void;
     rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
 }
 
@@ -138,7 +140,7 @@ interface Scene_MenuBase {
     _slotWindow: Window_Selectable;
 }
 
-interface Scene_Map{
+interface Scene_Map {
     _mapResumeEffectDuration: number;
 }
 
@@ -173,6 +175,7 @@ interface Game_Battler {
     _usedItemSlots: number[];
     makeSPName?(action?: Game_Action): string | null;
     enemy(): MZ.Enemy;
+    setWt(battler):void;
 }
 
 declare class Sprite_EnemyHPGauge extends Sprite {
@@ -196,6 +199,7 @@ interface Game_Actor {
     getStateParamRate(paramId: number): number;
     getEquipParamRate(paramId: number): number;
     getPassiveObject(): any[];
+    skills(options?: { includeHasAbilitySkills?: boolean }): number[];
 }
 
 interface Game_Enemy {
@@ -283,6 +287,7 @@ declare interface Game_Temp {
     enemyHPGaugeRefresh?: boolean;
     enemyStateRefresh?: boolean;
     refreshOverlay?: boolean;
+    formationRefresh:boolean;
 }
 
 // Sprite_StateIcon インターフェースを拡張
@@ -370,8 +375,15 @@ interface Window_Options {
     changeWindowSizeValue(symbol: string, value: number): void;
 }
 
-interface Window_SavefileList{
-    isSaveFileShowAutoSave: boolean
+interface Window_SavefileList {
+    isSaveFileShowAutoSave: boolean;
+}
+
+interface Window_StatusBase {
+    isChangeActorActive(actor: Game_Actor): void;
+    getFormationSelectActor(): void;
+    drawBackGroundActor(index: number): void;
+    actor(index: number): Game_Actor;
 }
 
 interface Game_Interpreter {
@@ -464,7 +476,7 @@ declare interface Scene_Battle {
 }
 
 interface Bitmap {
-    getAlphaPixel(x: number, y: number)
+    getAlphaPixel(x: number, y: number);
 }
 
 declare class Sprite_SVWeapon extends Sprite {
@@ -488,3 +500,22 @@ interface NuunStyleData {
 declare const NuunManager: {
     styleData: NuunStyleData;
 };
+
+declare class Window_FormationMember extends Window_Base {
+    isFormationChangeActorEnabled(actor: Game_Actor): void;
+    isChangeActorActive(actor: Game_Actor): void;
+}
+declare class Window_FormationBattleMember extends Window_Base {
+    isFormationChangeActorEnabled(actor: Game_Actor): void;
+    isChangeActorActive(actor: Game_Actor): void;
+}
+
+declare class AdditionalClass{
+    actor(): Game_Actor;
+    classId: number;
+    setLevel(): void;
+    changeExp(exp:number, show:boolean, index:number, difExp:number): void;
+    changeLevel(): void;
+    displayLevelUp(newSkills: number[]): void;
+    initialize(actor: Game_Actor, classId: number): void;
+}

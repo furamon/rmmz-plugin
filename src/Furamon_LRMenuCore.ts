@@ -154,4 +154,9 @@
             this._statusWindow.setCursorRect = Window.prototype.setCursorRect;
         }
     };
+
+    // NUUN_SceneFormation内のアクター選択ウィンドウもトゥイーンさせない
+    Window_FormationBattleMember.prototype.setCursorRect = Window.prototype.setCursorRect;
+
+    Window_FormationMember.prototype.setCursorRect = Window.prototype.setCursorRect;
 })();
