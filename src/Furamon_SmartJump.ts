@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 // 2025/06/11 1.0.0 公開！
 // 2025/08/30 1.0.1 HalfMove.js対応が不完全だったので修正
+// 2025/08/31 1.1.0 ジャンプ禁止リージョンを設定可能にした
 
 /*:ja
  * @target MZ
@@ -45,6 +46,14 @@
  * @-----------------------------------------------------------
  * @ プラグインパラメータ
  * @-----------------------------------------------------------
+ *
+ * @param noJumpRegionId
+ * @text ジャンプ禁止リージョンID
+ * @desc ジャンプを禁止するリージョンID。0で無効
+ * @type number
+ * @min 0
+ * @max 255
+ * @default 0
  *
  * @param jumpSoundName
  * @text ジャンプ効果音
@@ -149,6 +158,7 @@
     const PLUGIN_NAME = 'Furamon_SmartJump';
     const parameters = PluginManager.parameters(PLUGIN_NAME);
 
+    const prmNoJumpRegionId = Number(parameters['noJumpRegionId']) || 0;
     const prmJumpSoundName = parameters['jumpSoundName'] || 'Jump1';
     const prmJumpSoundVolume = Number(parameters['jumpSoundVolume']) || 90;
     const prmJumpSoundPitch = Number(parameters['jumpSoundPitch']) || 80;
@@ -197,6 +207,14 @@
         const [dx, dy] = getDirectionOffset(direction);
         const targetX = fromX + dx * distance;
         const targetY = fromY + dy * distance;
+
+        // 0. ジャンプ禁止リージョンチェック
+        if (prmNoJumpRegionId > 0) {
+            const regionId = $gameMap.regionId(Math.floor(targetX), Math.floor(targetY));
+            if (regionId === prmNoJumpRegionId) {
+                return false;
+            }
+        }
 
         // 1. イベントとの衝突チェック
         if (player.isCollidedWithCharacters(targetX, targetY)) {
@@ -310,6 +328,14 @@
         const player = $gamePlayer;
         const direction = player.direction();
         const [px, py] = [player.x, player.y];
+
+        // 現在地がジャンプ禁止リージョンの場合、ジャンプしない
+        if (prmNoJumpRegionId > 0) {
+            const regionId = $gameMap.regionId(Math.floor(px), Math.floor(py));
+            if (regionId === prmNoJumpRegionId) {
+                return; // 何もせずに終了
+            }
+        }
 
         // 効果音再生
         playJumpSound();
