@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 // 2025/08/10 1.0.0-Beta 仮作成
 // 2025/08/27 1.1.0-Beta モーション毎に武器画像を変更する機能、メニュー画面で武器を描画しない機能(NUUN_MenuScreenEX用)を追加
+// 2025/09/04 1.1.1-Beta 余分な武器スプライトを消した
 
 /*:
  * @target MZ
@@ -210,7 +211,7 @@
 
     const _Sprite_Actor_createWeaponSprite = Sprite_Actor.prototype.createWeaponSprite;
     Sprite_Actor.prototype.createWeaponSprite = function() {
-        _Sprite_Actor_createWeaponSprite.call(this);
+        // _Sprite_Actor_createWeaponSprite.call(this);
         // 武器スプライトを上書き
         this._weaponSprite = new Sprite_SVWeapon();
         this._weaponSprite.setup(this);

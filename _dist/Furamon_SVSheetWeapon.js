@@ -191,7 +191,7 @@
     // アクターを表示するためのスプライトです。
     const _Sprite_Actor_createWeaponSprite = Sprite_Actor.prototype.createWeaponSprite;
     Sprite_Actor.prototype.createWeaponSprite = function () {
-        _Sprite_Actor_createWeaponSprite.call(this);
+        // _Sprite_Actor_createWeaponSprite.call(this);
         // 武器スプライトを上書き
         this._weaponSprite = new Sprite_SVWeapon();
         this._weaponSprite.setup(this);
