@@ -84,7 +84,7 @@
             }
         }
     };
-    // 装備選択時のウィンドウに「空」表示を追加
+    // 装備選択時のウィンドウに「素手」表示を追加
     const _Window_EquipItem_isEnabled = Window_EquipItem.prototype.isEnabled;
     Window_EquipItem.prototype.isEnabled = function (item) {
         if (item === null) {
@@ -99,7 +99,7 @@
             const rect = this.itemLineRect(index);
             this.resetTextColor();
             this.changePaintOpacity(true);
-            this.drawText('空', rect.x, rect.y, rect.width);
+            this.drawText('素手', rect.x, rect.y, rect.width);
         }
         else {
             _Window_EquipItem_drawItem.call(this, index);

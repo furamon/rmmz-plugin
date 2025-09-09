@@ -150,7 +150,7 @@
     // 戦闘中のME同時再生を禁止
     const _AudioManager_playMe = AudioManager.playMe;
     AudioManager.playMe = function (me) {
-        if ($gameParty.inBattle() && this._meBuffer) {
+        if ($gameParty.inBattle() && this._meBuffer && this._meBuffer.isPlaying()) {
             return;
         }
         _AudioManager_playMe.call(this, me);
