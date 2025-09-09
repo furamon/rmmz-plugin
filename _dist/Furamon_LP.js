@@ -38,6 +38,7 @@
 //                  HP全快処理を戦闘前にも挟んだ。
 // 2025/03/16 1.5.4 競合処理を微修正。
 // 2025/05/10 1.5.5 リファクタリング。
+// 2025/09/09 1.5.6 HP回復がフェードアウト中にチラ見えするの修正。
 /*:
  * @target MZ
  * @plugindesc 戦闘不能に関わるライフポイントを実装します。
@@ -392,26 +393,50 @@
         _BattleManager_startInput.call(this);
         lpUpdate();
     };
-    // 戦闘開始時にLPが残っていれば復活
+    // // 戦闘開始時にLPが残っていれば復活
+    // // 設定に応じてHP全回復
+    // const _BattleManager_setup = BattleManager.setup;
+    // BattleManager.setup = function (
+    //     troopId: number,
+    //     canEscape: boolean,
+    //     canLose: boolean
+    // ) {
+    //     _BattleManager_setup.call(this, troopId, canEscape, canLose);
+    //     $gameParty.members().forEach((member: Game_Actor) => {
+    //         if (member.lp > 0) {
+    //             member.revive();
+    //             if (prmBattleEndRecover) {
+    //                 member.setHp(member.mhp);
+    //             }
+    //         }
+    //     });
+    // };
+    // 戦闘勝利or逃走時にLPが残っていれば復活
     // 設定に応じてHP全回復
-    const _BattleManager_setup = BattleManager.setup;
-    BattleManager.setup = function (troopId, canEscape, canLose) {
-        _BattleManager_setup.call(this, troopId, canEscape, canLose);
-        $gameParty.members().forEach((member) => {
-            if (member.lp > 0) {
-                member.revive();
-                if (prmBattleEndRecover) {
-                    member.setHp(member.mhp);
-                }
-            }
-        });
+    const _Game_Temp_initialize = Game_Temp.prototype.initialize;
+    Game_Temp.prototype.initialize = function () {
+        _Game_Temp_initialize.call(this);
+        this._justWonBattle = false;
     };
-    // 戦闘終了時にもLPが残っていれば復活
-    // 設定に応じてHP全回復
+    Game_Temp.prototype.setJustWonBattle = function (value) {
+        this._justWonBattle = value;
+    };
+    Game_Temp.prototype.isJustWonBattle = function () {
+        return this._justWonBattle === true;
+    };
+    // 戦闘終了時に、フェードアウト後の回復をトリガーするためのフラグを立てる
     const _BattleManager_endBattle = BattleManager.endBattle;
     BattleManager.endBattle = function (result) {
         _BattleManager_endBattle.call(this, result);
         if (result === 0 || this._escaped) {
+            $gameTemp.setJustWonBattle(true);
+        }
+    };
+    // マップシーンに戻った際、フラグが立っていれば回復処理を実行
+    const _Scene_Map_start = Scene_Map.prototype.start;
+    Scene_Map.prototype.start = function () {
+        if ($gameTemp.isJustWonBattle()) {
+            $gameTemp.setJustWonBattle(false); // フラグをリセット
             $gameParty.members().forEach((member) => {
                 if (member.lp > 0) {
                     member.revive();
@@ -421,6 +446,7 @@
                 }
             });
         }
+        _Scene_Map_start.call(this);
     };
     // ポップアップ処理の調整
     const _Sprite_Battler_createDamageSprite = Sprite_Battler.prototype.createDamageSprite;

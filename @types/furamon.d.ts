@@ -519,3 +519,10 @@ declare class AdditionalClass{
     displayLevelUp(newSkills: number[]): void;
     initialize(actor: Game_Actor, classId: number): void;
 }
+
+// For Furamon_LP.ts
+declare interface Game_Temp {
+    _justWonBattle: boolean;
+    setJustWonBattle(value: boolean): void;
+    isJustWonBattle(): boolean;
+}
