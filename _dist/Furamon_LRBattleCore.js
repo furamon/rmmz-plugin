@@ -130,6 +130,18 @@
     Game_BattlerBase.prototype.isDummyEnemy = function () {
         return this.traitObjects().some((object) => object.meta.DummyEnemy);
     };
+    let bgmToReplayAfterMe = null;
+    const replayBgmAfterMe = function () {
+        if (bgmToReplayAfterMe && (!AudioManager._meBuffer || !AudioManager._meBuffer.isPlaying())) {
+            AudioManager.replayBgm(bgmToReplayAfterMe);
+            bgmToReplayAfterMe = null;
+        }
+    };
+    const _Scene_Map_update_for_LRBattleCore = Scene_Map.prototype.update;
+    Scene_Map.prototype.update = function () {
+        _Scene_Map_update_for_LRBattleCore.call(this);
+        replayBgmAfterMe();
+    };
     // NRP_BattleTargetCursorが開いている間はスキルウィンドウを閉じる
     const _Scene_Battle_update = Scene_Battle.prototype.update;
     Scene_Battle.prototype.update = function () {
@@ -146,6 +158,7 @@
                 }
             }
         }
+        replayBgmAfterMe();
     };
     // 戦闘中のME同時再生を禁止
     const _AudioManager_playMe = AudioManager.playMe;
