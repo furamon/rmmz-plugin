@@ -127,4 +127,19 @@
         }
         _Scene_Battle_terminate.call(this);
     };
+
+    const _Scene_Battle_isAnyInputWindowActive = Scene_Battle.prototype.isAnyInputWindowActive;
+    Scene_Battle.prototype.isAnyInputWindowActive = function () {
+        if (_Scene_Battle_isAnyInputWindowActive.call(this)) {
+            return true;
+        }
+        // NUUN_BattleStyleEX競合対策でactivateされたステータスウィンドウを
+        // 入力中ウィンドウとして扱うことで、ウィンドウアンフォーカス時の無限ループを防止
+        if (PluginManager._scripts.includes('NRP_CountTimeBattle')) {
+            if (this._statusWindow && this._statusWindow.active) {
+                return BattleManager.isInputting();
+            }
+        }
+        return false;
+    };
 })();
