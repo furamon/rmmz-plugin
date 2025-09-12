@@ -39,6 +39,7 @@
 // 2025/03/16 1.5.4 競合処理を微修正。
 // 2025/05/10 1.5.5 リファクタリング。
 // 2025/09/09 1.5.6 HP回復がフェードアウト中にチラ見えするの修正。
+// 2025/09/12 1.5.7 戦闘開始時にもHPが回復するよう戻した。
 /*:
  * @target MZ
  * @plugindesc 戦闘不能に関わるライフポイントを実装します。
@@ -393,24 +394,20 @@
         _BattleManager_startInput.call(this);
         lpUpdate();
     };
-    // // 戦闘開始時にLPが残っていれば復活
-    // // 設定に応じてHP全回復
-    // const _BattleManager_setup = BattleManager.setup;
-    // BattleManager.setup = function (
-    //     troopId: number,
-    //     canEscape: boolean,
-    //     canLose: boolean
-    // ) {
-    //     _BattleManager_setup.call(this, troopId, canEscape, canLose);
-    //     $gameParty.members().forEach((member: Game_Actor) => {
-    //         if (member.lp > 0) {
-    //             member.revive();
-    //             if (prmBattleEndRecover) {
-    //                 member.setHp(member.mhp);
-    //             }
-    //         }
-    //     });
-    // };
+    // 戦闘開始時にLPが残っていれば復活
+    // 設定に応じてHP全回復
+    const _BattleManager_setup = BattleManager.setup;
+    BattleManager.setup = function (troopId, canEscape, canLose) {
+        _BattleManager_setup.call(this, troopId, canEscape, canLose);
+        $gameParty.members().forEach((member) => {
+            if (member.lp > 0) {
+                member.revive();
+                if (prmBattleEndRecover) {
+                    member.setHp(member.mhp);
+                }
+            }
+        });
+    };
     // 戦闘勝利or逃走時にLPが残っていれば復活
     // 設定に応じてHP全回復
     const _Game_Temp_initialize = Game_Temp.prototype.initialize;

@@ -111,7 +111,7 @@
             const rect = this.itemLineRect(index);
             this.resetTextColor();
             this.changePaintOpacity(true);
-            this.drawText('素手', rect.x, rect.y, rect.width);
+            this.drawText('空', rect.x, rect.y, rect.width);
         } else {
             _Window_EquipItem_drawItem.call(this, index);
         }
