@@ -40,6 +40,7 @@
 // 2025/05/10 1.5.5 リファクタリング。
 // 2025/09/09 1.5.6 HP回復がフェードアウト中にチラ見えするの修正。
 // 2025/09/12 1.5.7 戦闘開始時にもHPが回復するよう戻した。
+// 2025/09/15 1.5.8 リファクタリング。
 
 /*:
  * @target MZ
@@ -203,6 +204,7 @@
     // LPを増減させるメソッド
     function gainLP(actor: Game_Actor, value: number) {
         actor._lp = (actor.lp + value).clamp(0, actor.mlp);
+        lpUpdate();
     }
 
     // LP監視関数。LPが0なら戦闘不能に
@@ -372,7 +374,7 @@
                 target._result.lpDamage -= recoverValue;
             }
 
-            lpUpdate();
+            // lpUpdate();
         }
     };
 
@@ -436,11 +438,11 @@
         }
     };
 
-    const _BattleManager_startInput = BattleManager.startInput;
-    BattleManager.startInput = function () {
-        _BattleManager_startInput.call(this);
-        lpUpdate();
-    };
+    // const _BattleManager_startInput = BattleManager.startInput;
+    // BattleManager.startInput = function () {
+    //     _BattleManager_startInput.call(this);
+    //     lpUpdate();
+    // };
 
     // 戦闘開始時にLPが残っていれば復活
     // 設定に応じてHP全回復
