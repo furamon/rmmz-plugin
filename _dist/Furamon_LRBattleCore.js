@@ -130,42 +130,46 @@
     Game_BattlerBase.prototype.isDummyEnemy = function () {
         return this.traitObjects().some((object) => object.meta.DummyEnemy);
     };
-    let bgmToReplayAfterMe = null;
-    const replayBgmAfterMe = function () {
-        if (bgmToReplayAfterMe && (!AudioManager._meBuffer || !AudioManager._meBuffer.isPlaying())) {
-            AudioManager.replayBgm(bgmToReplayAfterMe);
-            bgmToReplayAfterMe = null;
-        }
+    // const _Scene_Battle_update = Scene_Battle.prototype.update;
+    // Scene_Battle.prototype.update = function () {
+    //     _Scene_Battle_update.call(this);
+    //     if (BattleManager.isInputting()) {
+    //         if (this._actorCommandWindow.visible) {
+    //             // 敵選択ウィンドウが開いているなら
+    //             if (
+    //                 this._enemyWindow.visible ||
+    //                 this._enemyNameWindow.visible
+    //             ) {
+    //                 this._actorCommandWindow.visible = false;
+    //             } else {
+    //                 this._actorCommandWindow.visible = true;
+    //             }
+    //         }
+    //         if (this._skillWindow.visible) {
+    //             // 敵選択ウィンドウが開いているなら
+    //             if (
+    //                 this._enemyWindow.visible ||
+    //                 this._enemyNameWindow.visible
+    //             ) {
+    //                 this._skillWindow.visible = false;
+    //             } else {
+    //                 this._skillWindow.visible = true;
+    //             }
+    //         }
+    //     }
+    // };
+    // 対象選択中はコマンド・スキルウィンドウを閉じる
+    const _Scene_Battle_startEnemySelection = Scene_Battle.prototype.startEnemySelection;
+    Scene_Battle.prototype.startEnemySelection = function () {
+        this._actorCommandWindow.hide();
+        this._skillWindow.hide();
+        _Scene_Battle_startEnemySelection.apply(this);
     };
-    const _Scene_Map_update_for_LRBattleCore = Scene_Map.prototype.update;
-    Scene_Map.prototype.update = function () {
-        _Scene_Map_update_for_LRBattleCore.call(this);
-        replayBgmAfterMe();
-    };
-    // NRP_BattleTargetCursorが開いている間はスキルウィンドウを閉じる
-    const _Scene_Battle_update = Scene_Battle.prototype.update;
-    Scene_Battle.prototype.update = function () {
-        _Scene_Battle_update.call(this);
-        if (BattleManager.isInputting()) {
-            if (this._skillWindow.visible) {
-                // 敵選択ウィンドウが開いているなら
-                if (this._enemyWindow.visible ||
-                    this._enemyNameWindow.visible) {
-                    this._skillWindow.visible = false;
-                }
-                else {
-                    this._skillWindow.visible = true;
-                }
-            }
+    const _Scene_Battle_onEnemyCancel = Scene_Battle.prototype.onEnemyCancel;
+    Scene_Battle.prototype.onEnemyCancel = function () {
+        if (this._actorCommandWindow.currentSymbol() === 'attack') {
+            this._actorCommandWindow.show();
         }
-        replayBgmAfterMe();
-    };
-    // 戦闘中のME同時再生を禁止
-    const _AudioManager_playMe = AudioManager.playMe;
-    AudioManager.playMe = function (me) {
-        if ($gameParty.inBattle() && this._meBuffer && this._meBuffer.isPlaying()) {
-            return;
-        }
-        _AudioManager_playMe.call(this, me);
+        _Scene_Battle_onEnemyCancel.apply(this);
     };
 })();
