@@ -130,34 +130,6 @@
     Game_BattlerBase.prototype.isDummyEnemy = function () {
         return this.traitObjects().some((object) => object.meta.DummyEnemy);
     };
-    // const _Scene_Battle_update = Scene_Battle.prototype.update;
-    // Scene_Battle.prototype.update = function () {
-    //     _Scene_Battle_update.call(this);
-    //     if (BattleManager.isInputting()) {
-    //         if (this._actorCommandWindow.visible) {
-    //             // 敵選択ウィンドウが開いているなら
-    //             if (
-    //                 this._enemyWindow.visible ||
-    //                 this._enemyNameWindow.visible
-    //             ) {
-    //                 this._actorCommandWindow.visible = false;
-    //             } else {
-    //                 this._actorCommandWindow.visible = true;
-    //             }
-    //         }
-    //         if (this._skillWindow.visible) {
-    //             // 敵選択ウィンドウが開いているなら
-    //             if (
-    //                 this._enemyWindow.visible ||
-    //                 this._enemyNameWindow.visible
-    //             ) {
-    //                 this._skillWindow.visible = false;
-    //             } else {
-    //                 this._skillWindow.visible = true;
-    //             }
-    //         }
-    //     }
-    // };
     // 対象選択中はコマンド・スキルウィンドウを閉じる
     const _Scene_Battle_startEnemySelection = Scene_Battle.prototype.startEnemySelection;
     Scene_Battle.prototype.startEnemySelection = function () {
