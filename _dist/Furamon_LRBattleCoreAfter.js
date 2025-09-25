@@ -4,6 +4,7 @@
  * @author Furamon
  *
  * @help 以下の処理を加えます。
+ * - 負の速度補正を魔法防御で相殺
  * - NRP_EquipItemのキャラ入れ替えでnullエラー修正
  * - NRP_CountTimeBattle.jsでアクターコマンドキャンセルを差し替え
  * - NRP_CountTimeBattle.jsとNUUN_BattleStyleEX.jsの競合修正
@@ -12,6 +13,21 @@
 (function () {
     const PLUGIN_NAME = 'Furamon_LRBattleCoreAfter';
     const parameters = PluginManager.parameters(PLUGIN_NAME);
+    // 速度補正が負の行動なら魔法防御で割合相殺
+    const _Game_Action_speed = Game_Action.prototype.speed;
+    Game_Action.prototype.speed = function () {
+        const speed = _Game_Action_speed.call(this);
+        if (this.item().speed < 0) {
+            return Math.min(speed +
+                (-this.item().speed *
+                    this.subject().agi *
+                    this.subject().mdf) /
+                    10000, -this.item().speed);
+        }
+        else {
+            return speed;
+        }
+    };
     // メソッドを上書き
     Game_Battler.prototype.isUsedSlot = function (slotId) {
         this._usedItemSlots = this._usedItemSlots || [];

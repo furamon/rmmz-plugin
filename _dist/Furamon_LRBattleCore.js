@@ -6,7 +6,6 @@
  * @help 以下の処理を加えます。
  * - 初期TPの変更
  * - 被ダメージ時のTP回復の廃止
- * - 負の速度補正を魔法防御で相殺
  * - メモ欄に<IgnoreExp>のついた特徴を持つアクターがいる場合は
  * 戦闘勝利時の獲得経験値を0
  * - メモ欄に<DoubleExp>のついた特徴を持つアクターがいる場合は
@@ -55,21 +54,6 @@
     if (prmNoChargeTpByDamage) {
         Game_Battler.prototype.chargeTpByDamage = function () { };
     }
-    // 速度補正が負の行動なら魔法防御で割合相殺
-    const _Game_Action_speed = Game_Action.prototype.speed;
-    Game_Action.prototype.speed = function () {
-        const speed = _Game_Action_speed.call(this);
-        if (this.item().speed < 0) {
-            return (speed +
-                (-this.item().speed *
-                    this.subject().agi *
-                    this.subject().mdf) /
-                    10000);
-        }
-        else {
-            return speed;
-        }
-    };
     // <IgnoreExp>のついた特徴を持つアクターがいる場合は
     // 戦闘勝利時の獲得経験値を0にする
     // またメモ欄に<DoubleExp>のついた特徴を持つアクターがいる場合は
