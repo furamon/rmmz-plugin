@@ -108,7 +108,7 @@
          const currentStateIds = this.states().map((state) => state.id);
          // NUUN_PassiveSkill 由来のオブジェクトリストを取得 (プラグインが存在する場合)
          const passiveObjects = Imported.NUUN_PassiveSkill
-             ? this.passiveObject()
+             ? this.getPassiveObject()
              : [];
 
          // 全ての特徴を持つオブジェクトから特徴を収集（装備データと現在のステートデータを除外、パッシブスキルは含める）

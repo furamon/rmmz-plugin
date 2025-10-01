@@ -6,7 +6,6 @@
  * @help 以下の処理を加えます。
  * - 初期TPの変更
  * - 被ダメージ時のTP回復の廃止
- * - 負の速度補正を魔法防御で相殺
  * - メモ欄に<IgnoreExp>のついた特徴を持つアクターがいる場合は
  * 戦闘勝利時の獲得経験値を0
  * - メモ欄に<DoubleExp>のついた特徴を持つアクターがいる場合は
@@ -55,21 +54,6 @@
     if (prmNoChargeTpByDamage) {
         Game_Battler.prototype.chargeTpByDamage = function () { };
     }
-    // 速度補正が負の行動なら魔法防御で割合相殺
-    const _Game_Action_speed = Game_Action.prototype.speed;
-    Game_Action.prototype.speed = function () {
-        const speed = _Game_Action_speed.call(this);
-        if (this.item().speed < 0) {
-            return (speed +
-                (-this.item().speed *
-                    this.subject().agi *
-                    this.subject().mdf) /
-                    10000);
-        }
-        else {
-            return speed;
-        }
-    };
     // <IgnoreExp>のついた特徴を持つアクターがいる場合は
     // 戦闘勝利時の獲得経験値を0にする
     // またメモ欄に<DoubleExp>のついた特徴を持つアクターがいる場合は
@@ -130,21 +114,18 @@
     Game_BattlerBase.prototype.isDummyEnemy = function () {
         return this.traitObjects().some((object) => object.meta.DummyEnemy);
     };
-    // NRP_BattleTargetCursorが開いている間はスキルウィンドウを閉じる
-    const _Scene_Battle_update = Scene_Battle.prototype.update;
-    Scene_Battle.prototype.update = function () {
-        _Scene_Battle_update.call(this);
-        if (BattleManager.isInputting()) {
-            if (this._skillWindow.visible) {
-                // 敵選択ウィンドウが開いているなら
-                if (this._enemyWindow.visible ||
-                    this._enemyNameWindow.visible) {
-                    this._skillWindow.visible = false;
-                }
-                else {
-                    this._skillWindow.visible = true;
-                }
-            }
+    // 対象選択中はコマンド・スキルウィンドウを閉じる
+    const _Scene_Battle_startEnemySelection = Scene_Battle.prototype.startEnemySelection;
+    Scene_Battle.prototype.startEnemySelection = function () {
+        this._actorCommandWindow.hide();
+        this._skillWindow.hide();
+        _Scene_Battle_startEnemySelection.apply(this);
+    };
+    const _Scene_Battle_onEnemyCancel = Scene_Battle.prototype.onEnemyCancel;
+    Scene_Battle.prototype.onEnemyCancel = function () {
+        if (this._actorCommandWindow.currentSymbol() === 'attack') {
+            this._actorCommandWindow.show();
         }
+        _Scene_Battle_onEnemyCancel.apply(this);
     };
 })();

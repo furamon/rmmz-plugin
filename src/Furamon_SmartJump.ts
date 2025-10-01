@@ -4,6 +4,9 @@
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
 // 2025/06/11 1.0.0 公開！
+// 2025/08/30 1.0.1 HalfMove.js対応が不完全だったので修正
+// 2025/08/31 1.1.0 ジャンプ禁止リージョンを設定可能にした
+// 2025/09/29 1.2.0 PD_8DirDash及びHalfMove.jsの8方向移動有効時斜めにジャンプできるようにした
 
 /*:ja
  * @target MZ
@@ -44,6 +47,14 @@
  * @-----------------------------------------------------------
  * @ プラグインパラメータ
  * @-----------------------------------------------------------
+ *
+ * @param noJumpRegionId
+ * @text ジャンプ禁止リージョンID
+ * @desc ジャンプを禁止するリージョンID。0で無効
+ * @type number
+ * @min 0
+ * @max 255
+ * @default 0
  *
  * @param jumpSoundName
  * @text ジャンプ効果音
@@ -146,8 +157,25 @@
  */
 (function () {
     const PLUGIN_NAME = 'Furamon_SmartJump';
+
+    // Game_Playerに最後に移動した方向を記憶するプロパティを追加
+    const _Game_Player_initMembers = Game_Player.prototype.initMembers;
+    Game_Player.prototype.initMembers = function () {
+        _Game_Player_initMembers.call(this);
+        this._lastMoveDirection = 2; // 初期値は下向き
+    };
+
+    // プレイヤーの移動時に方向を記憶
+    const _Game_Player_executeMove = Game_Player.prototype.executeMove;
+    Game_Player.prototype.executeMove = function (direction) {
+        if (direction > 0) {
+            this._lastMoveDirection = direction;
+        }
+        _Game_Player_executeMove.call(this, direction);
+    };
     const parameters = PluginManager.parameters(PLUGIN_NAME);
 
+    const prmNoJumpRegionId = Number(parameters['noJumpRegionId']) || 0;
     const prmJumpSoundName = parameters['jumpSoundName'] || 'Jump1';
     const prmJumpSoundVolume = Number(parameters['jumpSoundVolume']) || 90;
     const prmJumpSoundPitch = Number(parameters['jumpSoundPitch']) || 80;
@@ -159,15 +187,23 @@
     const prmDisableInMenu = parameters['disableInMenu'] === 'true';
 
     /**
-     * HalfMove.jsの有無を検出
+     * 8方向移動プラグイン（HalfMove.js or PD_8DirDash.js）が有効か検出
      */
-    function isHalfMoveActive() {
-        const map = new Game_Map();
-        return (
-            typeof map.tileUnit !== 'undefined' &&
-            $gamePlayer.isHalfMove &&
-            $gamePlayer.isHalfMove()
-        );
+    function is8DirMoveActive() {
+        const halfMoveRegistered = PluginManager._scripts.some(name => name.toLowerCase() === 'halfmove');
+        const pd8DirDashRegistered = PluginManager._scripts.some(name => name.toLowerCase() === 'pd_8dirdash');
+
+        if (pd8DirDashRegistered) {
+            return true;
+        }
+
+        if (halfMoveRegistered) {
+            // isHalfMoveプロパティの存在は、未ロード時のエラーを防ぐためにチェックが必要です。
+            if ($gamePlayer.isHalfMove && $gamePlayer.isHalfMove()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -184,6 +220,20 @@
     }
 
     /**
+     * 斜め方向に応じたオフセットを取得
+     */
+    function getDiagonalDirectionOffset(direction: number) {
+        const offsets: Record<number, number[]> = {
+            1: [-1, 1], // 左下
+            3: [1, 1],  // 右下
+            7: [-1, -1], // 左上
+            9: [1, -1], // 右上
+        };
+        return offsets[direction] || [0, 0];
+    }
+
+
+    /**
      * 通行判定を行う（HalfMove対応版）
      */
     function canPassToPosition(
@@ -192,39 +242,60 @@
         direction: number,
         distance: number
     ) {
-        // 着地予定地点の座標を計算
-        const [dx, dy] = getDirectionOffset(direction);
-        const targetX = fromX + dx * distance;
-        const targetY = fromY + dy * distance;
+        const player = $gamePlayer;
+        let targetX: number, targetY: number;
 
-        if (isHalfMoveActive()) {
-            // HalfMoveがアクティブな場合、着地点での通行可能性をチェック
-            const player = $gamePlayer;
-            const tempX = player._x;
-            const tempY = player._y;
-
-            // 着地点に一時的に設定して通行可能かチェック
-            player._x = targetX;
-            player._y = targetY;
-
-            // 着地点が通行可能かチェック（方向は関係ないので適当な方向を指定）
-            const canLand =
-                $gameMap.isPassable(
-                    Math.floor(targetX),
-                    Math.floor(targetY),
-                    2
-                ) ||
-                $gameMap.isPassable(Math.ceil(targetX), Math.ceil(targetY), 2);
-
-            // 元の位置に戻す
-            player._x = tempX;
-            player._y = tempY;
-
-            return canLand;
+        if (direction % 2 !== 0 && is8DirMoveActive()) {
+            // 斜め方向
+            const [dx, dy] = getDiagonalDirectionOffset(direction);
+            targetX = fromX + dx * distance;
+            targetY = fromY + dy * distance;
         } else {
-            // 通常の場合、着地点の通行判定
-            return $gameMap.isPassable(targetX, targetY, 2); // 下方向で通行判定
+            // 上下左右
+            const [dx, dy] = getDirectionOffset(direction);
+            targetX = fromX + dx * distance;
+            targetY = fromY + dy * distance;
         }
+
+        // 0. ジャンプ禁止リージョンチェック
+        if (prmNoJumpRegionId > 0) {
+            const regionId = $gameMap.regionId(Math.floor(targetX), Math.floor(targetY));
+            if (regionId === prmNoJumpRegionId) {
+                return false;
+            }
+        }
+
+        // 1. イベントとの衝突チェック
+        if (player.isCollidedWithCharacters(targetX, targetY)) {
+            return false;
+        }
+
+        // 2. タイルの通行可能性チェック
+        const isPassableTile = (x: number, y: number) => {
+            const player = $gamePlayer;
+            // HalfMove.jsが有効な場合、isMapPassableを使って判定する
+            if (typeof Game_Map.prototype.tileUnit !== 'undefined' && player.isHalfMove && player.isHalfMove()) {
+                // ジャンプ先からいずれかの方向に移動できれば、そこは通行可能とみなす
+                return player.isMapPassable(x, y, 2) || player.isMapPassable(x, y, 4) ||
+                       player.isMapPassable(x, y, 6) || player.isMapPassable(x, y, 8);
+            }
+            // 通常のタイル通行判定
+            return $gameMap.checkPassage(Math.floor(x), Math.floor(y), 0x0f);
+        };
+
+        if (!isPassableTile(targetX, targetY)) {
+            return false;
+        }
+
+        // 3. HalfMove.js の特殊な通行不可設定（リージョン/地形タグ）をチェック
+        if (typeof Game_Map.prototype.tileUnit !== 'undefined' && $gamePlayer.isHalfMove && $gamePlayer.isHalfMove()) {
+            // @ts-ignore
+            if (!$gameMap.isPassableByHalfRegionAndTag(targetX, targetY)) {
+                return false;
+            }
+        }
+
+        return true;
     }
     /**
      * ジャンプ効果音を再生
@@ -273,28 +344,54 @@
      */
     function executeSmartJump() {
         const player = $gamePlayer;
-        const direction = player.direction();
+        let direction = Input.dir8;
+        if (direction === 0) {
+            // @ts-ignore
+            direction = player._lastMoveDirection || player.direction();
+        }
         const [px, py] = [player.x, player.y];
+
+        // 現在地がジャンプ禁止リージョンの場合、ジャンプしない
+        if (prmNoJumpRegionId > 0) {
+            const regionId = $gameMap.regionId(Math.floor(px), Math.floor(py));
+            if (regionId === prmNoJumpRegionId) {
+                return; // 何もせずに終了
+            }
+        }
 
         // 効果音再生
         playJumpSound();
 
         // 1マス先と2マス先への着地可能性を判定
-        const can1Pass = canPassToPosition(px, py, direction, 1);
-        const can2Pass = canPassToPosition(px, py, direction, 2);
-
-        // ジャンプ距離を決定（常に通常の1マス＝1単位で計算）
-        const [dx, dy] = getDirectionOffset(direction);
-
-        if (can2Pass) {
-            // 2マス先が通れる場合：2マスジャンプ（すり抜け有効）
-            executeJump(dx * 2, dy * 2, true);
-        } else if (can1Pass) {
-            // 1マス先だけ通れる場合：1マスジャンプ
-            executeJump(dx, dy, false);
+        if (is8DirMoveActive() && direction % 2 !== 0) {
+            // 斜めジャンプ処理
+            const jumpDistance = 1.5;
+            const canPass = canPassToPosition(px, py, direction, jumpDistance);
+            if (canPass) {
+                const [dx, dy] = getDiagonalDirectionOffset(direction);
+                executeJump(dx * jumpDistance, dy * jumpDistance, true);
+            } else {
+                // 斜めに飛べない場合はその場でジャンプ
+                executeJump(0, 0, false);
+            }
         } else {
-            // どちらも通れない場合：その場ジャンプ
-            executeJump(0, 0, false);
+            // 上下左右ジャンプ処理
+            const can1Pass = canPassToPosition(px, py, direction, 1);
+            const can2Pass = canPassToPosition(px, py, direction, 2);
+
+            // ジャンプ距離を決定（常に通常の1マス＝1単位で計算）
+            const [dx, dy] = getDirectionOffset(direction);
+
+            if (can2Pass) {
+                // 2マス先が通れる場合：2マスジャンプ（すり抜け有効）
+                executeJump(dx * 2, dy * 2, true);
+            } else if (can1Pass) {
+                // 1マス先だけ通れる場合：1マスジャンプ
+                executeJump(dx, dy, false);
+            } else {
+                // どちらも通れない場合：その場ジャンプ
+                executeJump(0, 0, false);
+            }
         }
     }
 

@@ -27,7 +27,13 @@
         this._contentsBackSprite.alpha =
             SceneManager._scene?.constructor?.name === 'Scene_KeyConfig_V10'
                 ? 1
-                : 0;
+                : 0.3;
+    };
+    // Window_MenuStatusなら背景なし
+    const _Window_MenuStatus_initialize = Window_MenuStatus.prototype.initialize;
+    Window_MenuStatus.prototype.initialize = function (rect) {
+        _Window_MenuStatus_initialize.call(this, rect);
+        this._contentsBackSprite.alpha = 0;
     };
     // カーソルを9patch風に拡縮
     Window.prototype._refreshCursor = function () {
@@ -46,8 +52,32 @@
     Input.keyMapper[83] = 'down'; //Sキー
     Input.keyMapper[68] = 'right'; //Dキー
     Input.keyMapper[69] = 'pagedown'; //Eキー
+    // --- セーブファイルリストの改変 ---
+    // セーブシーンではリストの項目数を2(オートとクイック)減らす
+    const _Window_SavefileList_maxItems = Window_SavefileList.prototype.maxItems;
+    Window_SavefileList.prototype.maxItems = function () {
+        const originalMax = _Window_SavefileList_maxItems.call(this);
+        if (this._mode === 'save') {
+            return originalMax - 2;
+        }
+        return originalMax;
+    };
+    // セーブシーンではファイルID:0(オートセーブ)と1をスキップする
+    const _Window_SavefileList_indexToSavefileId = Window_SavefileList.prototype.indexToSavefileId;
+    Window_SavefileList.prototype.indexToSavefileId = function (index) {
+        if (this._mode === 'save') {
+            return index + 2;
+        }
+        return _Window_SavefileList_indexToSavefileId.call(this, index);
+    };
+    const _Window_SavefileList_savefileIdToIndex = Window_SavefileList.prototype.savefileIdToIndex;
+    Window_SavefileList.prototype.savefileIdToIndex = function (savefileId) {
+        if (this._mode === 'save') {
+            return savefileId - 2;
+        }
+        return _Window_SavefileList_savefileIdToIndex.call(this, savefileId);
+    };
     // セーブファイル名表示改変
-    // 1番は「クイックセーブ」と表示、残りは本来の番号-1番を表示
     Window_SavefileList.prototype.drawTitle = function (savefileId, x, y) {
         if (savefileId === 0) {
             this.drawText(TextManager.autosave, x, y, 180);
@@ -56,7 +86,29 @@
             this.drawText('クイックセーブ', x, y, 240);
         }
         else {
-            this.drawText(TextManager.file + ' ' + (savefileId - 1), x, y, 180);
+            const fileNo = savefileId - 1;
+            this.drawText(TextManager.file + ' ' + fileNo, x, y, 180);
+        }
+    };
+    // NUUN_SaveScreen_3.js 競合対策
+    const _Scene_File_start = Scene_File.prototype.start;
+    Scene_File.prototype.start = function () {
+        _Scene_File_start.call(this);
+        // セーブモードの場合、初期カーソル位置を調整
+        if (this.mode() === 'save') {
+            let savefileId = this.firstSavefileId();
+            // オートセーブかクイックセーブが選択されるはずだった場合、
+            // 最初の有効なセーブファイル(ID:2)を選択する
+            if (savefileId <= 1) {
+                savefileId = 2;
+            }
+            this._listWindow.selectSavefile(savefileId);
+        }
+        // _listWindowの存在と、NUUN_SaveScreen_3.jsの有効性を確認
+        if (this._listWindow &&
+            typeof this._listWindow.isSaveFileShowAutoSave === 'function') {
+            // selectLast() によって設定された index を元にスクロールさせる
+            this._listWindow.ensureCursorVisible(true); // NUUN_SaveScreen_3.js v3.1.1以降はtrue推奨
         }
     };
     // NRP_AdditionalCCScene競合
@@ -106,14 +158,21 @@
     Scene_Base.prototype.slowFadeSpeed = function () {
         return this.fadeSpeed() * 1.5;
     };
-    // NUUN_SaveScreen_3.js 競合対策
-    const _Scene_File_start = Scene_File.prototype.start;
-    Scene_File.prototype.start = function () {
-        _Scene_File_start.call(this);
-        // _listWindowの存在と、NUUN_SaveScreen_3.jsの有効性を確認
-        if (this._listWindow && typeof this._listWindow.isSaveFileShowAutoSave === 'function') {
-            // selectLast() によって設定された index を元にスクロールさせる
-            this._listWindow.ensureCursorVisible(false);
+    // 隊列歩行OFFでも隊列メンバーの集合使用可能
+    Game_Followers.prototype.areGathered = function () {
+        return this._data.every((follower) => follower.isGathered());
+    };
+    // NUUN_BattleStyleEX内のアクターステータスはZinTweenのトゥイーンさせない
+    const _Scene_Battle_startActorCommandSelection = Scene_Battle.prototype.startActorCommandSelection;
+    Scene_Battle.prototype.startActorCommandSelection = function () {
+        _Scene_Battle_startActorCommandSelection.call(this);
+        if (this._statusWindow) {
+            this._statusWindow.setCursorRect = Window.prototype.setCursorRect;
         }
     };
+    // NUUN_SceneFormation内のアクター選択ウィンドウもトゥイーンさせない
+    Window_FormationBattleMember.prototype.setCursorRect =
+        Window.prototype.setCursorRect;
+    Window_FormationMember.prototype.setCursorRect =
+        Window.prototype.setCursorRect;
 })();

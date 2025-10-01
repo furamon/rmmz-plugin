@@ -1916,7 +1916,7 @@ declare class Window extends PIXI.Container {
   public _updateClientArea(): void;
   public _updateFrame(): void;
   public _updateContentsBack(): void;
-  public _updateCorsor(): void;
+  public _updateCursor(): void;
   public _makeCursorAlpha(): number;
   public _updateContents(): void;
   public _updateArrows(): void;

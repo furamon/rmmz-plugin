@@ -44,9 +44,8 @@ pnpm install
 
 以下のコマンドを実行して、`src/`内のTypeScriptファイルをJavaScriptにトランスパイルします。ビルドされたファイルは`_dist/`に出力されます。
 
-```shell
-pnpm tsc
-cp -f ./_dist/* ../src/js/plugins/Furamon
+```bat
+pnpm tsc; xcopy /Y .\_dist\* ..\src\js\plugins\Furamon\
 ```
 
 (注: `package.json`に`scripts`エントリはありませんが、`pnpm`は`node_modules/.bin`にある`tsc`を直接実行できます)

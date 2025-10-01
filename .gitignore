@@ -26,3 +26,4 @@ pnpm-lock.yaml
 
 **_Template.js
 .env
+src/*.js

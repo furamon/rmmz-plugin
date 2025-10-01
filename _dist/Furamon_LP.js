@@ -38,6 +38,9 @@
 //                  HP全快処理を戦闘前にも挟んだ。
 // 2025/03/16 1.5.4 競合処理を微修正。
 // 2025/05/10 1.5.5 リファクタリング。
+// 2025/09/09 1.5.6 HP回復がフェードアウト中にチラ見えするの修正。
+// 2025/09/12 1.5.7 戦闘開始時にもHPが回復するよう戻した。
+// 2025/09/15 1.5.8 リファクタリング。
 /*:
  * @target MZ
  * @plugindesc 戦闘不能に関わるライフポイントを実装します。
@@ -190,6 +193,7 @@
     // LPを増減させるメソッド
     function gainLP(actor, value) {
         actor._lp = (actor.lp + value).clamp(0, actor.mlp);
+        lpUpdate();
     }
     // LP監視関数。LPが0なら戦闘不能に
     function lpUpdate() {
@@ -334,7 +338,7 @@
                 gainLP(target, recoverValue);
                 target._result.lpDamage -= recoverValue;
             }
-            lpUpdate();
+            // lpUpdate();
         }
     };
     // LP増減ステート
@@ -387,11 +391,11 @@
             }
         }
     };
-    const _BattleManager_startInput = BattleManager.startInput;
-    BattleManager.startInput = function () {
-        _BattleManager_startInput.call(this);
-        lpUpdate();
-    };
+    // const _BattleManager_startInput = BattleManager.startInput;
+    // BattleManager.startInput = function () {
+    //     _BattleManager_startInput.call(this);
+    //     lpUpdate();
+    // };
     // 戦闘開始時にLPが残っていれば復活
     // 設定に応じてHP全回復
     const _BattleManager_setup = BattleManager.setup;
@@ -406,12 +410,32 @@
             }
         });
     };
-    // 戦闘終了時にもLPが残っていれば復活
+    // 戦闘勝利or逃走時にLPが残っていれば復活
     // 設定に応じてHP全回復
+    const _Game_Temp_initialize = Game_Temp.prototype.initialize;
+    Game_Temp.prototype.initialize = function () {
+        _Game_Temp_initialize.call(this);
+        this._justWonBattle = false;
+    };
+    Game_Temp.prototype.setJustWonBattle = function (value) {
+        this._justWonBattle = value;
+    };
+    Game_Temp.prototype.isJustWonBattle = function () {
+        return this._justWonBattle === true;
+    };
+    // 戦闘終了時に、フェードアウト後の回復をトリガーするためのフラグを立てる
     const _BattleManager_endBattle = BattleManager.endBattle;
     BattleManager.endBattle = function (result) {
         _BattleManager_endBattle.call(this, result);
         if (result === 0 || this._escaped) {
+            $gameTemp.setJustWonBattle(true);
+        }
+    };
+    // マップシーンに戻った際、フラグが立っていれば回復処理を実行
+    const _Scene_Map_start = Scene_Map.prototype.start;
+    Scene_Map.prototype.start = function () {
+        if ($gameTemp.isJustWonBattle()) {
+            $gameTemp.setJustWonBattle(false); // フラグをリセット
             $gameParty.members().forEach((member) => {
                 if (member.lp > 0) {
                     member.revive();
@@ -421,6 +445,7 @@
                 }
             });
         }
+        _Scene_Map_start.call(this);
     };
     // ポップアップ処理の調整
     const _Sprite_Battler_createDamageSprite = Sprite_Battler.prototype.createDamageSprite;

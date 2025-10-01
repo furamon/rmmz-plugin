@@ -55,6 +55,7 @@ declare namespace BattleManager {
     interface Spriteset {
         battlerSprites(): Sprite_Battler[];
     }
+
 }
 
 declare class TextManager {
@@ -102,6 +103,7 @@ declare let Imported: {
 };
 
 interface BattleManager {
+    battleCommandRefresh(): void;
     rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
 }
 
@@ -138,7 +140,7 @@ interface Scene_MenuBase {
     _slotWindow: Window_Selectable;
 }
 
-interface Scene_Map{
+interface Scene_Map {
     _mapResumeEffectDuration: number;
 }
 
@@ -159,6 +161,7 @@ interface Game_Player {
     setJumpSpeed(speed: number): void;
     setJumpHeight(height: number): void;
     isHalfMove(): boolean;
+    _lastMoveDirection: number;
 }
 
 interface Game_BattlerBase {
@@ -173,6 +176,7 @@ interface Game_Battler {
     _usedItemSlots: number[];
     makeSPName?(action?: Game_Action): string | null;
     enemy(): MZ.Enemy;
+    setWt(battler):void;
 }
 
 declare class Sprite_EnemyHPGauge extends Sprite {
@@ -195,13 +199,14 @@ interface Game_Actor {
     getActorClassParamRate(paramId: number): number;
     getStateParamRate(paramId: number): number;
     getEquipParamRate(paramId: number): number;
-    passiveObject(): any[];
+    getPassiveObject(): any[];
+    skills(options?: { includeHasAbilitySkills?: boolean }): number[];
 }
 
 interface Game_Enemy {
     enemy(): MZ.Enemy;
     requestMotion(motionName: string): void;
-    makeSPName?(action: Game_Action): string | null;
+    makeSPName?(action?: Game_Action): string | null;
     _motion?: string;
     _motionRefresh?: boolean;
     getHPGaugePositionX(): number;
@@ -283,6 +288,7 @@ declare interface Game_Temp {
     enemyHPGaugeRefresh?: boolean;
     enemyStateRefresh?: boolean;
     refreshOverlay?: boolean;
+    formationRefresh:boolean;
 }
 
 // Sprite_StateIcon インターフェースを拡張
@@ -357,6 +363,12 @@ interface Window_BattleLog {
     );
 }
 
+interface Window_BattleStatus {
+    _statusInputPatched: boolean;
+    _statusInputDisabled: boolean;
+    select(index: number): void;
+}
+
 interface Window_Options {
     _noTouchSelect: boolean;
     _gamepadOptionIndex: number;
@@ -364,8 +376,15 @@ interface Window_Options {
     changeWindowSizeValue(symbol: string, value: number): void;
 }
 
-interface Window_SavefileList{
-    isSaveFileShowAutoSave: boolean
+interface Window_SavefileList {
+    isSaveFileShowAutoSave: boolean;
+}
+
+interface Window_StatusBase {
+    isChangeActorActive(actor: Game_Actor): void;
+    getFormationSelectActor(): void;
+    drawBackGroundActor(index: number): void;
+    actor(index: number): Game_Actor;
 }
 
 interface Game_Interpreter {
@@ -458,7 +477,7 @@ declare interface Scene_Battle {
 }
 
 interface Bitmap {
-    getAlphaPixel(x: number, y: number)
+    getAlphaPixel(x: number, y: number);
 }
 
 declare class Sprite_SVWeapon extends Sprite {
@@ -471,4 +490,40 @@ declare class Sprite_SVWeapon extends Sprite {
 
 declare interface Sprite_Actor extends Sprite_Battler {
     _weaponSprite: Sprite_SVWeapon;
+}
+
+// For NUUN_BattleStyleEX
+interface NuunStyleData {
+    isSelectBackShow(): boolean;
+    activeActorWindow(): boolean;
+}
+
+declare const NuunManager: {
+    styleData: NuunStyleData;
+};
+
+declare class Window_FormationMember extends Window_Base {
+    isFormationChangeActorEnabled(actor: Game_Actor): void;
+    isChangeActorActive(actor: Game_Actor): void;
+}
+declare class Window_FormationBattleMember extends Window_Base {
+    isFormationChangeActorEnabled(actor: Game_Actor): void;
+    isChangeActorActive(actor: Game_Actor): void;
+}
+
+declare class AdditionalClass{
+    actor(): Game_Actor;
+    classId: number;
+    setLevel(): void;
+    changeExp(exp:number, show:boolean, index:number, difExp:number): void;
+    changeLevel(): void;
+    displayLevelUp(newSkills: number[]): void;
+    initialize(actor: Game_Actor, classId: number): void;
+}
+
+// For Furamon_LP.ts
+declare interface Game_Temp {
+    _justWonBattle: boolean;
+    setJustWonBattle(value: boolean): void;
+    isJustWonBattle(): boolean;
 }
