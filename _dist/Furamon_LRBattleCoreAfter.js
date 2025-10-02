@@ -17,16 +17,17 @@
     const _Game_Action_speed = Game_Action.prototype.speed;
     Game_Action.prototype.speed = function () {
         const speed = _Game_Action_speed.call(this);
-        if (this.item().speed < 0) {
-            return Math.min(speed +
-                (-this.item().speed *
-                    this.subject().agi *
-                    this.subject().mdf) /
-                    10000, -this.item().speed);
+        const item = this.item();
+        if (item) {
+            if (item.speed < 0) {
+                return Math.min(speed +
+                    (-item.speed *
+                        this.subject().agi *
+                        this.subject().mdf) /
+                        10000, -item.speed);
+            }
         }
-        else {
-            return speed;
-        }
+        return speed;
     };
     // メソッドを上書き
     Game_Battler.prototype.isUsedSlot = function (slotId) {
