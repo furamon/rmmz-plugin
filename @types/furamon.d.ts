@@ -567,3 +567,52 @@ type MapWithRange = {
 };
 
 declare class DotMoveSystem {}
+
+  type TriggerList = readonly number[];
+
+  type RealPositionCharacter = {
+    x: number;
+    y: number;
+    _realX?: number;
+    _realY?: number;
+  };
+
+  const realX = (character: RealPositionCharacter): number => {
+    const value = character._realX;
+    return typeof value === 'number' ? value : character.x;
+  };
+
+  const realY = (character: RealPositionCharacter): number => {
+    const value = character._realY;
+    return typeof value === 'number' ? value : character.y;
+  };
+
+  type GameFollowersLike = {
+    data?: () => any[];
+  };
+
+  type PlayerWithRange = RealPositionCharacter & {
+    setDistanceFrom?: (dx: number, dy: number) => void;
+    rangeFollower?: (x: number, y: number, event: unknown) => boolean;
+    pos: (x: number, y: number) => boolean;
+    followers?: () => GameFollowersLike;
+  };
+
+  type MapWithRange = {
+    eventsRangeEventPlayerXy?: (x: number, y: number) => unknown[];
+    roundXWithDirection: (x: number, d: number) => number;
+    roundYWithDirection: (y: number, d: number) => number;
+    isEventRunning: () => boolean;
+  };
+
+  type RangeEvent = {
+    isTriggerIn?: (triggers: TriggerList) => boolean;
+    isNormalPriority?: () => boolean;
+    range?: (x: number, y: number, event?: unknown) => boolean;
+    getEventRangeTag?: () => string | null | undefined;
+    isJumping?: () => boolean;
+    start?: () => void;
+    _trigger?: number;
+    x: number;
+    y: number;
+  };
