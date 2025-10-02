@@ -55,7 +55,6 @@ declare namespace BattleManager {
     interface Spriteset {
         battlerSprites(): Sprite_Battler[];
     }
-
 }
 
 declare class TextManager {
@@ -157,11 +156,28 @@ interface Game_Map {
     tileUnit: any;
 }
 
+interface Game_CharacterBase {
+    moveCallback(
+        this: Game_CharacterBase & EventRangeEvent,
+        moved: boolean,
+        dpf: number
+    ): void;
+}
+
 interface Game_Player {
     setJumpSpeed(speed: number): void;
     setJumpHeight(height: number): void;
     isHalfMove(): boolean;
     _lastMoveDirection: number;
+    startMapEventFront(
+        this: Game_Player & PlayerWithRange,
+        x: number,
+        y: number,
+        d: number,
+        triggers: TriggerList,
+        normal: boolean,
+        isTouch: boolean
+    ): void;
 }
 
 interface Game_BattlerBase {
@@ -176,7 +192,7 @@ interface Game_Battler {
     _usedItemSlots: number[];
     makeSPName?(action?: Game_Action): string | null;
     enemy(): MZ.Enemy;
-    setWt(battler):void;
+    setWt(battler): void;
 }
 
 declare class Sprite_EnemyHPGauge extends Sprite {
@@ -288,7 +304,7 @@ declare interface Game_Temp {
     enemyHPGaugeRefresh?: boolean;
     enemyStateRefresh?: boolean;
     refreshOverlay?: boolean;
-    formationRefresh:boolean;
+    formationRefresh: boolean;
 }
 
 // Sprite_StateIcon インターフェースを拡張
@@ -511,11 +527,11 @@ declare class Window_FormationBattleMember extends Window_Base {
     isChangeActorActive(actor: Game_Actor): void;
 }
 
-declare class AdditionalClass{
+declare class AdditionalClass {
     actor(): Game_Actor;
     classId: number;
     setLevel(): void;
-    changeExp(exp:number, show:boolean, index:number, difExp:number): void;
+    changeExp(exp: number, show: boolean, index: number, difExp: number): void;
     changeLevel(): void;
     displayLevelUp(newSkills: number[]): void;
     initialize(actor: Game_Actor, classId: number): void;
@@ -527,3 +543,27 @@ declare interface Game_Temp {
     setJustWonBattle(value: boolean): void;
     isJustWonBattle(): boolean;
 }
+
+type TriggerList = number[];
+
+type EventRangeEvent = {
+    rangeEventPlayer?: (x: number, y: number) => boolean;
+    range?: (x: number, y: number, event?: unknown) => boolean;
+    getEventRangeTag?: () => string | undefined;
+    getEventRangeCollidedTag?: () => boolean;
+    isEventRangeEvent?: () => boolean;
+};
+
+type PlayerWithRange = {
+    setDistanceFrom?: (dx: number, dy: number) => void;
+    rangeFollower?: (x: number, y: number, event: unknown) => boolean;
+    pos: (x: number, y: number) => boolean;
+    x: number;
+    y: number;
+};
+
+type MapWithRange = {
+    eventsRangeEventPlayerXy?: (x: number, y: number) => unknown[];
+};
+
+declare class DotMoveSystem {}
