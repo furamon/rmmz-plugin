@@ -578,7 +578,7 @@ declare class Window_FormationBattleMember extends Window_Base {
 interface AdditionalClass {
     _actor: Game_Actor;
     _id: number;
-    _data: MZ.Class;
+    _data: MZ.Class | null;
     _level: number;
     exp(): number;
     actor(): Game_Actor;

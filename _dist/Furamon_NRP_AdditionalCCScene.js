@@ -352,6 +352,11 @@
  * @type boolean
  * @default true
  * @desc 転職コマンドを参照専用にした際、転職先の候補も表示します。
+ *
+ * @param ShowEquipSwitch
+ * @text 転職後装備画面スイッチ
+ * @type switch
+ * @desc 転職後、このスイッチがONだと自動で装備画面を開きます。
  */
 /*~struct~Class:ja
  * @param Class
@@ -467,6 +472,7 @@
  * @type file
  * @dir img/sv_actors
  * @desc 使用するＳＶアクター画像のファイルです。
+ *
  */
 //-----------------------------------------------------------------------------
 // Windows_SelectClasses
@@ -506,20 +512,20 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
     const PLUGIN_NAME = 'Furamon_NRP_AdditionalCCScene';
     const parameters = PluginManager.parameters(PLUGIN_NAME);
     const pClassList = parseStruct2(parameters['ClassList']);
-    const pNoDuplicate = Boolean(parameters['NoDuplicate'] || false);
-    const pAddBlankToLeave = Boolean(parameters['AddBlankToLeave'] || true);
-    const pUseClassFocus = Boolean(parameters['UseClassFocus'] || true);
+    const pNoDuplicate = Boolean(parameters['NoDuplicate'] == 'true');
+    const pAddBlankToLeave = Boolean(parameters['AddBlankToLeave'] == 'true');
+    const pUseClassFocus = parameters['UseClassFocus'] === 'true';
     const pClassChangeMessage = parameters['ClassChangeMessage'];
     const pSoundSuccess = parameters['SoundSuccess'];
     // レイアウト関連
     const pSortClassId = Boolean(parameters['SortClassId'] == 'true');
     const pClassListWidth = Number(parameters['ClassListWidth'] || 280);
-    const pDisplayListLevel = Boolean(parameters['DisplayListLevel'] || true);
+    const pDisplayListLevel = Boolean(parameters['DisplayListLevel'] == 'true');
     const pMessageFontSize = Number(parameters['MessageFontSize']);
     const pDisplayParameters = parameters['DisplayParameters'] || '';
     const pParamFontSize = Number(parameters['ParamFontSize']);
     const pParamLineHeight = Number(parameters['ParamLineHeight'] || 36);
-    const pHideNormalExp = Boolean(parameters['HideNormalExp'] || false);
+    const pHideNormalExp = Boolean(parameters['HideNormalExp'] == 'true');
     // 画像レイアウト関連
     const pClassImageList = parseStruct2(parameters['ClassImageList']);
     const pUseClassImage = Boolean(parameters['ReverseImagePos'] == 'true');
@@ -533,24 +539,23 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
     const pShowUnlearnedSkills = parameters['ShowUnlearnedSkills'];
     const pSkillFontSize = Number(parameters['SkillFontSize']);
     // メニューコマンド関連
-    const pShowMenuCommand = Boolean(parameters['ShowMenuCommand'] || false);
-    const pShowMenuCommandPosition = Number(parameters['ShowMenuCommandPosition'] ||
-        3);
+    const pShowMenuCommand = Boolean(parameters['ShowMenuCommand'] == 'true');
+    const pShowMenuCommandPosition = Number(parameters['ShowMenuCommandPosition'] || 3);
     const pClassChangeName = parameters['ClassChangeName'];
     const pMenuCommandSwitch = Number(parameters['MenuCommandSwitch']);
     const pMaskString = parameters['MaskString'];
     const pDisableSwitch = Number(parameters['DisableSwitch']);
     const pClassChangeSymbol = parameters['ClassChangeSymbol'];
-    const pReadOnlyMenu = Boolean(parameters['ReadOnlyMenu'] === 'false');
+    const pReadOnlyMenu = Boolean(parameters['ReadOnlyMenu'] === 'true');
     const pReadOnlyMenuOther = Boolean(parameters['ReadOnlyMenuOther'] == 'true');
+    const pShowEquipSwitch = Number(parameters['ShowEquipSwitch'] || 0);
     // ベースプラグインのパラメータを参照
     const BASE_PLUGIN_NAME = 'Furamon_NRP_AdditionalClasses';
     const baseParameters = PluginManager.parameters(BASE_PLUGIN_NAME);
     const pLvName = baseParameters['LvName'] || '';
     const pExpName = baseParameters['ExpName'] || '';
-    const pUnificationExp = Boolean(baseParameters['UnificationExp'] == 'false');
-    const pClassLvMaxExp = baseParameters['ClassLvMaxExp'] ||
-        '-------';
+    const pUnificationExp = Boolean(baseParameters['UnificationExp'] == 'true');
+    const pClassLvMaxExp = baseParameters['ClassLvMaxExp'] || '-------';
     const pZeroLevel = Boolean(baseParameters['ZeroLevel'] == 'true');
     //----------------------------------------
     // ＭＺ用プラグインコマンド
@@ -706,7 +711,6 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
     Scene_AdditionalCC.prototype.update = function () {
         Scene_MenuBase.prototype.update.call(this);
         if (this._isMessageClosing) {
-            // メッセージが完全に閉じてからシーン終了
             if (this._messageWindow.isClosed()) {
                 this.classChangeEnd();
                 this._isMessageClosing = false;
@@ -881,7 +885,6 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      * ●転職確認
      */
     Scene_AdditionalCC.prototype.onClassChangeConfirm = function () {
-        // 確認を行う場合
         if (pUseClassFocus) {
             this._infoWindow.select(0);
             this._infoWindow.activate();
@@ -924,9 +927,11 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             // 成功メッセージの表示
             const text = pClassChangeMessage.format(actor.name(), classItem.name);
             $gameMessage.add(text);
-            // メッセージがない場合は即終了
+            // メッセージが表示される場合は、メッセージが閉じられた後にclassChangeEndが呼ばれることを期待
+            // ここでは直接classChangeEndを呼ばない
         }
         else {
+            // メッセージがない場合は即終了
             this.classChangeEnd();
         }
     };
@@ -953,7 +958,13 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             // アクターの選択がない場合は前シーンへ
         }
         else {
-            this.popScene();
+            // 装備画面を開くスイッチがONの場合
+            if (pShowEquipSwitch && $gameSwitches.value(pShowEquipSwitch)) {
+                SceneManager.goto(Scene_Equip);
+            }
+            else {
+                this.popScene();
+            }
         }
     };
     //----------------------------------------
@@ -1006,7 +1017,8 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      * ●メッセージが閉じている最中か？
      */
     Scene_AdditionalCC.prototype.isMessageWindowClosing = function () {
-        return this._messageWindow.isClosing();
+        const result = this._messageWindow.isClosing();
+        return result;
     };
     /**
      * ●ウィンドウ生成
@@ -1020,8 +1032,12 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         this.createEventItemWindow();
         this.associateWindows();
         // メッセージウィンドウの下が消えないよう調整
-        this.addChild(this._windowLayer.removeChild(this._messageWindow));
-        this.addChild(this._windowLayer.removeChild(this._scrollTextWindow));
+        this.addChild(this._messageWindow);
+        this.addChild(this._scrollTextWindow);
+        this.addChild(this._nameBoxWindow);
+        this.addChild(this._choiceListWindow);
+        this.addChild(this._numberInputWindow);
+        this.addChild(this._eventItemWindow);
     };
     Scene_AdditionalCC.prototype.createMessageWindow = function () {
         Scene_Message.prototype.createMessageWindow.call(this);
@@ -1056,6 +1072,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         const rect = new Rectangle(0, 0, 0, 0);
         const goldWindow = new Window_Gold(rect);
         messageWindow.setGoldWindow(goldWindow);
+        this.addChild(goldWindow); // goldWindowをシーンに追加
         messageWindow.setNameBoxWindow(this._nameBoxWindow);
         messageWindow.setChoiceListWindow(this._choiceListWindow);
         messageWindow.setNumberInputWindow(this._numberInputWindow);
@@ -1193,7 +1210,8 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      * ●選択中の項目が選択可能かどうか？
      */
     Windows_SelectClasses.prototype.isCurrentItemEnabled = function () {
-        return true;
+        const classItem = this.item();
+        return isClassEnabled(classItem, this._actor);
     };
     /**
      * ●選択中の項目を取得
@@ -1484,22 +1502,22 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      */
     Windows_ClassInfo.prototype.drawActorClassLevel = function (x, y) {
         const additionalClass = this.getClass();
-        // 職業についてない場合は通常のレベル表示
-        if (!additionalClass) {
+        // additionalClass が存在しない場合（空欄）
+        // または additionalClass が存在し、かつ <NoGrow> タグがある場合
+        if (!additionalClass || additionalClass._data.meta.NoGrow) {
             this.changeTextColor(ColorManager.systemColor());
             this.drawText(TextManager.levelA, x, y, 80);
             this.resetTextColor();
             this.drawText(this._actor.level, x + 84, y, 36, 'right');
             return;
         }
-        // <NoGrow>タグがある場合は表示しない
-        if (additionalClass._data.meta.NoGrow) {
-            return;
-        }
+        // 通常の成長する職業の場合
         this.changeTextColor(ColorManager.systemColor());
         this.drawText(pLvName, x, y, 80);
         this.resetTextColor();
-        const displayLevel = pZeroLevel ? additionalClass.level - 1 : additionalClass.level;
+        const displayLevel = pZeroLevel
+            ? additionalClass.level - 1
+            : additionalClass.level;
         this.drawText(displayLevel, x + 84, y, 36, 'right');
     };
     /**
@@ -1507,49 +1525,59 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      */
     Windows_ClassInfo.prototype.drawExpInfo = function (x, y) {
         const additionalClass = this.getClass();
-        // <NoGrow>タグがある場合は表示しない
-        if (additionalClass && additionalClass._data.meta.NoGrow) {
-            return;
-        }
-        // 通常経験値を非表示にする場合、かつ選択する職業が空欄の場合
-        if (pHideNormalExp && !additionalClass) {
-            // 表示しない
+        // pHideNormalExp が true の場合、空欄（additionalClass が null）または <NoGrow> タグ付きの職業は表示しない
+        if (pHideNormalExp &&
+            (!additionalClass || additionalClass._data.meta.NoGrow)) {
             return;
         }
         let expName;
-        if (additionalClass) {
+        let currentExpValue;
+        let nextExpValue;
+        if (additionalClass && !additionalClass._data.meta.NoGrow) {
+            // 通常の成長する職業の場合
             expName = pExpName;
+            currentExpValue = this.expTotalValue();
+            nextExpValue = this.expNextValue();
         }
         else {
+            // 空欄、または <NoGrow> タグ付きの職業の場合（キャラクター自身の経験値を表示）
             expName = TextManager.exp;
+            if (this._actor.isMaxLevel()) {
+                currentExpValue = '-------';
+                nextExpValue = '-------';
+            }
+            else {
+                currentExpValue = this._actor.currentExp();
+                nextExpValue = this._actor.nextLevelExp();
+            }
         }
         const faceWidth = ImageManager.faceWidth;
-        // 追加：全体的に広げた
         this.changeTextColor(ColorManager.systemColor());
         this.drawText(expName, faceWidth + 400 + this.itemPadding(), y, 270);
         this.resetTextColor();
         // 現在の経験値
-        this.drawText(this.expTotalValue(), x - 155, y, this.innerWidth - this.itemPadding(), 'right');
+        this.drawText(currentExpValue, x - 155, y, this.innerWidth - this.itemPadding(), 'right');
         // "/"
         this.drawText('/', x - 130, y, this.innerWidth - this.itemPadding(), 'right');
         // 次のレベルアップまでの経験値
-        this.drawText(this.expNextValue(), x, y, this.innerWidth - this.itemPadding(), 'right');
+        this.drawText(nextExpValue, x, y, this.innerWidth - this.itemPadding(), 'right');
     };
     /**
      * ●現在の経験値
      */
     Windows_ClassInfo.prototype.expTotalValue = function () {
         const additionalClass = this.getClass();
-        if (additionalClass) {
+        // additionalClass が存在し、かつ <NoGrow> タグがない場合のみ additionalClass の経験値を返す
+        if (additionalClass && !additionalClass._data.meta.NoGrow) {
             if (additionalClass.isMaxLevel()) {
                 return pClassLvMaxExp;
             }
             else {
                 return additionalClass.currentExp();
             }
-            // 職業がない場合は通常の経験値
         }
         else {
+            // 空欄、または <NoGrow> タグ付きの職業の場合（キャラクター自身の経験値を返す）
             if (this._actor.isMaxLevel()) {
                 return '-------';
             }
@@ -1563,7 +1591,8 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      */
     Windows_ClassInfo.prototype.expNextValue = function () {
         const additionalClass = this.getClass();
-        if (additionalClass) {
+        // additionalClass が存在し、かつ <NoGrow> タグがない場合のみ additionalClass の経験値を返す
+        if (additionalClass && !additionalClass._data.meta.NoGrow) {
             if (additionalClass.isMaxLevel()) {
                 return pClassLvMaxExp;
             }
@@ -1571,9 +1600,9 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
                 // デフォルトとは異なり、現在ＥＸＰとの合計を表示
                 return additionalClass.nextLevelExp();
             }
-            // 職業がない場合は通常の経験値
         }
         else {
+            // 空欄、または <NoGrow> タグ付きの職業の場合（キャラクター自身の経験値を返す）
             if (this._actor.isMaxLevel()) {
                 return '-------';
             }
