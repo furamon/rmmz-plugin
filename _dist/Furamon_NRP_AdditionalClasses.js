@@ -1593,10 +1593,10 @@ if (pParamPlusByLevel || pParamPlusByTag) {
                 maxValue = 0;
             }
             if (paramName === 'Mhp' || paramName === 'Mmp') {
-                // maxValue が 0 より大きい場合にのみ乗算を適用
-                if (maxValue > 0) {
-                    value = Math.round(value * (1 + maxValue / 100)); // 乗算
-                }
+                // アクターの基本能力値を取得
+                const baseValue = this.paramBase(paramId);
+                // 基本能力値に乗算を適用し、元のparamPlusの結果に加算
+                value += Math.round(baseValue * (maxValue / 100));
             }
             else {
                 value += maxValue; // 加算
