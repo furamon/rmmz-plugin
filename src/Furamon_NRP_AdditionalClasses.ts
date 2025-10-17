@@ -559,35 +559,247 @@
 // 追加職業を保有するクラス
 // ※外部プラグインから参照できるように外側に定義
 
-function AdditionalClass() {
-    this.initialize(...arguments);
-}
+class AdditionalClass {
+    _actor: Game_Actor;
+    _id: number;
+    _data: MZ.Class;
+    _level: number;
 
-/**
- * ●初期化
- */
-AdditionalClass.prototype.initialize = function (actor, classId) {
-    this._actor = actor;
-    this._id = classId;
-    this._data = $dataClasses[classId];
-    this.setLevel();
-};
+    constructor(actor: Game_Actor, classId: number) {
+        this._actor = actor;
+        this._id = classId;
+        this._data = $dataClasses[classId];
+        this._level = 1; // 仮
+        this.setLevel();
+    }
 
-(function () {
-    'use strict';
+    get id(): number {
+        return this._id;
+    }
 
-    const _DataManager_onLoad = DataManager.onLoad;
-    DataManager.onLoad = function (object) {
-        _DataManager_onLoad.call(this, object);
-        if (object === $dataClasses) {
-            for (let i = 1; i < $dataClasses.length; i++) {
-                const classData = $dataClasses[i];
-                if (classData) {
-                    DataManager.extractMetadata(classData);
+    get level(): number {
+        return this._level;
+    }
+
+    get name(): string {
+        return this._data.name;
+    }
+
+    get note(): string {
+        return this._data.note;
+    }
+
+    get learnings(): MZ.Learning[] {
+        return this._data.learnings;
+    }
+
+    get id(): number {
+        return this._id;
+    }
+
+    get level(): number {
+        return this._level;
+    }
+
+    get name(): string {
+        return this._data.name;
+    }
+
+    get note(): string {
+        return this._data.note;
+    }
+
+    get learnings(): MZ.Learning[] {
+        return this._data.learnings;
+    }
+
+    exp(): number {
+        let exp = this.expActor()._exp[this._id];
+        if (!exp) {
+            exp = 0;
+        }
+        return exp;
+    }
+
+    actor(): Game_Actor {
+        return this._actor;
+    }
+
+    expActor(): Game_Actor {
+        if (pUnificationExp) {
+            return getExpActor();
+        }
+        return this._actor;
+    }
+
+    setLevel(): void {
+        const exp = this.exp();
+        this._level = 1;
+        while (!this.isMaxLevel() && exp >= this.nextLevelExp()) {
+            this._level++;
+        }
+    }
+
+    currentExp(showFlg: boolean): number | string {
+        if (showFlg && this.isMaxLevel()) {
+            return pClassLvMaxExp;
+        }
+        return this.exp();
+    }
+
+    currentLevelExp(): number {
+        return this.expForLevel(this._level);
+    }
+
+    nextLevelExp(showFlg?: boolean): number | string {
+        if (showFlg && this.isMaxLevel()) {
+            return pClassLvMaxExp;
+        }
+        return this.expForLevel(this._level + 1);
+    }
+
+    nextRequiredExp(): number {
+        return (this.nextLevelExp() as number) - (this.currentExp(false) as number);
+    }
+
+    expForLevel(level: number): number {
+        if (this._data.meta.NeedsExp) {
+            try {
+                const needsExp = JSON.parse(this._data.meta.NeedsExp);
+                if (level <= 1) {
+                    return 0;
+                }
+                if (level > needsExp.length + 1) {
+                    return this.expForLevel(needsExp.length + 1);
+                }
+                let totalExp = 0;
+                for (let i = 0; i < level - 1; i++) {
+                    totalExp += needsExp[i] || 0;
+                }
+                return totalExp;
+            } catch (e) {
+                console.error("Failed to parse NeedsExp tag for class " + this.id, e);
+            }
+        }
+        const actor = this.expActor();
+        mForceClassId = this.id;
+        const exp = actor.expForLevel(level);
+        mForceClassId = null;
+        return exp;
+    }
+
+    isMaxLevel(): boolean {
+        return this._level >= this.maxLevel();
+    }
+
+    maxLevel(): number {
+        if (this._data.meta.NeedsExp) {
+            try {
+                const needsExp = JSON.parse(this._data.meta.NeedsExp);
+                return needsExp.length + 1;
+            } catch (e) {
+                console.error("Failed to parse NeedsExp tag for class " + this.id, e);
+            }
+        }
+        const metaMaxLevel = this._data.meta.MaxLevel;
+        if (metaMaxLevel) {
+            return metaMaxLevel;
+        } else if (pDefaultMaxLevel) {
+            return pDefaultMaxLevel;
+        }
+        return this.expActor().actor().maxLevel;
+    }
+
+    changeExp(exp: number, show: boolean): void {
+        const expActor = this.expActor();
+        const skillActor = this.actor();
+        const classId = this.id;
+        expActor._exp[classId] = Math.max(exp, 0);
+        const lastLevel = this._level;
+        const lastSkills = skillActor.skills();
+        while (!this.isMaxLevel() && this.exp() >= this.nextLevelExp()) {
+            this.levelUp();
+        }
+        while (this.exp() < this.currentLevelExp()) {
+            this.levelDown();
+        }
+        if (this._level > lastLevel) {
+            if (show) {
+                this.displayLevelUp(skillActor.findNewSkills(lastSkills));
+            }
+            if (this.isMaxLevel()) {
+                this.displayLevelMax(show);
+                if (!skillActor._masteredClassIds.includes(classId)) {
+                    skillActor._masteredClassIds.push(classId);
                 }
             }
         }
-    };
+        expActor.refresh();
+    }
+
+    changeLevel(level: number, show: boolean): void {
+        level = level.clamp(1, this.maxLevel());
+        this.changeExp(this.expForLevel(level), show);
+    }
+
+    levelUp(): void {
+        const actor = this.actor();
+        this._level++;
+        for (const learning of this._data.learnings) {
+            if (learning.level === this._level) {
+                if (!actor.isAdditionalClassId(this.id)) {
+                    if (!isKeepSkill(learning.skillId)) {
+                        continue;
+                    }
+                }
+                actor.learnSkill(learning.skillId);
+            }
+        }
+    }
+
+    levelDown(): void {
+        this._level--;
+    }
+
+    displayLevelUp(newSkills: MZ.Skill[]): void {
+        if (pLvUpMessage) {
+            const actor = this.actor();
+            const displayLevel = pZeroLevel ? this._level - 1 : this._level;
+            const text = pLvUpMessage.format(
+                actor.name(),
+                this.name,
+                displayLevel
+            );
+            $gameMessage.newPage();
+            $gameMessage.add(text);
+        }
+        for (const skill of newSkills) {
+            $gameMessage.add(TextManager.obtainSkill.format(skill.name));
+        }
+        mDisplayLevelUp = true;
+    }
+
+    displayLevelMax(show: boolean): void {
+        if (!pShowMaxLevelMessage) {
+            return;
+        }
+        if (mCommandFlg && !show) {
+            return;
+        }
+        const actor = this.actor();
+        if (!actor.shouldDisplayLevelUp() && !pShowBenchMaxLevel) {
+            return;
+        }
+        const displayLevel = pZeroLevel ? this._level - 1 : this._level;
+        const text = pMaxLevelMessage.format(actor.name(), this.name, displayLevel);
+        if (!actor.shouldDisplayLevelUp()) {
+            $gameMessage.newPage();
+        }
+        for (const line of text.split('\\n')) {
+            $gameMessage.add(line);
+        }
+    }
+}
 
     function toBoolean(str, def) {
         if (str === true || str === 'true') {
@@ -951,41 +1163,7 @@ AdditionalClass.prototype.initialize = function (actor, classId) {
     //
     // 追加職業を保有するクラス
 
-    /**
-     * JSONオブジェクト感覚でアクセスできるようにしておく。
-     */
-    Object.defineProperties(AdditionalClass.prototype, {
-        id: {
-            get: function () {
-                return this._id;
-            },
-            configurable: true,
-        },
-        level: {
-            get: function () {
-                return this._level;
-            },
-            configurable: true,
-        },
-        name: {
-            get: function () {
-                return this._data.name;
-            },
-            configurable: false,
-        },
-        note: {
-            get: function () {
-                return this._data.note;
-            },
-            configurable: false,
-        },
-        learnings: {
-            get: function () {
-                return this._data.learnings;
-            },
-            configurable: false,
-        },
-    });
+
 
     /**
      * ●現在の経験値を取得
@@ -1893,43 +2071,42 @@ AdditionalClass.prototype.initialize = function (actor, classId) {
 
                 // 追加職業のレベルをさらに表示
                 const additionalClass = actor.additionalClass();
-                if (additionalClass) {
-                    // 幅を取得
-                    const classNameWidth = this.textSizeEx(
-                        additionalClass.name
-                    ).width;
-                    x += classNameWidth + this.itemPadding();
-                    const displayLevel = pZeroLevel
-                        ? additionalClass.level - 1
-                        : additionalClass.level;
-
-                    // 数字のみ
-                    if (pShowLevelOnMenu == 'simple') {
-                        this.drawText(displayLevel, x, y, 30, 'right');
-
-                        // 全表示
-                    } else if (pShowLevelOnMenu == 'full') {
-                        this.changeTextColor(ColorManager.systemColor());
-                        this.drawText(
-                            pLvName,
-                            x,
-                            y,
-                            this.innerWidth - x - this.itemPadding() * 2 - 40,
-                            'right'
-                        );
-                        this.resetTextColor();
-                        // 追加職業のレベル描画を追加
-                        x += 40;
-                        this.drawText(
-                            displayLevel,
-                            x,
-                            y,
-                            this.innerWidth - x - this.itemPadding() * 2,
-                            'right'
-                        );
-                    }
-                }
-            };
+                            if (additionalClass && !additionalClass._data.meta.NoGrow) {
+                                // 幅を取得
+                                const classNameWidth = this.textSizeEx(
+                                    additionalClass.name
+                                ).width;
+                                x += classNameWidth + this.itemPadding();
+                                const displayLevel = pZeroLevel
+                                    ? additionalClass.level - 1
+                                    : additionalClass.level;
+                
+                                // 数字のみ
+                                if (pShowLevelOnMenu == 'simple') {
+                                    this.drawText(displayLevel, x, y, 30, 'right');
+                
+                                // 全表示
+                                } else if (pShowLevelOnMenu == 'full') {
+                                    this.changeTextColor(ColorManager.systemColor());
+                                    this.drawText(
+                                        pLvName,
+                                        x,
+                                        y,
+                                        this.innerWidth - x - this.itemPadding() * 2 - 40,
+                                        'right'
+                                    );
+                                    this.resetTextColor();
+                                    // 追加職業のレベル描画を追加
+                                    x += 40;
+                                    this.drawText(
+                                        displayLevel,
+                                        x,
+                                        y,
+                                        this.innerWidth - x - this.itemPadding() * 2,
+                                        'right'
+                                    );
+                                }
+                            }            };
         }
     }
 
@@ -2037,6 +2214,11 @@ AdditionalClass.prototype.initialize = function (actor, classId) {
                 'right'
             );
 
+            // <NoGrow> タグがある場合はレベル・経験値を表示しない
+            if (additionalClass._data.meta.NoGrow) {
+                return;
+            }
+
             // 下の段に
             y += this.lineHeight();
             this.changeTextColor(ColorManager.systemColor());
@@ -2049,8 +2231,9 @@ AdditionalClass.prototype.initialize = function (actor, classId) {
             );
             this.resetTextColor();
             // 追加職業のレベル描画を追加
+            const displayLevel = pZeroLevel ? additionalClass.level - 1 : additionalClass.level;
             this.drawText(
-                additionalClass.level,
+                displayLevel,
                 x - pClassExpWidth * 2 - 30,
                 y,
                 this.innerWidth - this.itemPadding(),

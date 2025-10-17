@@ -1186,7 +1186,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             // 職業名の表示
             this.drawItemName(classItem, rect.x, rect.y);
             // 職業レベルの表示
-            if (pDisplayListLevel) {
+            if (pDisplayListLevel && !classItem.meta.NoGrow) {
                 const level = getClassLevel(this._actor, classItem.id);
                 this.drawClassLevel(level, rect.x, rect.y, rect.width);
             }
@@ -1504,6 +1504,10 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             this.drawText(this._actor.level, x + 84, y, 36, 'right');
             return;
         }
+        // <NoGrow>タグがある場合は表示しない
+        if (additionalClass._data.meta.NoGrow) {
+            return;
+        }
         this.changeTextColor(ColorManager.systemColor());
         this.drawText(pLvName, x, y, 80);
         this.resetTextColor();
@@ -1514,8 +1518,13 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      * ●職業経験値を表示
      */
     Windows_ClassInfo.prototype.drawExpInfo = function (x, y) {
+        const additionalClass = this.getClass();
+        // <NoGrow>タグがある場合は表示しない
+        if (additionalClass && additionalClass._data.meta.NoGrow) {
+            return;
+        }
         // 通常経験値を非表示にする場合、かつ選択する職業が空欄の場合
-        if (pHideNormalExp && !this.getClass()) {
+        if (pHideNormalExp && !additionalClass) {
             // 表示しない
             return;
         }
