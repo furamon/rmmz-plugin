@@ -5,7 +5,7 @@ interface MetaObject {
 declare var ApngLoader: any;
 declare var SceneManager: any;
 declare var Sprite_Enemy: any;
-
+declare var obtainSkill: string;
 declare let EnemyStatePosition: number;
 declare let State_X: number;
 declare let State_Y: number;
@@ -55,11 +55,35 @@ declare namespace BattleManager {
     interface Spriteset {
         battlerSprites(): Sprite_Battler[];
     }
+    let _rewards: {
+        gold: number;
+        exp: number;
+        items: MZ.Item[];
+        classExp: number;
+    };
+    function gainClassExp(): void;
+    function displayExp(): void;
+    let _subject: Game_Actor | Game_Enemy | null;
+    function startInput(): void;
+    function battleCommandRefresh(): void;
+    function endTurn(): void;
+    function rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
+    function setup(troopId: number, canEscape: boolean, canLose: boolean): void;
+    function endBattle(result: number): void;
+    let _escaped: boolean;
+    function canEscape(): boolean;
+    function selectPreviousCommand(): void;
+    function actor(): Game_Actor;
+    function inputtingAction(): Game_Action;
+    function startTurn(): void;
 }
 
 declare class TextManager {
     public static readonly file: string;
     public static readonly autosave: string;
+    public static readonly obtainSkill: string; // 追加
+    public static readonly levelA: string; // 追加
+    public static readonly exp: string; // 追加
 }
 
 declare namespace ImageManager {
@@ -104,6 +128,8 @@ declare let Imported: {
 interface BattleManager {
     battleCommandRefresh(): void;
     rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
+    gainClassExp(): void; // 追加
+    displayExp(): void; // 追加
 }
 
 // For Furamon_TorigoyaMZ_FrameTween
@@ -193,6 +219,7 @@ interface Game_Battler {
     makeSPName?(action?: Game_Action): string | null;
     enemy(): MZ.Enemy;
     setWt(battler): void;
+    isActor(): this is Game_Actor; // 追加
 }
 
 declare class Sprite_EnemyHPGauge extends Sprite {
@@ -216,7 +243,25 @@ interface Game_Actor {
     getStateParamRate(paramId: number): number;
     getEquipParamRate(paramId: number): number;
     getPassiveObject(): any[];
-    skills(options?: { includeHasAbilitySkills?: boolean }): number[];
+    skills(options?: { includeHasAbilitySkills?: boolean }): number[]; // 戻り値をnumber[]に修正
+
+    _additionalClassId: number;
+    _masteredClassIds: number[];
+    additionalClass(): AdditionalClass | undefined;
+    additionalClassObject(): MZ.Class | undefined;
+    changeAdditionalClass(classId: number): void;
+    leaveAdditionalClass(): void;
+    setAllAdditionalClassesSkills(): void;
+    setAdditionalClassSkills(additionalClass: AdditionalClass): void;
+    isAdditionalClass(gameClass: MZ.Class): boolean;
+    isAdditionalClassId(classId: number): boolean;
+    gainClassExp(classExp: number, ignoreBench?: boolean): void;
+    finalClassExpRate(): number;
+    benchMembersClassExpRate(): number;
+    traitObjects(): DataManager.TraitObject[]; // 追加
+    setUnificationExp(): void; // 追加
+    traitBattlerObjects(): DataManager.TraitObject[]; // 追加
+    currentClass(): MZ.Class | undefined; // 戻り値をMZ.Class | undefinedに修正
 }
 
 interface Game_Enemy {
@@ -235,6 +280,7 @@ interface Game_Enemy {
     _damageMotionCount: number;
     originalCollapseId(): number | null;
     originalCollapseData(): CollapseData | null;
+    classExp(): number;
 }
 
 interface Game_Action {
@@ -401,6 +447,8 @@ interface Window_StatusBase {
     getFormationSelectActor(): void;
     drawBackGroundActor(index: number): void;
     actor(index: number): Game_Actor;
+    drawActorClass(actor: Game_Actor, x: number, y: number, width?: number): void; // 追加
+    drawAdditionalClassLevel(additionalClass: AdditionalClass | undefined, x: number, y: number): void; // 追加
 }
 
 interface Game_Interpreter {
@@ -443,7 +491,7 @@ interface TweenSetting {
     enable: boolean;
     moveX: string;
     moveY: string;
-    alpha: number;
+alpha: number;
     easing: EasingFunc;
     duration: number;
     delay: number;
@@ -457,7 +505,7 @@ interface TorigoyaTween {
     stacks: { duration: number; delay: number }[];
 }
 
-interface WindowLike extends PIXI.Container {
+interface WindowLike extends Window_Base {
     x: number;
     y: number;
     opacity: number;
@@ -527,14 +575,28 @@ declare class Window_FormationBattleMember extends Window_Base {
     isChangeActorActive(actor: Game_Actor): void;
 }
 
-declare class AdditionalClass {
+interface AdditionalClass {
+    _actor: Game_Actor;
+    _id: number;
+    _data: MZ.Class;
+    _level: number;
+    exp(): number;
     actor(): Game_Actor;
-    classId: number;
+    expActor(): Game_Actor;
     setLevel(): void;
-    changeExp(exp: number, show: boolean, index: number, difExp: number): void;
-    changeLevel(): void;
-    displayLevelUp(newSkills: number[]): void;
-    initialize(actor: Game_Actor, classId: number): void;
+    currentExp(showFlg?: boolean): number | string;
+    currentLevelExp(): number;
+    nextLevelExp(showFlg?: boolean): number | string;
+    nextRequiredExp(): number;
+    expForLevel(level: number): number;
+    isMaxLevel(): boolean;
+    maxLevel(): number;
+    changeExp(exp: number, show: boolean): void;
+    changeLevel(level: number, show: boolean): void;
+    levelUp(): void;
+    levelDown(): void;
+    displayLevelUp(newSkills: MZ.Skill[]): void;
+    displayLevelMax(show: boolean): void;
 }
 
 // For Furamon_LP.ts
@@ -552,19 +614,22 @@ type EventRangeEvent = {
     getEventRangeTag?: () => string | undefined;
     getEventRangeCollidedTag?: () => boolean;
     isEventRangeEvent?: () => boolean;
+    start?: () => void;
 };
 
 type PlayerWithRange = {
     setDistanceFrom?: (dx: number, dy: number) => void;
     rangeFollower?: (x: number, y: number, event: unknown) => boolean;
     pos: (x: number, y: number) => boolean;
-    x: number;
-    y: number;
-};
+    followers?: () => GameFollowersLike;
+  };
 
-type MapWithRange = {
+  type MapWithRange = {
     eventsRangeEventPlayerXy?: (x: number, y: number) => unknown[];
-};
+    roundXWithDirection: (x: number, d: number) => number;
+    roundYWithDirection: (y: number, d: number) => number;
+    isEventRunning: () => boolean;
+  };
 
 declare class DotMoveSystem {}
 
@@ -616,3 +681,169 @@ declare class DotMoveSystem {}
     x: number;
     y: number;
   };
+
+interface Game_System {
+    isClassExpEnabled(): boolean;
+}
+
+interface Game_Troop {
+    classExpTotal(): number;
+}
+
+declare class Windows_SelectClasses extends Window_Selectable {
+    constructor(rect: Rectangle);
+    _actor: Game_Actor;
+    _data: (MZ.Class | null)[];
+    _infoWindow: Windows_ClassInfo;
+    refresh(): void;
+    makeItemList(): void;
+    isActorConditionOK(actorIds: string[]): boolean;
+    isClassConditionOK(jsonConditions: any): boolean;
+    drawItem(index: number): void;
+    isCurrentItemEnabled(): boolean;
+    item(): MZ.Class | null;
+    itemAt(index: number): MZ.Class | null;
+    maxItems(): number;
+    drawItemName(item: MZ.Class, x: number, y: number): void;
+    drawClassLevel(level: number, x: number, y: number, width: number): void;
+    select(index: number): void;
+    setInfoWindow(window: Windows_ClassInfo): void;
+    setActor(actor: Game_Actor): void;
+    selectCurrentClass(): void;
+    flushTextState(textState: any): void;
+    isUsePage(): boolean;
+}
+
+declare class Windows_ClassInfo extends Window_EquipStatus {
+    constructor(rect: Rectangle);
+    _actor: Game_Actor;
+    _tempActor: Game_Actor;
+    _isSkillPage: boolean;
+    _scrollInterval: number;
+    _parameterEndY: number;
+    _skillEndY: number;
+    _messageEndY: number;
+    setActor(actor: Game_Actor): void;
+    changePage(): void;
+    paint(): void;
+    refresh(): void;
+    getClass(): AdditionalClass;
+    drawAllItems(): void;
+    drawActorName(actor: Game_Actor, x: number, y: number, width: number): void;
+    drawClassImage(actor: Game_Actor, x: number, y: number, width?: number, height?: number): void;
+    drawPicture(imageName: string, x: number, y: number, width?: number, height?: number): void;
+    drawActorClass(x: number, y: number, width?: number): void;
+    drawActorClassLevel(x: number, y: number): void;
+    drawExpInfo(x: number, y: number): void;
+    expTotalValue(): string | number;
+    expNextValue(): string | number;
+    levelX(): number;
+    drawAllParams(): void;
+    drawItem(x: number, y: number, paramId: number): void;
+    drawNewParam(x: number, y: number, paramId: number): void;
+    isDispNewParam(): boolean;
+    paramWidth(): number;
+    paramLineHeight(): number;
+    paramX(): number;
+    paramY(index: number): number;
+    drawLearnSkills(x: number, y: number): void;
+    drawClassMessage(x: number, y: number): void;
+    classMessageY(): number;
+    classSkillY(): number;
+    setOverallHeight(): void;
+    overallHeight(): number;
+    processHandling(): void;
+    processWheel(): void;
+    isScrollEnabled(): boolean;
+    updateArrows(): void;
+    isPageChangeEnabled(): boolean;
+    isPageChangeRequested(): boolean;
+    onPageChange(): void;
+}
+
+declare class Windows_ClassSlot extends Window_Selectable {
+    constructor(rect: Rectangle);
+    _actor: Game_Actor;
+    _data: (AdditionalClass | null)[];
+    _infoWindow: Windows_ClassInfo;
+    refresh(): void;
+    makeItemList(): void;
+    drawItem(index: number): void;
+    isCurrentItemEnabled(): boolean;
+    item(): AdditionalClass | null;
+    itemAt(index: number): AdditionalClass | null;
+    maxItems(): number;
+    drawItemName(item: AdditionalClass | null, x: number, y: number): void;
+    drawClassLevel(level: number, x: number, y: number, width: number): void;
+    select(index: number): void;
+    setActor(actor: Game_Actor): void;
+    selectCurrentClass(): void;
+    isUsePage(): boolean;
+}
+
+declare class Scene_AdditionalCC extends Scene_MenuBase {
+    constructor();
+    _isSelectActor: boolean;
+    _isMessageClosing: boolean;
+    _selectWindow: Windows_SelectClasses;
+    _infoWindow: Windows_ClassInfo;
+    _statusWindow: Window_MenuStatus;
+    _actor: Game_Actor;
+    _messageWindow: Window_Message;
+    _scrollTextWindow: Window_ScrollText;
+    _nameBoxWindow: Window_NameBox;
+    _choiceListWindow: Window_ChoiceList;
+    _numberInputWindow: Window_NumberInput;
+    _eventItemWindow: Window_EventItem;
+    _windowLayer: WindowLayer;
+    initialize(): void;
+    updateActor(): void;
+    update(): void;
+    create(): void;
+    start(): void;
+    helpAreaHeight(): number;
+    refreshActor(): void;
+    isNoActor(): boolean;
+    createStatusWindow(): void;
+    statusWindowRect(): Rectangle;
+    selectActorStart(): void;
+    onActorOk(): void;
+    onClassChangeSelectStart(): void;
+    onClassChangeSelectCancel(): void;
+    onClassChangeConfirm(): void;
+    onClassChangeOk(): void;
+    onClassChangeCancel(): void;
+    classChangeEnd(): void;
+    onActorChange(): void;
+    needsPageButtons(): boolean;
+    arePageButtonsEnabled(): boolean;
+    stop(): void;
+    terminate(): void;
+    isMessageWindowClosing(): boolean;
+    createMessageWindows(): void;
+    createMessageWindow(): void;
+    createScrollTextWindow(): void;
+    createNameBoxWindow(): void;
+    createChoiceListWindow(): void;
+    createNumberInputWindow(): void;
+    createEventItemWindow(): void;
+    messageWindowRect(): Rectangle;
+    scrollTextWindowRect(): Rectangle;
+    eventItemWindowRect(): Rectangle;
+    associateWindows(): void;
+    showMessage(message: string): void;
+}
+
+declare interface Window_MenuStatus {
+    drawActorClass(actor: Game_Actor, x: number, y: number, width?: number): void; // 追加
+}
+
+declare interface Window_Status {
+    drawBlock1(y: number): void; // 追加
+    drawActorLevel(actor: Game_Actor, x: number, y: number): void; // 追加
+    drawExpInfo(x: number, y: number): void; // 追加
+    drawBlock2(y: number): void; // 追加
+    drawClassInfo(additionalClass: AdditionalClass | undefined, x: number, y: number): void; // 追加
+}
+
+declare let mForceClassId: number | null; // 追加

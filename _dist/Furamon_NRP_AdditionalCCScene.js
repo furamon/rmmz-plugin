@@ -3,6 +3,7 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
+// 2025/10/17 1.0.0-Beta 非公開作成
 /*:
  * @target MZ
  * @plugindesc NRP様の転職画面プラグインの改造版
@@ -14,6 +15,11 @@
  * 削られたものも多い……というかよっぽどFFVを再現したいんじゃな方以外は
  * もとのプラグインを使ったほうが良いと思われますのでご承知ください。
  * (https://newrpg.seesaa.net/article/483582956.html)
+ *
+ * # 主な変更点
+ * - Furamon_NRP_AdditionalClassesに対応
+ * - AbilitySkillと併用時、アビリティスキルを追加職業で習得後
+ * 装備していない場合習得済み表示がされない競合の修正
  *
  * --- 以下元プラグイン解説（改変内容に合わせて原文から変更） ---
  * 多重職業用の転職画面を実装します。
@@ -497,74 +503,55 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         }
         return ret;
     }
-    function toBoolean(str, def) {
-        if (str === true || str === 'true') {
-            return true;
-        }
-        else if (str === false || str === 'false') {
-            return false;
-        }
-        return def;
-    }
-    function toNumber(str, def) {
-        if (str == undefined || str == '') {
-            return def;
-        }
-        return isNaN(str) ? def : +(str || def);
-    }
-    function setDefault(str, def) {
-        if (str == undefined || str == '') {
-            return def;
-        }
-        return str;
-    }
     const PLUGIN_NAME = 'Furamon_NRP_AdditionalCCScene';
     const parameters = PluginManager.parameters(PLUGIN_NAME);
     const pClassList = parseStruct2(parameters['ClassList']);
-    const pNoDuplicate = toBoolean(parameters['NoDuplicate'], false);
-    const pAddBlankToLeave = toBoolean(parameters['AddBlankToLeave'], true);
-    const pUseClassFocus = toBoolean(parameters['UseClassFocus'], true);
-    const pClassChangeMessage = setDefault(parameters['ClassChangeMessage']);
+    const pNoDuplicate = Boolean(parameters['NoDuplicate'] || false);
+    const pAddBlankToLeave = Boolean(parameters['AddBlankToLeave'] || true);
+    const pUseClassFocus = Boolean(parameters['UseClassFocus'] || true);
+    const pClassChangeMessage = parameters['ClassChangeMessage'];
     const pSoundSuccess = parameters['SoundSuccess'];
     // レイアウト関連
-    const pSortClassId = toBoolean(parameters['SortClassId'], false);
-    const pClassListWidth = toNumber(parameters['ClassListWidth'], 280);
-    const pDisplayListLevel = toBoolean(parameters['DisplayListLevel'], true);
-    const pMessageFontSize = toNumber(parameters['MessageFontSize']);
-    const pDisplayParameters = setDefault(parameters['DisplayParameters'], '');
-    const pParamFontSize = toNumber(parameters['ParamFontSize']);
-    const pParamLineHeight = toNumber(parameters['ParamLineHeight'], 36);
-    const pHideNormalExp = toBoolean(parameters['HideNormalExp'], false);
+    const pSortClassId = Boolean(parameters['SortClassId'] == 'true');
+    const pClassListWidth = Number(parameters['ClassListWidth'] || 280);
+    const pDisplayListLevel = Boolean(parameters['DisplayListLevel'] || true);
+    const pMessageFontSize = Number(parameters['MessageFontSize']);
+    const pDisplayParameters = parameters['DisplayParameters'] || '';
+    const pParamFontSize = Number(parameters['ParamFontSize']);
+    const pParamLineHeight = Number(parameters['ParamLineHeight'] || 36);
+    const pHideNormalExp = Boolean(parameters['HideNormalExp'] || false);
     // 画像レイアウト関連
     const pClassImageList = parseStruct2(parameters['ClassImageList']);
-    const pUseClassImage = toBoolean(parameters['UseClassImage'], true);
-    const pReverseImagePos = toBoolean(parameters['ReverseImagePos'], false);
-    const pPictureOnScroll = toBoolean(parameters['PictureOnScroll'], true);
-    const pPictureAdjustX = toNumber(parameters['PictureAdjustX'], 0);
-    const pPictureAdjustY = toNumber(parameters['PictureAdjustY'], 0);
-    const pPictureOpacity = toNumber(parameters['PictureOpacity'], 255);
+    const pUseClassImage = Boolean(parameters['ReverseImagePos'] == 'true');
+    const pReverseImagePos = Boolean(parameters['ReverseImagePos'] == 'true');
+    const pPictureOnScroll = Boolean(parameters['ReverseImagePos'] == 'true');
+    const pPictureAdjustX = Number(parameters['PictureAdjustX'] || 0);
+    const pPictureAdjustY = Number(parameters['PictureAdjustY'] || 0);
+    const pPictureOpacity = Number(parameters['PictureOpacity'] || 255);
     // スキル関連
     const pShowSkillsType = parameters['ShowSkillsType'];
     const pShowUnlearnedSkills = parameters['ShowUnlearnedSkills'];
-    const pSkillFontSize = toNumber(parameters['SkillFontSize']);
+    const pSkillFontSize = Number(parameters['SkillFontSize']);
     // メニューコマンド関連
-    const pShowMenuCommand = toBoolean(parameters['ShowMenuCommand'], false);
-    const pShowMenuCommandPosition = toNumber(parameters['ShowMenuCommandPosition'], 3);
+    const pShowMenuCommand = Boolean(parameters['ShowMenuCommand'] || false);
+    const pShowMenuCommandPosition = Number(parameters['ShowMenuCommandPosition'] ||
+        3);
     const pClassChangeName = parameters['ClassChangeName'];
-    const pMenuCommandSwitch = toNumber(parameters['MenuCommandSwitch']);
-    const pMaskString = setDefault(parameters['MaskString']);
-    const pDisableSwitch = toNumber(parameters['DisableSwitch']);
+    const pMenuCommandSwitch = Number(parameters['MenuCommandSwitch']);
+    const pMaskString = parameters['MaskString'];
+    const pDisableSwitch = Number(parameters['DisableSwitch']);
     const pClassChangeSymbol = parameters['ClassChangeSymbol'];
-    const pReadOnlyMenu = toBoolean(parameters['ReadOnlyMenu'], false);
-    const pReadOnlyMenuOther = toBoolean(parameters['ReadOnlyMenuOther'], true);
+    const pReadOnlyMenu = Boolean(parameters['ReadOnlyMenu'] === 'false');
+    const pReadOnlyMenuOther = Boolean(parameters['ReadOnlyMenuOther'] == 'true');
     // ベースプラグインのパラメータを参照
     const BASE_PLUGIN_NAME = 'Furamon_NRP_AdditionalClasses';
     const baseParameters = PluginManager.parameters(BASE_PLUGIN_NAME);
-    const pLvName = setDefault(baseParameters['LvName'], '');
-    const pExpName = setDefault(baseParameters['ExpName'], '');
-    const pUnificationExp = toBoolean(baseParameters['UnificationExp'], false);
-    const pClassLvMaxExp = setDefault(baseParameters['ClassLvMaxExp'], '-------');
-    const pZeroLevel = toBoolean(baseParameters['ZeroLevel'], false);
+    const pLvName = baseParameters['LvName'] || '';
+    const pExpName = baseParameters['ExpName'] || '';
+    const pUnificationExp = Boolean(baseParameters['UnificationExp'] == 'false');
+    const pClassLvMaxExp = baseParameters['ClassLvMaxExp'] ||
+        '-------';
+    const pZeroLevel = Boolean(baseParameters['ZeroLevel'] == 'true');
     //----------------------------------------
     // ＭＺ用プラグインコマンド
     //----------------------------------------
@@ -601,9 +588,10 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         if (args.AddClassList) {
             // プラグインコマンドの場合は、
             // なぜか謎の文字コード（001B）が含まれているので\に変換
-            let addClassList = args.AddClassList.replace(/\u001B/g, '\\');
+            const raw = args.AddClassList;
+            const addClassListStr = String(raw).replace(/\u001B/g, '\\');
             // JSON形式をJS用に変換
-            addClassList = parseStruct2(addClassList);
+            const addClassList = parseStruct2(addClassListStr);
             // リストを結合
             mClassList = mClassList.concat(addClassList);
         }
@@ -628,9 +616,9 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      * ●アクターを取得
      */
     function getActor(args) {
-        let actorId = setDefault(args.Actor);
+        let actorId = args.Actor;
         // 変数の指定がある場合は優先
-        const variablActor = setDefault(args.VariableActor);
+        const variablActor = args.VariableActor;
         if (variablActor) {
             actorId = $gameVariables.value(variablActor);
         }
@@ -645,8 +633,8 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         for (const classInfo of classList) {
             classInfo.class = classInfo.Class;
             classInfo.actors = parseStruct1(classInfo.Actors);
-            classInfo.switch = toNumber(classInfo.Switch);
-            classInfo.item = toNumber(classInfo.Item);
+            classInfo.switch = Number(classInfo.Switch);
+            classInfo.item = Number(classInfo.Item);
             classInfo.classInfo = classInfo.ClassInfo;
             classInfo.script = classInfo.Script;
         }
@@ -682,7 +670,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         if (mNoRefresh) {
             return;
         }
-        _Game_Actor_refresh.apply(this, arguments);
+        _Game_Actor_refresh.call(this);
     };
     //-----------------------------------------------------------------------------
     // Scene_AdditionalCC
@@ -1152,8 +1140,8 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      * ●アクター条件を満たすかどうか？
      */
     Windows_SelectClasses.prototype.isActorConditionOK = function (actorIds) {
-        // 引数は文字列配列、this._actor.actorId()は数字なので==で比較
-        return actorIds.some((id) => id == this._actor.actorId());
+        // 引数は文字列配列、this._actor.actorId()は数字なので型変換して比較
+        return actorIds.some((id) => Number(id) === this._actor.actorId());
     };
     /**
      * ●職業条件を満たすかどうか？
@@ -1191,14 +1179,14 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
                 this.drawClassLevel(level, rect.x, rect.y, rect.width);
             }
             // 表示を戻す
-            this.changePaintOpacity(1);
+            this.changePaintOpacity(true);
         }
         else {
             // 追加：外す用空欄の場合「空」表示
             const rect = this.itemLineRect(index);
             this.resetTextColor();
-            this.drawTextEx('空', rect.x + 6, rect.y, rect.width);
-            this.changePaintOpacity(1);
+            this.drawTextEx('空', rect.x + 6, rect.y);
+            this.changePaintOpacity(true);
         }
     };
     /**
@@ -1238,21 +1226,21 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             }
             const itemWidth = Math.max(0, this.innerWidth - textMargin - levelWidth);
             this.resetTextColor();
-            this.drawTextEx(item.name, x + textMargin, y, itemWidth);
+            this.drawTextEx(item.name, x + textMargin, y);
         }
     };
     /**
      * ●職業のレベルを表示
      */
     Windows_SelectClasses.prototype.drawClassLevel = function (level, x, y, width) {
-        const displayLevel = pZeroLevel ? level - 1 : level;
+        const displayLevel = String(pZeroLevel ? level - 1 : level);
         this.drawText(displayLevel, x, y, width, 'right');
     };
     /**
      * ●カーソル移動時
      */
     Windows_SelectClasses.prototype.select = function (index) {
-        Window_Selectable.prototype.select.apply(this, arguments);
+        Window_Selectable.prototype.select.call(this, index);
         const classItem = this.itemAt(index);
         // 比較用に転職後アクター情報を設定
         if (this._actor) {
@@ -1313,7 +1301,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         const x = rtl ? textState.x - width : textState.x;
         const y = textState.y;
         if (textState.drawing) {
-            this.contents.drawText(text, x, y, width, height);
+            this.contents.drawText(text, x, y, width, height, rtl ? 'right' : 'left');
         }
         textState.x += rtl ? -width : width;
         textState.buffer = this.createTextBuffer(rtl);
@@ -1327,8 +1315,8 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
     // Windows_ClassInfo
     //
     // 職業情報用ウィンドウ
-    function Windows_ClassInfo() {
-        this.initialize(...arguments);
+    function Windows_ClassInfo(rect) {
+        this.initialize(rect);
     }
     Windows_ClassInfo.prototype = Object.create(Window_EquipStatus.prototype);
     Windows_ClassInfo.prototype.constructor = Windows_ClassInfo;
@@ -1418,7 +1406,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      * ●アクター名を表示
      */
     Windows_ClassInfo.prototype.drawActorName = function (actor, x, y, width) {
-        Window_StatusBase.prototype.drawActorName.apply(this, arguments);
+        Window_StatusBase.prototype.drawActorName.call(this, actor, x, y, width);
     };
     /**
      * ●職業画像を表示
@@ -1529,7 +1517,6 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             return;
         }
         let expName;
-        const additionalClass = this.getClass();
         if (additionalClass) {
             expName = pExpName;
         }
@@ -1622,7 +1609,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             for (const dispParam of displayParameters) {
                 i++;
                 const y = this.paramY(i);
-                this.drawItem(x, y, toNumber(dispParam));
+                this.drawItem(x, y, Number(dispParam));
             }
         }
         // パラメータの終了Ｙ座標を取得
@@ -1801,7 +1788,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             // クラスの習得スキル情報を取得
             const learning = dataClass.learnings.find((l) => l.skillId == skillId);
             // スキル習得に必要なＥＸＰを満たしている？
-            if (exp >= dummyActor.expForLevel(learning.level)) {
+            if (learning && exp >= dummyActor.expForLevel(learning.level)) {
                 return true;
             }
         }
@@ -1978,7 +1965,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
      * ●転職キャンセル時
      */
     Windows_ClassInfo.prototype.processCancel = function () {
-        Window_Selectable.prototype.processCancel.apply(this, arguments);
+        Window_Selectable.prototype.processCancel.call(this);
         // スクロール位置を先頭に戻す。
         this.scrollTo(this._scrollX, 0);
     };
@@ -2073,7 +2060,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
                 this.cursorUp(Input.isTriggered('up'));
             }
         }
-        Window_Selectable.prototype.processCursorMove.apply(this, arguments);
+        Window_Selectable.prototype.processCursorMove.call(this);
     };
     // Windows_ClassInfo.prototype._updateCursor = function() {
     //     this._cursorSprite.alpha = this._makeCursorAlpha();
@@ -2179,7 +2166,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
          * ●ページ切替矢印更新
          */
         Windows_ClassInfo.prototype.updateArrows = function () {
-            Window_Selectable.prototype.updateArrows.apply(this, arguments);
+            Window_Selectable.prototype.updateArrows.call(this);
             // 左右のページ切替矢印を表示
             // this.leftArrowVisible = true;
             this.rightArrowVisible = true;
@@ -2188,7 +2175,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
          * ●ページ切替矢印作成
          */
         Windows_ClassInfo.prototype._createAllParts = function () {
-            Window.prototype._createAllParts.apply(this, arguments);
+            Window.prototype._createAllParts.call(this);
             // 左右の矢印を追加
             // this._leftArrowSprite = new Sprite();
             this._rightArrowSprite = new Sprite();
@@ -2199,7 +2186,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
          * ●ページ切替矢印配置
          */
         Windows_ClassInfo.prototype._refreshArrows = function () {
-            Window.prototype._refreshArrows.apply(this, arguments);
+            Window.prototype._refreshArrows.call(this);
             var w = this._width;
             var h = this._height;
             var p = 24;
@@ -2293,7 +2280,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
          */
         const _Scene_Menu_onPersonalOk = Scene_Menu.prototype.onPersonalOk;
         Scene_Menu.prototype.onPersonalOk = function () {
-            _Scene_Menu_onPersonalOk.apply(this, arguments);
+            _Scene_Menu_onPersonalOk.call(this);
             // 転職画面に遷移
             if (this._commandWindow.currentSymbol() == pClassChangeSymbol) {
                 // 職業一覧の生成
@@ -2325,7 +2312,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             if (classImage && classImage.Face) {
                 return classImage.Face;
             }
-            return _Game_Actor_faceName.apply(this, arguments);
+            return _Game_Actor_faceName.call(this);
         };
         /**
          * ●顔グラ（インデックス）
@@ -2336,7 +2323,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             if (classImage && classImage.FaceIndex) {
                 return classImage.FaceIndex;
             }
-            return _Game_Actor_faceIndex.apply(this, arguments);
+            return _Game_Actor_faceIndex.call(this);
         };
         /**
          * ●キャラクター
@@ -2347,7 +2334,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             if (classImage && classImage.Character) {
                 return classImage.Character;
             }
-            return _Game_Actor_characterName.apply(this, arguments);
+            return _Game_Actor_characterName.call(this);
         };
         /**
          * ●キャラクター（インデックス）
@@ -2358,7 +2345,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             if (classImage && classImage.CharacterIndex) {
                 return classImage.CharacterIndex;
             }
-            return _Game_Actor_characterIndex.apply(this, arguments);
+            return _Game_Actor_characterIndex.call(this);
         };
         /**
          * ●ＳＶアクター
@@ -2369,7 +2356,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             if (classImage && classImage.Battler) {
                 return classImage.Battler;
             }
-            return _Game_Actor_battlerName.apply(this, arguments);
+            return _Game_Actor_battlerName.call(this);
         };
     }
     //-----------------------------------------------------------------------------
@@ -2417,7 +2404,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             // 職業が一致する場合
             if (classImage.Class == currentClass.id) {
                 // アクターの指定がある場合
-                if (toNumber(classImage.Actor)) {
+                if (Number(classImage.Actor)) {
                     if (classImage.Actor == actor.actorId()) {
                         return classImage;
                     }
@@ -2430,7 +2417,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             }
             else if (!classImage.Class) {
                 // アクターの指定がある場合
-                if (toNumber(classImage.Actor)) {
+                if (Number(classImage.Actor)) {
                     if (classImage.Actor == actor.actorId()) {
                         return classImage;
                     }
