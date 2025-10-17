@@ -540,14 +540,6 @@
  * @desc trueの場合、追加職業のレベルが0から始まります。
  * スキル習得レベルなども1ずれます(DBでLv2習得→Lv1で習得)
  *
- * @param MhpMmpAddMethod
- * @text MHP/MMP加算方法
- * @type select
- * @option 乗算 @value multiply
- * @option 加算 @value add
- * @default multiply
- * @desc MHP/MMPの<AddMhp:n>/<AddMmp:n>タグの加算方法です。
- * 乗算の場合、(1 + n/100)倍されます。加算の場合、直接nが加算されます。
  */
 //-----------------------------------------------------------------------------
 // AdditionalClass
@@ -814,7 +806,6 @@ const pShowBenchMaxLevel = parameters['ShowBenchMaxLevel'] != null
 const pZeroLevel = parameters['ZeroLevel'] != null
     ? Boolean(parameters['ZeroLevel'] == 'true')
     : false;
-const pMhpMmpAddMethod = parameters['MhpMmpAddMethod'] || 'multiply';
 // mForceClassId is declared in @types/furamon.d.ts; initialize at runtime without redeclaration
 mForceClassId = null;
 //----------------------------------------
@@ -1560,7 +1551,7 @@ if (pParamPlusByLevel || pParamPlusByTag) {
             ];
             const paramName = paramShortNames[paramId];
             const pattern = new RegExp(`<Add${paramName}:(-?\\d+\\.?\\d*)>`, 'gi'); // 小数点も考慮
-            let sumValue = 0; // maxValue を sumValue に変更
+            let maxValue = -Infinity;
             const objects = this.traitObjects();
             const noteObjects = objects.slice();
             const skillNoteObjects = [];
@@ -1592,21 +1583,23 @@ if (pParamPlusByLevel || pParamPlusByTag) {
                     for (const match of matches) {
                         if (match) {
                             const addValue = parseFloat(match[1]);
-                            sumValue += addValue;
+                            maxValue = Math.max(maxValue, addValue); // 最大値を更新
                         }
                     }
                 }
             }
+            // maxValue が -Infinity のままなら、該当するタグがなかったということなので 0 にする
+            if (maxValue === -Infinity) {
+                maxValue = 0;
+            }
             if (paramName === 'Mhp' || paramName === 'Mmp') {
-                if (pMhpMmpAddMethod === 'multiply') {
-                    value = Math.round(value * (1 + sumValue / 100)); // 乗算
-                }
-                else {
-                    value += sumValue; // 加算
+                // maxValue が 0 より大きい場合にのみ乗算を適用
+                if (maxValue > 0) {
+                    value = Math.round(value * (1 + maxValue / 100)); // 乗算
                 }
             }
             else {
-                value += sumValue; // 加算
+                value += maxValue; // 加算
             }
         }
         return value;
