@@ -67,7 +67,10 @@ declare namespace BattleManager {
     function startInput(): void;
     function battleCommandRefresh(): void;
     function endTurn(): void;
-    function rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
+    function rangeEx(
+        action: Game_Action,
+        target: Game_Battler[]
+    ): Game_Battler[];
     function setup(troopId: number, canEscape: boolean, canLose: boolean): void;
     function endBattle(result: number): void;
     let _escaped: boolean;
@@ -447,8 +450,17 @@ interface Window_StatusBase {
     getFormationSelectActor(): void;
     drawBackGroundActor(index: number): void;
     actor(index: number): Game_Actor;
-    drawActorClass(actor: Game_Actor, x: number, y: number, width?: number): void; // 追加
-    drawAdditionalClassLevel(additionalClass: AdditionalClass | undefined, x: number, y: number): void; // 追加
+    drawActorClass(
+        actor: Game_Actor,
+        x: number,
+        y: number,
+        width?: number
+    ): void; // 追加
+    drawAdditionalClassLevel(
+        additionalClass: AdditionalClass | undefined,
+        x: number,
+        y: number
+    ): void; // 追加
 }
 
 interface Game_Interpreter {
@@ -491,7 +503,7 @@ interface TweenSetting {
     enable: boolean;
     moveX: string;
     moveY: string;
-alpha: number;
+    alpha: number;
     easing: EasingFunc;
     duration: number;
     delay: number;
@@ -580,6 +592,30 @@ interface AdditionalClass {
     _id: number;
     _data: MZ.Class | null;
     _level: number;
+    id: number;
+    level: number;
+    name: string;
+    note: string;
+    learnings: MZ.Learning[];
+    initialize(
+        this: AdditionalClass,
+        actor: Game_Actor,
+        classId: number,
+        pUnificationExp: boolean,
+        pClassLvMaxExp: string,
+        pDefaultMaxLevel: number,
+        pLvUpMessage: string,
+        pZeroLevel: boolean,
+        pShowMaxLevelMessage: boolean,
+        pShowBenchMaxLevel: boolean,
+        pMaxLevelMessage: string,
+        pParamPlusByLevel: boolean,
+        pParamPlusByTag: boolean,
+        pKeepSkill: boolean,
+        mCommandFlg: boolean,
+        mForceClassId: number | null,
+        isKeepSkill: (skillId: number) => boolean
+    ): void;
     exp(): number;
     actor(): Game_Actor;
     expActor(): Game_Actor;
@@ -597,6 +633,64 @@ interface AdditionalClass {
     levelDown(): void;
     displayLevelUp(newSkills: MZ.Skill[]): void;
     displayLevelMax(show: boolean): void;
+    pUnificationExp: boolean;
+    pClassLvMaxExp: string;
+    pDefaultMaxLevel: number;
+    pLvUpMessage: string;
+    pZeroLevel: boolean;
+    pShowMaxLevelMessage: boolean;
+    pShowBenchMaxLevel: boolean;
+    pMaxLevelMessage: string;
+    pParamPlusByLevel: boolean;
+    pParamPlusByTag: boolean;
+    pKeepSkill: boolean;
+    mCommandFlg: boolean;
+    mForceClassId: number | null;
+    isKeepSkill: (skillId: number) => boolean;
+}
+
+declare function getExpActor(): Game_Actor;
+declare function isKeepSkill(skillId: number): boolean;
+
+interface Game_Actor {
+    mlp: number;
+    _lp: number;
+    lp: number;
+    _regeneDeath: boolean;
+    _resurrect: boolean;
+    maxLPSet(): void;
+    recoverLP(): void;
+    getActorClass(): (MZ.Actor | MZ.Class)[];
+    getActorClassParamRate(paramId: number): number;
+    getStateParamRate(paramId: number): number;
+    getEquipParamRate(paramId: number): number;
+    getPassiveObject(): any[];
+    skills(options?: { includeHasAbilitySkills?: boolean }): MZ.Skill[]; // 戻り値をMZ.Skill[]に修正
+    findNewSkills(lastSkills: MZ.Skill[]): MZ.Skill[]; // 追加
+
+    _additionalClassId: number;
+    _masteredClassIds: number[];
+    additionalClass(): AdditionalClass | undefined;
+    additionalClassObject(): MZ.Class | undefined;
+    changeAdditionalClass(classId: number): void;
+    leaveAdditionalClass(): void;
+    setAllAdditionalClassesSkills(): void;
+    setAdditionalClassSkills(additionalClass: AdditionalClass): void;
+    isAdditionalClass(gameClass: MZ.Class): boolean;
+    isAdditionalClassId(classId: number): boolean;
+    gainClassExp(classExp: number, ignoreBench?: boolean): void;
+    finalClassExpRate(): number;
+    benchMembersClassExpRate(): number;
+    traitObjects(): DataManager.TraitObject[];
+    setUnificationExp(): void;
+    traitBattlerObjects(): DataManager.TraitObject[];
+    currentClass(): MZ.Class | null; // 戻り値をMZ.Class | nullに修正
+}
+
+interface Game_BattlerBase {
+    isDummyEnemy(): boolean;
+    isActor(): this is Game_Actor;
+    isEnemy(): this is Game_Enemy;
 }
 
 // For Furamon_LP.ts
@@ -622,55 +716,55 @@ type PlayerWithRange = {
     rangeFollower?: (x: number, y: number, event: unknown) => boolean;
     pos: (x: number, y: number) => boolean;
     followers?: () => GameFollowersLike;
-  };
+};
 
-  type MapWithRange = {
+type MapWithRange = {
     eventsRangeEventPlayerXy?: (x: number, y: number) => unknown[];
     roundXWithDirection: (x: number, d: number) => number;
     roundYWithDirection: (y: number, d: number) => number;
     isEventRunning: () => boolean;
-  };
+};
 
 declare class DotMoveSystem {}
 
-  type TriggerList = readonly number[];
+type TriggerList = readonly number[];
 
-  type RealPositionCharacter = {
+type RealPositionCharacter = {
     x: number;
     y: number;
     _realX?: number;
     _realY?: number;
-  };
+};
 
-  const realX = (character: RealPositionCharacter): number => {
+const realX = (character: RealPositionCharacter): number => {
     const value = character._realX;
     return typeof value === 'number' ? value : character.x;
-  };
+};
 
-  const realY = (character: RealPositionCharacter): number => {
+const realY = (character: RealPositionCharacter): number => {
     const value = character._realY;
     return typeof value === 'number' ? value : character.y;
-  };
+};
 
-  type GameFollowersLike = {
+type GameFollowersLike = {
     data?: () => any[];
-  };
+};
 
-  type PlayerWithRange = RealPositionCharacter & {
+type PlayerWithRange = RealPositionCharacter & {
     setDistanceFrom?: (dx: number, dy: number) => void;
     rangeFollower?: (x: number, y: number, event: unknown) => boolean;
     pos: (x: number, y: number) => boolean;
     followers?: () => GameFollowersLike;
-  };
+};
 
-  type MapWithRange = {
+type MapWithRange = {
     eventsRangeEventPlayerXy?: (x: number, y: number) => unknown[];
     roundXWithDirection: (x: number, d: number) => number;
     roundYWithDirection: (y: number, d: number) => number;
     isEventRunning: () => boolean;
-  };
+};
 
-  type RangeEvent = {
+type RangeEvent = {
     isTriggerIn?: (triggers: TriggerList) => boolean;
     isNormalPriority?: () => boolean;
     range?: (x: number, y: number, event?: unknown) => boolean;
@@ -680,7 +774,7 @@ declare class DotMoveSystem {}
     _trigger?: number;
     x: number;
     y: number;
-  };
+};
 
 interface Game_System {
     isClassExpEnabled(): boolean;
@@ -730,8 +824,20 @@ declare class Windows_ClassInfo extends Window_EquipStatus {
     getClass(): AdditionalClass;
     drawAllItems(): void;
     drawActorName(actor: Game_Actor, x: number, y: number, width: number): void;
-    drawClassImage(actor: Game_Actor, x: number, y: number, width?: number, height?: number): void;
-    drawPicture(imageName: string, x: number, y: number, width?: number, height?: number): void;
+    drawClassImage(
+        actor: Game_Actor,
+        x: number,
+        y: number,
+        width?: number,
+        height?: number
+    ): void;
+    drawPicture(
+        imageName: string,
+        x: number,
+        y: number,
+        width?: number,
+        height?: number
+    ): void;
     drawActorClass(x: number, y: number, width?: number): void;
     drawActorClassLevel(x: number, y: number): void;
     drawExpInfo(x: number, y: number): void;
@@ -835,7 +941,12 @@ declare class Scene_AdditionalCC extends Scene_MenuBase {
 }
 
 declare interface Window_MenuStatus {
-    drawActorClass(actor: Game_Actor, x: number, y: number, width?: number): void; // 追加
+    drawActorClass(
+        actor: Game_Actor,
+        x: number,
+        y: number,
+        width?: number
+    ): void; // 追加
 }
 
 declare interface Window_Status {
@@ -843,7 +954,45 @@ declare interface Window_Status {
     drawActorLevel(actor: Game_Actor, x: number, y: number): void; // 追加
     drawExpInfo(x: number, y: number): void; // 追加
     drawBlock2(y: number): void; // 追加
-    drawClassInfo(additionalClass: AdditionalClass | undefined, x: number, y: number): void; // 追加
+    drawClassInfo(
+        additionalClass: AdditionalClass | undefined,
+        x: number,
+        y: number
+    ): void; // 追加
 }
 
 declare let mForceClassId: number | null; // 追加
+
+declare namespace DataManager {
+    interface TraitObject {
+        code: number;
+        dataId: number;
+        value: number;
+        note?: string;
+        meta?: Metadata;
+    }
+}
+
+interface AdditionalClassConstructor {
+    new (
+        actor: Game_Actor,
+        classId: number,
+        pUnificationExp: boolean,
+        pClassLvMaxExp: string,
+        pDefaultMaxLevel: number,
+        pLvUpMessage: string,
+        pZeroLevel: boolean,
+        pShowMaxLevelMessage: boolean,
+        pShowBenchMaxLevel: boolean,
+        pMaxLevelMessage: string,
+        pParamPlusByLevel: boolean,
+        pParamPlusByTag: boolean,
+        pKeepSkill: boolean,
+        mCommandFlg: boolean,
+        mForceClassId: number | null,
+        isKeepSkill: (skillId: number) => boolean
+    ): AdditionalClass;
+    prototype: AdditionalClass;
+}
+
+declare var AdditionalClass: AdditionalClassConstructor;
