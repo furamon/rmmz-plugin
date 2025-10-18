@@ -274,6 +274,8 @@ interface Game_Actor {
     currentClass(): MZ.Class | null;
 }
 
+
+
 interface Game_Enemy {
     enemy(): MZ.Enemy;
     requestMotion(motionName: string): void;
@@ -622,6 +624,7 @@ interface AdditionalClass {
     levelDown(): void;
     displayLevelUp(newSkills: MZ.Skill[]): void;
     displayLevelMax(show: boolean): void;
+    getNeedsExpData(): number[];
     pUnificationExp: boolean;
     pClassLvMaxExp: string;
     pDefaultMaxLevel: number;
