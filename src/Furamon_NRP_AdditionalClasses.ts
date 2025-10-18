@@ -32,6 +32,10 @@
  * - AbilitySkillと併用時、アビリティスキルを追加職業で習得時
  * その表示がされない競合の修正
  *
+ * NRP_LevelUpDirection併用時は、あちらの472行目らへんを
+ * const AC_PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";に
+ * 書き換えてください。
+ *
  * --- 以下元プラグイン解説（改変内容に合わせて原文から変更） ---
  *
  * アクターに対して、複数の職業を同時に設定することにより、
