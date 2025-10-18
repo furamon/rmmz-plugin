@@ -232,13 +232,18 @@ declare class Sprite_EnemyHPGauge extends Sprite {
     hide(): void;
     update(): void;
 }
-
+// furamon.d.ts
 interface Game_Actor {
+    // 既存のプロパティ
     mlp: number;
     _lp: number;
     lp: number;
     _regeneDeath: boolean;
     _resurrect: boolean;
+    _additionalClassId: number;
+    _masteredClassIds: number[];
+
+    // メソッド
     maxLPSet(): void;
     recoverLP(): void;
     getActorClass(): (MZ.Actor | MZ.Class)[];
@@ -246,10 +251,8 @@ interface Game_Actor {
     getStateParamRate(paramId: number): number;
     getEquipParamRate(paramId: number): number;
     getPassiveObject(): any[];
-    skills(options?: { includeHasAbilitySkills?: boolean }): number[]; // 戻り値をnumber[]に修正
-
-    _additionalClassId: number;
-    _masteredClassIds: number[];
+    skills(options?: { includeHasAbilitySkills?: boolean }): MZ.Skill[];
+    findNewSkills(lastSkills: MZ.Skill[]): MZ.Skill[];
     additionalClass(): AdditionalClass | undefined;
     additionalClassObject(): MZ.Class | undefined;
     changeAdditionalClass(classId: number): void;
@@ -261,10 +264,10 @@ interface Game_Actor {
     gainClassExp(classExp: number, ignoreBench?: boolean): void;
     finalClassExpRate(): number;
     benchMembersClassExpRate(): number;
-    traitObjects(): DataManager.TraitObject[]; // 追加
-    setUnificationExp(): void; // 追加
-    traitBattlerObjects(): DataManager.TraitObject[]; // 追加
-    currentClass(): MZ.Class | undefined; // 戻り値をMZ.Class | undefinedに修正
+    traitObjects(): DataManager.TraitObject[];
+    setUnificationExp(): void;
+    traitBattlerObjects(): DataManager.TraitObject[];
+    currentClass(): MZ.Class | null;
 }
 
 interface Game_Enemy {
@@ -652,41 +655,6 @@ interface AdditionalClass {
 declare function getExpActor(): Game_Actor;
 declare function isKeepSkill(skillId: number): boolean;
 
-interface Game_Actor {
-    mlp: number;
-    _lp: number;
-    lp: number;
-    _regeneDeath: boolean;
-    _resurrect: boolean;
-    maxLPSet(): void;
-    recoverLP(): void;
-    getActorClass(): (MZ.Actor | MZ.Class)[];
-    getActorClassParamRate(paramId: number): number;
-    getStateParamRate(paramId: number): number;
-    getEquipParamRate(paramId: number): number;
-    getPassiveObject(): any[];
-    skills(options?: { includeHasAbilitySkills?: boolean }): MZ.Skill[]; // 戻り値をMZ.Skill[]に修正
-    findNewSkills(lastSkills: MZ.Skill[]): MZ.Skill[]; // 追加
-
-    _additionalClassId: number;
-    _masteredClassIds: number[];
-    additionalClass(): AdditionalClass | undefined;
-    additionalClassObject(): MZ.Class | undefined;
-    changeAdditionalClass(classId: number): void;
-    leaveAdditionalClass(): void;
-    setAllAdditionalClassesSkills(): void;
-    setAdditionalClassSkills(additionalClass: AdditionalClass): void;
-    isAdditionalClass(gameClass: MZ.Class): boolean;
-    isAdditionalClassId(classId: number): boolean;
-    gainClassExp(classExp: number, ignoreBench?: boolean): void;
-    finalClassExpRate(): number;
-    benchMembersClassExpRate(): number;
-    traitObjects(): DataManager.TraitObject[];
-    setUnificationExp(): void;
-    traitBattlerObjects(): DataManager.TraitObject[];
-    currentClass(): MZ.Class | null; // 戻り値をMZ.Class | nullに修正
-}
-
 interface Game_BattlerBase {
     isDummyEnemy(): boolean;
     isActor(): this is Game_Actor;
@@ -976,23 +944,16 @@ declare namespace DataManager {
 interface AdditionalClassConstructor {
     new (
         actor: Game_Actor,
-        classId: number,
-        pUnificationExp: boolean,
-        pClassLvMaxExp: string,
-        pDefaultMaxLevel: number,
-        pLvUpMessage: string,
-        pZeroLevel: boolean,
-        pShowMaxLevelMessage: boolean,
-        pShowBenchMaxLevel: boolean,
-        pMaxLevelMessage: string,
-        pParamPlusByLevel: boolean,
-        pParamPlusByTag: boolean,
-        pKeepSkill: boolean,
-        mCommandFlg: boolean,
-        mForceClassId: number | null,
-        isKeepSkill: (skillId: number) => boolean
+        classId: number
     ): AdditionalClass;
     prototype: AdditionalClass;
 }
 
 declare var AdditionalClass: AdditionalClassConstructor;
+
+interface TraitObject {
+    code: number;
+    dataId: number;
+    value: number;
+    note?: string;
+}

@@ -730,182 +730,204 @@ Object.defineProperties(AdditionalClass.prototype, {
     /**
      * ●経験値の増減
      */
-    PluginManager.registerCommand(PLUGIN_NAME, 'ChangeExp', function (args) {
-        // イベントコマンドから呼び出されたかどうかの判定
-        mCommandFlg = true;
+    PluginManager.registerCommand(
+        PLUGIN_NAME,
+        'ChangeExp',
+        function (this: Game_Interpreter, args) {
+            // イベントコマンドから呼び出されたかどうかの判定
+            mCommandFlg = true;
 
-        // 経験値
-        let exp = Number(args.Exp || 0);
-        // 経験値（変数）
-        const variableExp = Number(args.VariableExp || 0);
-        // レベルアップを表示
-        const show = Boolean(args.ShowLvUpMessage === true);
+            // 経験値
+            let exp = Number(args.Exp || 0);
+            // 経験値（変数）
+            const variableExp = Number(args.VariableExp || 0);
+            // レベルアップを表示
+            const show = Boolean(args.ShowLvUpMessage === true);
 
-        // 変数の指定がある場合は優先
-        if (variableExp) {
-            exp = $gameVariables.value(variableExp);
-        }
-
-        // アクターを取得
-        const actor = getActor(args);
-        if (actor) {
-            const additionalClass = actor.additionalClass();
-            if (additionalClass) {
-                additionalClass.changeExp(
-                    additionalClass.exp() + exp,
-                    show
-                );
+            // 変数の指定がある場合は優先
+            if (variableExp) {
+                exp = $gameVariables.value(variableExp);
             }
-            // アクターの指定がない場合は全体を対象化
-        } else if (isForParty(args)) {
-            // 経験値共有型かつ重複加算禁止の場合
-            if (pUnificationExp && pNoDuplicateExp) {
-                // 経験値共有用のアクターを対象にする。
-                const expActor = getExpActor();
-                // 職業単位で経験値を操作
-                const additionalClass = expActor.additionalClass();
+
+            // アクターを取得
+            const actor = getActor(args);
+            if (actor) {
+                const additionalClass = actor.additionalClass();
                 if (additionalClass) {
-                    additionalClass.changeExp(additionalClass.exp() + exp, show);
+                    additionalClass.changeExp(
+                        additionalClass.exp() + exp,
+                        show
+                    );
                 }
-            } else {
-                // 通常時
-                for (const member of $gameParty.members()) {
-                    const additionalClass = member.additionalClass();
+                // アクターの指定がない場合は全体を対象化
+            } else if (isForParty(args)) {
+                // 経験値共有型かつ重複加算禁止の場合
+                if (pUnificationExp && pNoDuplicateExp) {
+                    // 経験値共有用のアクターを対象にする。
+                    const expActor = getExpActor();
+                    // 職業単位で経験値を操作
+                    const additionalClass = expActor.additionalClass();
                     if (additionalClass) {
                         additionalClass.changeExp(
                             additionalClass.exp() + exp,
                             show
                         );
                     }
+                } else {
+                    // 通常時
+                    for (const member of $gameParty.members()) {
+                        const additionalClass = member.additionalClass();
+                        if (additionalClass) {
+                            additionalClass.changeExp(
+                                additionalClass.exp() + exp,
+                                show
+                            );
+                        }
+                    }
                 }
             }
-        }
 
-        // レベルアップを表示する場合
-        // かつ、メッセージが発生した場合
-        if (show && $gameMessage.isBusy()) {
-            // ウェイトする。
-            this.setWaitMode('message');
+            // レベルアップを表示する場合
+            // かつ、メッセージが発生した場合
+            if (show && $gameMessage.isBusy()) {
+                // ウェイトする。
+                this.setWaitMode('message');
+            }
         }
-    });
+    );
     /**
      * ●レベルの増減
      */
-    PluginManager.registerCommand(PLUGIN_NAME, 'ChangeLevel', function (args) {
-        // イベントコマンドから呼び出されたかどうかの判定
-        mCommandFlg = true;
+    PluginManager.registerCommand(
+        PLUGIN_NAME,
+        'ChangeLevel',
+        function (this: Game_Interpreter, args) {
+            // イベントコマンドから呼び出されたかどうかの判定
+            mCommandFlg = true;
 
-        // レベル
-        let level = Number(args.Level || 0);
-        // レベル（変数）
-        const variableLevel = Number(args.VariableLevel || 0);
-        // レベルアップを表示
-        const show = Boolean(args.ShowLvUpMessage === true);
+            // レベル
+            let level = Number(args.Level || 0);
+            // レベル（変数）
+            const variableLevel = Number(args.VariableLevel || 0);
+            // レベルアップを表示
+            const show = Boolean(args.ShowLvUpMessage === true);
 
-        // 変数の指定がある場合は優先
-        if (variableLevel) {
-            level = $gameVariables.value(variableLevel);
-        }
-
-        // アクターを取得
-        const actor = getActor(args);
-        if (actor) {
-            const additionalClass = actor.additionalClass();
-            if (additionalClass) {
-                additionalClass.changeLevel(
-                    additionalClass.level + level,
-                    show
-                );
+            // 変数の指定がある場合は優先
+            if (variableLevel) {
+                level = $gameVariables.value(variableLevel);
             }
-            // アクターの指定がない場合は全体を対象化
-        } else if (isForParty(args)) {
-            // 経験値共有型かつ重複加算禁止の場合
-            if (pUnificationExp && pNoDuplicateExp) {
-                // 経験値共有用のアクターを対象にする。
-                const expActor = getExpActor();
-                // 職業単位で経験値を操作
-                const additionalClass = expActor.additionalClass();
+
+            // アクターを取得
+            const actor = getActor(args);
+            if (actor) {
+                const additionalClass = actor.additionalClass();
                 if (additionalClass) {
-                    additionalClass.changeLevel(additionalClass.level + level, show);
+                    additionalClass.changeLevel(
+                        additionalClass.level + level,
+                        show
+                    );
                 }
-            } else {
-                // 通常時
-                for (const member of $gameParty.members()) {
-                    const additionalClass = member.additionalClass();
+                // アクターの指定がない場合は全体を対象化
+            } else if (isForParty(args)) {
+                // 経験値共有型かつ重複加算禁止の場合
+                if (pUnificationExp && pNoDuplicateExp) {
+                    // 経験値共有用のアクターを対象にする。
+                    const expActor = getExpActor();
+                    // 職業単位で経験値を操作
+                    const additionalClass = expActor.additionalClass();
                     if (additionalClass) {
                         additionalClass.changeLevel(
                             additionalClass.level + level,
                             show
                         );
                     }
+                } else {
+                    // 通常時
+                    for (const member of $gameParty.members()) {
+                        const additionalClass = member.additionalClass();
+                        if (additionalClass) {
+                            additionalClass.changeLevel(
+                                additionalClass.level + level,
+                                show
+                            );
+                        }
+                    }
                 }
             }
-        }
 
-        // レベルアップを表示する場合
-        // かつ、メッセージが発生した場合
-        if (show && $gameMessage.isBusy()) {
-            // ウェイトする。
-            this.setWaitMode('message');
+            // レベルアップを表示する場合
+            // かつ、メッセージが発生した場合
+            if (show && $gameMessage.isBusy()) {
+                // ウェイトする。
+                this.setWaitMode('message');
+            }
         }
-    });
+    );
     /**
      * ●追加職業の情報を取得
      */
-    PluginManager.registerCommand(PLUGIN_NAME, 'GetInformation', function (args) {
-        // アクターを取得
-        const actor = getActor(args);
-        if (!actor) {
-            return;
-        }
+    PluginManager.registerCommand(
+        PLUGIN_NAME,
+        'GetInformation',
+        function (args) {
+            // アクターを取得
+            const actor = getActor(args);
+            if (!actor) {
+                return;
+            }
 
-        // 追加職業を取得
-        const additionalClass = actor.additionalClass();
+            // 追加職業を取得
+            const additionalClass = actor.additionalClass();
 
-        // 追加職業のＩＤ
-        const variableAtClass = Number(args.VariableAtClass || 0);
-        if (variableAtClass) {
-            if (additionalClass) {
-                $gameVariables.setValue(
-                    variableAtClass,
-                    additionalClass.id
-                );
-            } else {
-                // 職業情報が取得できない場合も0を設定しておく。
-                $gameVariables.setValue(variableAtClass, 0);
+            // 追加職業のＩＤ
+            const variableAtClass = Number(args.VariableAtClass || 0);
+            if (variableAtClass) {
+                if (additionalClass) {
+                    $gameVariables.setValue(
+                        variableAtClass,
+                        additionalClass.id
+                    );
+                } else {
+                    // 職業情報が取得できない場合も0を設定しておく。
+                    $gameVariables.setValue(variableAtClass, 0);
+                }
+            }
+
+            // 追加職業のレベル
+            const variableAtLv = Number(args.VariableAtLv || 0);
+            if (variableAtLv) {
+                if (additionalClass) {
+                    $gameVariables.setValue(
+                        variableAtLv,
+                        additionalClass.level
+                    );
+                } else {
+                    $gameVariables.setValue(variableAtLv, 0);
+                }
+            }
+
+            // 追加職業の経験値
+            const VariableAtExp = Number(args.VariableAtExp || 0);
+            if (VariableAtExp) {
+                if (additionalClass) {
+                    $gameVariables.setValue(
+                        VariableAtExp,
+                        additionalClass.exp()
+                    );
+                } else {
+                    $gameVariables.setValue(VariableAtExp, 0);
+                }
             }
         }
-
-        // 追加職業のレベル
-        const variableAtLv = Number(args.VariableAtLv || 0);
-        if (variableAtLv) {
-            if (additionalClass) {
-                $gameVariables.setValue(
-                    variableAtLv,
-                    additionalClass.level
-                );
-            } else {
-                $gameVariables.setValue(variableAtLv, 0);
-            }
-        }
-
-        // 追加職業の経験値
-        const VariableAtExp = Number(args.VariableAtExp || 0);
-        if (VariableAtExp) {
-            if (additionalClass) {
-                $gameVariables.setValue(
-                    VariableAtExp,
-                    additionalClass.exp()
-                );
-            } else {
-                $gameVariables.setValue(VariableAtExp, 0);
-            }
-        }
-    });
+    );
     /**
      * ●アクターを取得
      */
-    function getActor(args: { [x: string]: string | true; Actor?: any; VariableActor?: any; }) {
+    function getActor(args: {
+        [x: string]: string | true;
+        Actor?: any;
+        VariableActor?: any;
+    }) {
         let actorId = Number(args.Actor || 0);
 
         // 変数の指定がある場合は優先
@@ -922,7 +944,11 @@ Object.defineProperties(AdditionalClass.prototype, {
     /**
      * ●全体が対象かどうか？
      */
-    function isForParty(args: { [x: string]: string | true; Actor?: any; VariableActor?: any; }) {
+    function isForParty(args: {
+        [x: string]: string | true;
+        Actor?: any;
+        VariableActor?: any;
+    }) {
         const actorId = Number(args.Actor || 0);
         const variablActor = Number(args.VariableActor || 0);
         return !actorId && !variablActor;
@@ -1345,24 +1371,7 @@ Object.defineProperties(AdditionalClass.prototype, {
     };
     Game_Actor.prototype.additionalClass = function () {
         if (this._additionalClassId) {
-            return new AdditionalClass(
-    this,
-    this._additionalClassId,
-    pUnificationExp,
-    pClassLvMaxExp,
-    pDefaultMaxLevel,
-    pLvUpMessage,
-    pZeroLevel,
-    pShowMaxLevelMessage,
-    pShowBenchMaxLevel,
-    pMaxLevelMessage,
-    pParamPlusByLevel,
-    pParamPlusByTag,
-    pKeepSkill,
-    mCommandFlg,
-    mForceClassId,
-    isKeepSkill
-);
+            return new AdditionalClass(this, this._additionalClassId);
         }
         return undefined;
     };
@@ -1387,24 +1396,7 @@ Object.defineProperties(AdditionalClass.prototype, {
         // 古い職業のスキルを忘れさせる
         if (oldClassId) {
             try {
-                const oldClass = new AdditionalClass(
-    this,
-    oldClassId,
-    pUnificationExp,
-    pClassLvMaxExp,
-    pDefaultMaxLevel,
-    pLvUpMessage,
-    pZeroLevel,
-    pShowMaxLevelMessage,
-    pShowBenchMaxLevel,
-    pMaxLevelMessage,
-    pParamPlusByLevel,
-    pParamPlusByTag,
-    pKeepSkill,
-    mCommandFlg,
-    mForceClassId,
-    isKeepSkill
-);
+                const oldClass = new AdditionalClass(this, oldClassId);
                 if (oldClass._data) {
                     for (const learning of oldClass.learnings) {
                         try {
@@ -1491,31 +1483,38 @@ Object.defineProperties(AdditionalClass.prototype, {
      * ●現在の職業を取得
      */
     const _Game_Actor_currentClass = Game_Actor.prototype.currentClass;
-    Game_Actor.prototype.currentClass = function (this: Game_Actor): MZ.Class | null {
+    Game_Actor.prototype.currentClass = function (this: Game_Actor): MZ.Class {
         if (mForceClassId) {
             // -1で空白を返す
             if (mForceClassId === -1) {
-                // 型エラー回避: 空の職業オブジェクトを返す
+                // ダミーのClassオブジェクトを返す
                 return {
-                    id: -1,
+                    id: 0,
                     name: '',
                     note: '',
-                    learnings: [],
-                    params: [[0]],
-                    meta: {},
-                    expParams: [],
+                    params: [[0, 0, 0, 0, 0, 0, 0, 0]],
+                    expParams: [
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 30, 40, 50, 60, 70, 80, 90, 100, 110,
+                        120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220,
+                        230, 240, 250, 260, 270, 280, 290, 300, 310, 320, 330,
+                        340, 350, 360, 370, 380, 390, 400, 410, 420, 430, 440,
+                        450, 460, 470, 480, 490, 500, 510, 520, 530, 540, 550,
+                        560, 570, 580, 590, 600, 610, 620, 630, 640, 650, 660,
+                        670, 680, 690, 700, 710, 720, 730, 740, 750, 760, 770,
+                        780,
+                    ],
                     traits: [],
+                    learnings: [],
+                    meta: {},
                 } as MZ.Class;
             }
             return $dataClasses[mForceClassId];
         }
 
-        // 型エラー回避: 必ずMZ.Class型を返す
-        const result = _Game_Actor_currentClass.call(this);
-        if (!result) {
-            return null; // nullを返すように修正
-        }
-        return result;
+        // 元のメソッドを呼び出し、その結果を返す
+        // 必ずMZ.Classが返ることを保証する
+        return _Game_Actor_currentClass.call(this) || $dataClasses[1]; // デフォルトの職業を返す
     };
 
     /**
@@ -1565,7 +1564,9 @@ Object.defineProperties(AdditionalClass.prototype, {
         // 追加職業を追加（JSON形式で取得）
         const additionalClass = this.additionalClassObject();
         if (additionalClass) {
-            objects.push(additionalClass);
+            // Class オブジェクトから TraitObject に変換して追加
+            const traits = additionalClass.traits || [];
+            objects.push(...traits);
         }
 
         return objects;
@@ -1573,21 +1574,28 @@ Object.defineProperties(AdditionalClass.prototype, {
     /**
      * ●アクターが追加職業についているか？
      */
-    Game_Actor.prototype.isAdditionalClass = function (gameClass) {
+    // 修正後のコード
+    Game_Actor.prototype.isAdditionalClass = function (
+        gameClass: MZ.Class | null | undefined
+    ): boolean {
         if (!gameClass) {
             return false;
         }
         return this.isAdditionalClassId(gameClass.id);
     };
+
     /**
      * ●アクターが追加職業についているか？（ＩＤ）
      */
-    Game_Actor.prototype.isAdditionalClassId = function (classId) {
+    Game_Actor.prototype.isAdditionalClassId = function (
+        classId: number
+    ): boolean {
         return this._additionalClassId === classId;
     };
+
     if (pParamPlusByLevel || pParamPlusByTag) {
         const _Game_Actor_paramPlus = Game_Actor.prototype.paramPlus;
-        Game_Actor.prototype.paramPlus = function (paramId) {
+        Game_Actor.prototype.paramPlus = function (paramId: number): number {
             let value = _Game_Actor_paramPlus.call(this, paramId);
             const additionalClass = this.additionalClass();
 
@@ -1617,19 +1625,19 @@ Object.defineProperties(AdditionalClass.prototype, {
                 let maxValue = -Infinity;
 
                 const objects = this.traitObjects();
-                const noteObjects = objects.slice();
-                const skillNoteObjects = [];
-                for (const skillEntry of this.skills()) {
-                    if (skillEntry) {
-                        skillNoteObjects.push(skillEntry);
+                const noteObjects: Array<{ note?: string }> = [...objects];
+                const skillNoteObjects: MZ.Skill[] = [];
+
+                // スキルを取得（nullチェック付き）
+                const skills = this.skills() || [];
+                for (const skill of skills) {
+                    if (skill) {
+                        skillNoteObjects.push(skill);
                     }
                 }
 
                 // <Inheritance> タグがあるかチェック
-                if (
-                    additionalClass &&
-                    additionalClass.note.includes('<Inheritance>')
-                ) {
+                if (additionalClass?.note?.includes('<Inheritance>')) {
                     for (const classId of this._masteredClassIds) {
                         const masteredClass = $dataClasses[classId];
                         if (masteredClass) {
@@ -1639,8 +1647,8 @@ Object.defineProperties(AdditionalClass.prototype, {
                 }
 
                 // TraitObject と Skill 系を結合してノートを走査
-                for (const obj of noteObjects.concat(skillNoteObjects)) {
-                    if (obj && obj.note) {
+                for (const obj of [...noteObjects, ...skillNoteObjects]) {
+                    if (obj?.note) {
                         const matches = obj.note.matchAll(pattern);
                         for (const match of matches) {
                             if (match) {
@@ -1667,8 +1675,8 @@ Object.defineProperties(AdditionalClass.prototype, {
             }
 
             return value;
-        };    }
-
+        };
+    }
     /**
      * 【独自】職業経験値の獲得
      */
@@ -1723,8 +1731,7 @@ Object.defineProperties(AdditionalClass.prototype, {
             }
 
             const addExpRound = Math.round(addExp);
-            const newExp =
-               Number(additionalClass.currentExp()) + addExpRound;
+            const newExp = Number(additionalClass.currentExp()) + addExpRound;
             additionalClass.changeExp(newExp, this.shouldDisplayLevelUp());
         }
     };
@@ -1805,7 +1812,8 @@ Object.defineProperties(AdditionalClass.prototype, {
             }
 
             this._exp = expActor._exp;
-        };    }
+        };
+    }
 
     //-----------------------------------------------------------------------------
     // 職業欄の表示
@@ -1817,7 +1825,12 @@ Object.defineProperties(AdditionalClass.prototype, {
         /**
          * 【上書】職業の表示
          */
-        Window_StatusBase.prototype.drawActorClass = function (actor, x, y, width) {
+        Window_StatusBase.prototype.drawActorClass = function (
+            actor,
+            x,
+            y,
+            width
+        ) {
             // 追加職業の名称を表示し、元の職業は表示しない。
             const additionalClass = actor.additionalClass();
             if (additionalClass) {
@@ -1832,7 +1845,12 @@ Object.defineProperties(AdditionalClass.prototype, {
             /**
              * 【上書】職業の表示
              */
-            Window_MenuStatus.prototype.drawActorClass = function (actor, x, y, width) {
+            Window_MenuStatus.prototype.drawActorClass = function (
+                actor,
+                x,
+                y,
+                width
+            ) {
                 _Window_MenuStatus_drawActorClass.call(
                     this,
                     actor,
@@ -1944,8 +1962,7 @@ Object.defineProperties(AdditionalClass.prototype, {
             );
             // 次にレベルアップする経験値
             let nextExp =
-                (Number(this.expTotalValue()) +
-                Number(this.expNextValue()));
+                Number(this.expTotalValue()) + Number(this.expNextValue());
             // 最大レベルの時は-------表記になるので修正
             if (this._actor && this._actor.isMaxLevel()) {
                 nextExp = Number(this.expTotalValue());
@@ -1975,7 +1992,11 @@ Object.defineProperties(AdditionalClass.prototype, {
         /**
          * ●職業経験値の描画
          */
-        Window_Status.prototype.drawClassInfo = function (additionalClass, x, y) {
+        Window_Status.prototype.drawClassInfo = function (
+            additionalClass,
+            x,
+            y
+        ) {
             if (!additionalClass) {
                 return;
             }
@@ -2055,7 +2076,12 @@ Object.defineProperties(AdditionalClass.prototype, {
          * ●二つ名の描画
          * ※Window_StatusBase.prototype.drawActorNicknameを継承
          */
-        Window_Status.prototype.drawActorNickname = function (actor, x, y, width) {
+        Window_Status.prototype.drawActorNickname = function (
+            actor,
+            x,
+            y,
+            width
+        ) {
             // 描画しない。
         };
     }
@@ -2064,7 +2090,11 @@ Object.defineProperties(AdditionalClass.prototype, {
      * 【独自】追加職業のレベル描画
      * ※外部プラグインから参照できるようにpOverwriteClassFieldの外に定義
      */
-    Window_StatusBase.prototype.drawAdditionalClassLevel = function (additionalClass, x, y) {
+    Window_StatusBase.prototype.drawAdditionalClassLevel = function (
+        additionalClass,
+        x,
+        y
+    ) {
         if (additionalClass) {
             this.changeTextColor(ColorManager.systemColor());
             this.drawText(pLvName, x, y, 48);
@@ -2078,34 +2108,103 @@ Object.defineProperties(AdditionalClass.prototype, {
     //-----------------------------------------------------------------------------
     // 職業経験値の取得（アイテム）
     // （Game_Action）
-    //-----------------------------------------------------------------------------
 
     /**
-     * ●効果適用
+     * ●アクターのステータスを描画
      */
-    const _Game_Action_apply = Game_Action.prototype.apply;
-    Game_Action.prototype.apply = function (target) {
-        _Game_Action_apply.call(this, target);
+    const _Window_Status_drawBlock1 = Window_Status.prototype.drawBlock1;
+    Window_Status.prototype.drawBlock1 = function (y) {
+        _Window_Status_drawBlock1.call(this, y);
+        if (this._actor) {
+            this.drawActorLevel(this._actor, 192, y);
+            this.drawExpInfo(0, y);
+        }
+    };
+    /**
+     * ●アクターレベルの描画
+     */
+    Window_Status.prototype.drawActorLevel = function (actor, x, y) {
+        this.changeTextColor(ColorManager.systemColor());
+        this.drawText(TextManager.levelA, x, y, 48);
+        this.resetTextColor();
+        // 少しＸ座標を詰める
 
-        mDisplayLevelUp = false;
+        this.drawText(String(actor.level), x + 42, y, 36, 'right');
+        // this.drawText(actor.level, x + 84, y, 36, "right");
+    };
+    /**
+     * ●経験値の描画
+     */
+    Window_Status.prototype.drawExpInfo = function (x, y) {
+        this.changeTextColor(ColorManager.systemColor());
+        this.drawText(
+            TextManager.exp,
+            x - pNormalExpWidth * 2 - 30,
+            y,
+            this.innerWidth - this.itemPadding(),
+            'right'
+        );
+        this.resetTextColor();
+        // 現在の経験値
+        this.drawText(
+            String(this.expTotalValue()),
+            x - pNormalExpWidth - 15,
+            y,
+            this.innerWidth - this.itemPadding(),
+            'right'
+        );
+        // "/"
+        this.drawText(
+            '/',
+            x - pNormalExpWidth,
+            y,
+            this.innerWidth - this.itemPadding(),
+            'right'
+        );
+        // 次にレベルアップする経験値
+        let nextExp =
+            Number(this.expTotalValue()) + Number(this.expNextValue());
+        // 最大レベルの時は-------表記になるので修正
+        if (this._actor && this._actor.isMaxLevel()) {
+            nextExp = Number(this.expTotalValue());
+        }
+        this.drawText(
+            String(nextExp),
+            x,
+            y,
+            this.innerWidth - this.itemPadding(),
+            'right'
+        );
+    };
+    /**
+     * ●ブロック２（２行目）の描画
+     */
+    Window_Status.prototype.drawBlock2 = function () {
+        const y = this.block2Y();
+        if (this._actor) {
+            this.drawActorFace(this._actor, 12, y);
+            this.drawBasicInfo(204, y);
+            // this.drawExpInfo(456, y);
 
-        // 職業経験値を加算
-        const addClassExp = Number(this.item()?.meta.AddClassExp);
-        if (addClassExp) {
-            const result = target.result();
-            if (result.isHit() && target instanceof Game_Actor) {
-                target.gainClassExp(
-                    addClassExp,
-                    true
-                );
-                this.makeSuccess(target);
-            }
+            // 追加職業の情報
+            this.drawClassInfo(this._actor.additionalClass(), 0, y);
+        }
+    };
+    /**
+     * ●職業経験値の描画
+     */
+    Window_Status.prototype.drawClassInfo = function (additionalClass, x, y) {
+        if (!additionalClass) {
+            return;
         }
 
-        // レベルアップ表示が必要な場合、アイテムメニューを閉じる
-        if (mDisplayLevelUp && SceneManager._scene instanceof Scene_Item) {
-            SceneManager.goto(Scene_Map);
-        }
+        this.drawText(
+            additionalClass.name,
+            x,
+            y,
+            this.innerWidth - this.itemPadding(),
+            'right'
+        );
     };
     /**
      * ●効果適用判定
@@ -2132,16 +2231,23 @@ Object.defineProperties(AdditionalClass.prototype, {
         // 追加職業を追加（JSON形式で取得）
         const additionalClass = this.additionalClassObject();
         if (additionalClass) {
-            objects.push(additionalClass);
+            // Class オブジェクトから TraitObject に変換して追加
+            const traits = additionalClass.traits || [];
+            objects.push(...traits);
         }
+
         return objects;
     };
+
     // Furamon_AdditionalClassesPatchから移行
 
-    let _lastSkills: number[] = [];
+    let _lastSkills: Array<number | MZ.Skill> = []; // 数値またはSkillオブジェクトの配列として宣言
 
     const _AdditionalClass_changeExp = AdditionalClass.prototype.changeExp;
-    AdditionalClass.prototype.changeExp = function (exp, show) {
+    AdditionalClass.prototype.changeExp = function (
+        exp: number,
+        show: boolean
+    ) {
         _lastSkills = this.actor().skills({
             includeHasAbilitySkills: true,
         });
@@ -2150,16 +2256,30 @@ Object.defineProperties(AdditionalClass.prototype, {
 
     const _AdditionalClass_displayLevelUp =
         AdditionalClass.prototype.displayLevelUp;
-    AdditionalClass.prototype.displayLevelUp = function (newSkills) {
-        // 現在のスキル一覧は number の配列か Skill オブジェクトの配列のいずれかになる可能性があるため、
-        // まず ID に正規化してから差分を取り、$dataSkills にアクセスするようにする。
+    AdditionalClass.prototype.displayLevelUp = function (
+        newSkills: MZ.Skill[]
+    ) {
+        // 現在のスキル一覧を取得
         const currentSkills = this.actor().skills({
             includeHasAbilitySkills: true,
         });
+
+        // 前回のスキルと比較して新しく習得したスキルを抽出
         const _newSkills = currentSkills
-            .map((s) => (typeof s === 'number' ? s : s.id))
-            .filter((id) => !_lastSkills.includes(id))
-            .map((id) => $dataSkills[id]);
+            .filter((skill) => {
+                // 前回のスキル一覧に含まれていないスキルを抽出
+                return !_lastSkills.some(
+                    (lastSkill) =>
+                        (typeof lastSkill === 'number'
+                            ? lastSkill
+                            : lastSkill.id) ===
+                        (typeof skill === 'number' ? skill : skill.id)
+                );
+            })
+            .map((skill) =>
+                typeof skill === 'number' ? $dataSkills[skill] : skill
+            );
+
         _AdditionalClass_displayLevelUp.call(this, _newSkills);
     };
 })();

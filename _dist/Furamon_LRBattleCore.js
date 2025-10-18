@@ -1,3 +1,4 @@
+/// <reference path="../@types/furamon.d.ts" />
 /*:
  * @target MZ
  * @plugindesc Lightning Rubellum BattleCore
