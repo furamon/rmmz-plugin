@@ -52,6 +52,9 @@ declare var nuunHpGaugeParams: {
 };
 
 declare namespace BattleManager {
+    export function gainExp(): void;
+    export function makeRewards(): void;
+    export function gainRewards(): void;
     interface Spriteset {
         battlerSprites(): Sprite_Battler[];
     }
@@ -223,6 +226,7 @@ interface Game_Battler {
     enemy(): MZ.Enemy;
     setWt(battler): void;
     isActor(): this is Game_Actor; // 追加
+    gainClassExp?(classExp: number, ignoreBench?: boolean): void;
 }
 
 declare class Sprite_EnemyHPGauge extends Sprite {
@@ -264,7 +268,7 @@ interface Game_Actor {
     gainClassExp(classExp: number, ignoreBench?: boolean): void;
     finalClassExpRate(): number;
     benchMembersClassExpRate(): number;
-    traitObjects(): DataManager.TraitObject[];
+    traitObjects(): (MZ.Actor | MZ.Class | MZ.Weapon | MZ.Armor | MZ.State)[];
     setUnificationExp(): void;
     traitBattlerObjects(): DataManager.TraitObject[];
     currentClass(): MZ.Class | null;
@@ -600,28 +604,10 @@ interface AdditionalClass {
     name: string;
     note: string;
     learnings: MZ.Learning[];
-    initialize(
-        this: AdditionalClass,
-        actor: Game_Actor,
-        classId: number,
-        pUnificationExp: boolean,
-        pClassLvMaxExp: string,
-        pDefaultMaxLevel: number,
-        pLvUpMessage: string,
-        pZeroLevel: boolean,
-        pShowMaxLevelMessage: boolean,
-        pShowBenchMaxLevel: boolean,
-        pMaxLevelMessage: string,
-        pParamPlusByLevel: boolean,
-        pParamPlusByTag: boolean,
-        pKeepSkill: boolean,
-        mCommandFlg: boolean,
-        mForceClassId: number | null,
-        isKeepSkill: (skillId: number) => boolean
-    ): void;
+    initialize(...arguments): void;
     exp(): number;
     actor(): Game_Actor;
-    expActor(): Game_Actor;
+    expActor(): Game_Actor | null;
     setLevel(): void;
     currentExp(showFlg?: boolean): number | string;
     currentLevelExp(): number;
@@ -645,6 +631,7 @@ interface AdditionalClass {
     pShowBenchMaxLevel: boolean;
     pMaxLevelMessage: string;
     pParamPlusByLevel: boolean;
+    [Symbol.iterator](): Iterator<AdditionalClass>;
     pParamPlusByTag: boolean;
     pKeepSkill: boolean;
     mCommandFlg: boolean;
@@ -942,14 +929,9 @@ declare namespace DataManager {
 }
 
 interface AdditionalClassConstructor {
-    new (
-        actor: Game_Actor,
-        classId: number
-    ): AdditionalClass;
+    new (actor: Game_Actor, classId: number): AdditionalClass;
     prototype: AdditionalClass;
 }
-
-declare var AdditionalClass: AdditionalClassConstructor;
 
 interface TraitObject {
     code: number;
@@ -957,3 +939,5 @@ interface TraitObject {
     value: number;
     note?: string;
 }
+
+declare var AdditionalClass: AdditionalClassConstructor;
