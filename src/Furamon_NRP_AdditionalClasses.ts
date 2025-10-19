@@ -1683,16 +1683,16 @@ AdditionalClass.prototype.getNeedsExpData = function () {
      */
     const _Game_Actor_currentClass = Game_Actor.prototype.currentClass;
     Game_Actor.prototype.currentClass = function (this: Game_Actor): MZ.Class {
-        // // 'this' の型を明示
-        // if (mForceClassId) {
-        //     // -1で空白を返す
-        //     if (mForceClassId == -1) {
-        //         const ret = [];
-        //         ret.name = '';
-        //         return ret;
-        //     }
-        //     return $dataClasses[mForceClassId];
-        // }
+        // 'this' の型を明示
+        if (mForceClassId) {
+            // -1で空白を返す
+            if (mForceClassId == -1) {
+                const ret: any = [];
+                ret.name = '';
+                return ret;
+            }
+            return $dataClasses[mForceClassId];
+        }
 
         return _Game_Actor_currentClass.call(this);
     };
@@ -2497,19 +2497,6 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         this.drawText(pLvName, x, y, 48);
         this.resetTextColor();
         this.drawText(String(additionalClass.level), x + 44, y, 36, 'right');
-    };
-
-    //-----------------------------------------------------------------------------
-    // Game_Actor.prototype.onLoadのオーバーライド
-    //-----------------------------------------------------------------------------
-
-    const _Game_Actor_onLoad = Game_Actor.prototype.onLoad;
-    Game_Actor.prototype.onLoad = function (this: Game_Actor) {
-        _Game_Actor_onLoad.call(this);
-        const additionalClass = this.additionalClass();
-        if (additionalClass) {
-            additionalClass.setLevel();
-        }
     };
 
     //-----------------------------------------------------------------------------
