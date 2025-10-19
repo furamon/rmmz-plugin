@@ -4,6 +4,7 @@
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
 // 2025/10/17 1.0.0-Beta 非公開作成
+// 2025/10/19 1.1.0-Beta 経験値関連が不具合まつりだったので修正
 /*:
  * @target MZ
  * @plugindesc NRP様の多重転職プラグインの改造版
@@ -534,7 +535,7 @@
  * @type boolean
  * @default false
  * @desc 控えメンバーもメッセージを強制表示します。
- * Furamon_BenchMembersExp.js併用時のみ機能。
+ * NRP_BenchMembersExp.js併用時のみ機能。
  *
  * @param ZeroLevel
  * @parent <FuramonOption>
@@ -1195,6 +1196,8 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         }
         // レベルアップした場合
         if (this._level > lastLevel) {
+            // スキルを再習得
+            skillActor.setAllAdditionalClassesSkills();
             // メッセージを表示
             if (show) {
                 this.displayLevelUp(skillActor.findNewSkills(lastSkills));
@@ -1249,7 +1252,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
     AdditionalClass.prototype.displayLevelUp = function (newSkills) {
         if (pLvUpMessage) {
             const actor = this.actor();
-            const text = pLvUpMessage.format(actor.name(), this.name, this._level);
+            const text = pLvUpMessage.format(actor.name(), this.name, pZeroLevel && this._level > 0 ? this._level - 1 : this._level);
             $gameMessage.newPage();
             $gameMessage.add(text);
         }
@@ -1466,9 +1469,8 @@ AdditionalClass.prototype.getNeedsExpData = function () {
             const level = additionalClass.level;
             // レベル以下のスキルを取得
             for (const learning of additionalClass.learnings) {
-                const learningLevel = pZeroLevel
-                    ? learning.level - 1
-                    : learning.level;
+                // データベース上のスキル習得レベル (1始まり)
+                const learningLevel = learning.level;
                 if (learningLevel <= level) {
                     this.learnSkill(learning.skillId);
                 }

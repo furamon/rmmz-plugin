@@ -4,6 +4,7 @@
 // http://opensource.org/licenses/mit-license.php
 //------------------------------------------------------------------------------
 // 2025/10/17 1.0.0-Beta 非公開作成
+// 2025/10/19 1.1.0-Beta 経験値関連が不具合まつりだったので修正
 
 /*:
  * @target MZ
@@ -33,8 +34,16 @@
  * その表示がされない競合の修正
  *
  * NRP_LevelUpDirection併用時は、あちらの472行目らへんを
- * const AC_PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";に
- * 書き換えてください。
+ * ```
+ * const AC_PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";
+ * const acParameters = PluginManager.parameters(AC_PLUGIN_NAME);
+ * const pLvUpMessage = setDefault(acParameters["LvUpMessage"]);
+ * const pZeroLevel = Boolean(acParameters["ZeroLevel"] == "true");
+ * ```に、
+ * 495行目らへんを
+ * ```
+ * pZeroLevel && this._level > 0 ? this._level - 1 : this._level
+ * ```に書き換えてください。
  *
  * --- 以下元プラグイン解説（改変内容に合わせて原文から変更） ---
  *
@@ -535,7 +544,7 @@
  * @type boolean
  * @default false
  * @desc 控えメンバーもメッセージを強制表示します。
- * Furamon_BenchMembersExp.js併用時のみ機能。
+ * NRP_BenchMembersExp.js併用時のみ機能。
  *
  * @param ZeroLevel
  * @parent <FuramonOption>
@@ -944,43 +953,42 @@ AdditionalClass.prototype.getNeedsExpData = function () {
      * ●アクターに対して追加職業のレベルを増減させる。
      */
     function changeLevel(actor: Game_Actor, level: number, show: boolean) {
-    //      // 条件指定がある場合
-    //      if (additionalClassId || index != undefined) {
-    //         let additionalClass = undefined;
+        //      // 条件指定がある場合
+        //      if (additionalClassId || index != undefined) {
+        //         let additionalClass = undefined;
 
-    //         // インデックスの指定がある場合
-    //         if (index != undefined) {
-    //             additionalClass = actor.additionalClasses()[index];
-    //             if (!additionalClass) {
-    //                 return;
-    //             }
-    //         }
+        //         // インデックスの指定がある場合
+        //         if (index != undefined) {
+        //             additionalClass = actor.additionalClasses()[index];
+        //             if (!additionalClass) {
+        //                 return;
+        //             }
+        //         }
 
-    //         // 職業の指定がある場合
-    //         if (additionalClassId) {
-    //             additionalClass = actor.additionalClass(additionalClassId, true);
-    //             if (!additionalClass) {
-    //                 return;
-    //             }
-    //         }
+        //         // 職業の指定がある場合
+        //         if (additionalClassId) {
+        //             additionalClass = actor.additionalClass(additionalClassId, true);
+        //             if (!additionalClass) {
+        //                 return;
+        //             }
+        //         }
 
-    //         if (additionalClass) {
-    //             // 経験値の増減
-    //             additionalClass.changeLevel(additionalClass.level + level, show);
-    //         }
+        //         if (additionalClass) {
+        //             // 経験値の増減
+        //             additionalClass.changeLevel(additionalClass.level + level, show);
+        //         }
 
-    //     // 未指定ならば、就いている全ての追加職業を対象
-    //     } else {
-    //         for (const additionalClass of actor.additionalClasses()) {
-    //             // 経験値の増減
-    //             additionalClass.changeLevel(additionalClass.level + level, show);
-    //         }
-    //     }
+        //     // 未指定ならば、就いている全ての追加職業を対象
+        //     } else {
+        //         for (const additionalClass of actor.additionalClasses()) {
+        //             // 経験値の増減
+        //             additionalClass.changeLevel(additionalClass.level + level, show);
+        //         }
+        //     }
         const additionalClass = actor.additionalClass();
         if (additionalClass) {
             additionalClass.changeLevel(additionalClass.level + level, show);
         }
-
     }
 
     /**
@@ -1364,6 +1372,8 @@ AdditionalClass.prototype.getNeedsExpData = function () {
 
         // レベルアップした場合
         if (this._level > lastLevel) {
+            // スキルを再習得
+            skillActor.setAllAdditionalClassesSkills();
             // メッセージを表示
             if (show) {
                 this.displayLevelUp(skillActor.findNewSkills(lastSkills));
@@ -1435,7 +1445,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
             const text = pLvUpMessage.format(
                 actor.name(),
                 this.name,
-                this._level
+                pZeroLevel && this._level > 0 ? this._level - 1 : this._level
             );
             $gameMessage.newPage();
             $gameMessage.add(text);
@@ -1700,9 +1710,8 @@ AdditionalClass.prototype.getNeedsExpData = function () {
             const level = additionalClass.level;
             // レベル以下のスキルを取得
             for (const learning of additionalClass.learnings) {
-                const learningLevel = pZeroLevel
-                    ? learning.level - 1
-                    : learning.level;
+                // データベース上のスキル習得レベル (1始まり)
+                const learningLevel = learning.level;
                 if (learningLevel <= level) {
                     this.learnSkill(learning.skillId);
                 }

@@ -1408,7 +1408,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         y,
         width
     ) {
-        const displayLevel = String(pZeroLevel ? level - 1 : level);
+        const displayLevel = String(pZeroLevel && level > 0 ? level - 1 : level);
         this.drawText(displayLevel, x, y, width, 'right');
     };
 
@@ -1783,7 +1783,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         this.changeTextColor(ColorManager.systemColor());
         this.drawText(pLvName, x, y, 80);
         this.resetTextColor();
-        const displayLevel = pZeroLevel
+        const displayLevel = pZeroLevel && additionalClass.level > 0
             ? additionalClass.level - 1
             : additionalClass.level;
         this.drawText(displayLevel, x + 84, y, 36, 'right');
@@ -1831,7 +1831,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         this.resetTextColor();
         // 現在の経験値
         this.drawText(
-            currentExpValue,
+            String(currentExpValue),
             x - 155,
             y,
             this.innerWidth - this.itemPadding(),
@@ -1847,7 +1847,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
         );
         // 次のレベルアップまでの経験値
         this.drawText(
-            nextExpValue,
+            String(nextExpValue),
             x,
             y,
             this.innerWidth - this.itemPadding(),
@@ -1887,6 +1887,10 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
             if (additionalClass.isMaxLevel()) {
                 return pClassLvMaxExp;
             } else {
+                // pZeroLevelがtrueの場合、内部レベル1で表示レベル0なので、次のレベルは1
+                if (pZeroLevel && additionalClass.level === 1) {
+                    return additionalClass.expForLevel(2);
+                }
                 // デフォルトとは異なり、現在ＥＸＰとの合計を表示
                 return additionalClass.nextLevelExp();
             }
