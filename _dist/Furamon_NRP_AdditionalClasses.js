@@ -33,8 +33,16 @@
  * その表示がされない競合の修正
  *
  * NRP_LevelUpDirection併用時は、あちらの472行目らへんを
- * const AC_PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";に
- * 書き換えてください。
+ * ```
+ * const AC_PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";
+ * const acParameters = PluginManager.parameters(AC_PLUGIN_NAME);
+ * const pLvUpMessage = setDefault(acParameters["LvUpMessage"]);
+ * const pZeroLevel = Boolean(acParameters["ZeroLevel"] == "true");
+ * ```に、
+ * 495行目らへんを
+ * ```
+ * pZeroLevel && this._level > 0 ? this._level - 1 : this._level
+ * ```に書き換えてください。
  *
  * --- 以下元プラグイン解説（改変内容に合わせて原文から変更） ---
  *
