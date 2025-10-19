@@ -272,6 +272,7 @@ interface Game_Actor {
     setUnificationExp(): void;
     traitBattlerObjects(): DataManager.TraitObject[];
     currentClass(): MZ.Class | null;
+    onLoad(): void;
 }
 
 

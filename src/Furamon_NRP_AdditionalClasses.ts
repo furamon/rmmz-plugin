@@ -206,7 +206,7 @@
  * -----------------------------------------------------------------------------
  * # 謝辞 #
  * -----------------------------------------------------------------------------
- * 改変元:Furamon_AdditionalClasses(https://newrpg.seesaa.net/article/483582956.html)
+ * 改変元:NRP_AdditionalClasses(https://newrpg.seesaa.net/article/483582956.html)
  *
  * GeminiCLIの力を盛大に借りました。
  *
@@ -547,7 +547,6 @@
  * NRP_BenchMembersExp.js併用時のみ機能。
  *
  * @param ZeroLevel
- * @parent <FuramonOption>
  * @text レベルを0始まりにする
  * @type boolean
  * @default false
@@ -2498,6 +2497,19 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         this.drawText(pLvName, x, y, 48);
         this.resetTextColor();
         this.drawText(String(additionalClass.level), x + 44, y, 36, 'right');
+    };
+
+    //-----------------------------------------------------------------------------
+    // Game_Actor.prototype.onLoadのオーバーライド
+    //-----------------------------------------------------------------------------
+
+    const _Game_Actor_onLoad = Game_Actor.prototype.onLoad;
+    Game_Actor.prototype.onLoad = function (this: Game_Actor) {
+        _Game_Actor_onLoad.call(this);
+        const additionalClass = this.additionalClass();
+        if (additionalClass) {
+            additionalClass.setLevel();
+        }
     };
 
     //-----------------------------------------------------------------------------
