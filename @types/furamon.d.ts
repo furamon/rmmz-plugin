@@ -607,6 +607,7 @@ interface AdditionalClass {
     name: string;
     note: string;
     learnings: MZ.Learning[];
+    isNoGrow(): boolean;
     initialize(...arguments): void;
     exp(): number;
     actor(): Game_Actor;

@@ -612,6 +612,13 @@ AdditionalClass.prototype.getNeedsExpData = function () {
     return null;
 };
 
+/**
+ * ●<NoGrow>タグを持つか
+ */
+AdditionalClass.prototype.isNoGrow = function () {
+    return !!(this._data && this._data.meta.NoGrow);
+};
+
 (function () {
     'use strict';
 
@@ -866,7 +873,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         // for (let i = 0; i < additionalClasses.length; i++) {
         //     const additionalClass = additionalClasses[i];
         //     // 経験値の増減
-        if (additionalClass) {
+        if (additionalClass && !additionalClass.isNoGrow()) {
             additionalClass.changeExp(additionalClass.exp() + exp, show);
         }
         // }
@@ -985,7 +992,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         //         }
         //     }
         const additionalClass = actor.additionalClass();
-        if (additionalClass) {
+        if (additionalClass && !additionalClass.isNoGrow()) {
             additionalClass.changeLevel(additionalClass.level + level, show);
         }
     }
@@ -1453,7 +1460,9 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         // 習得スキルの表示
         for (const skill of newSkills) {
             if (skill) {
-                $gameMessage.add(TextManager.obtainSkill.format(skill.name, skill.iconIndex));
+                $gameMessage.add(
+                    TextManager.obtainSkill.format(skill.name, skill.iconIndex)
+                );
             } else {
                 console.warn('Undefined skill found in newSkills array.');
             }
@@ -1928,7 +1937,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
 
             // 追加職業にも経験値を加算
             const additionalClass = this.additionalClass();
-            if (additionalClass) {
+            if (additionalClass && !additionalClass.isNoGrow()) {
                 const newExp = additionalClass.exp() + value;
                 additionalClass.changeExp(newExp, show);
             }
@@ -1966,20 +1975,19 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         let classExp = 0;
 
         // 設定値が存在する場合
-        const metaClassExp = String(this.enemy().meta.ClassExp);
-        if (metaClassExp != undefined) {
-            classExp = eval(metaClassExp);
-
+        if (this.enemy().meta.ClassExp != undefined) {
+            classExp = eval(String( this.enemy().meta.ClassExp));
             // 既定値が存在する場合
         } else if (pDefaultClassExp != undefined) {
             classExp = eval(pDefaultClassExp);
         }
 
         // rateを乗算する。
-        const rate = this.enemy().meta.ClassExpRate;
+        const rate =  this.enemy().meta.ClassExpRate;
         if (rate != undefined) {
             classExp = (classExp * Number(rate)) / 100;
         }
+
         return classExp;
     };
 

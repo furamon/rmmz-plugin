@@ -595,6 +595,12 @@ AdditionalClass.prototype.getNeedsExpData = function () {
     }
     return null;
 };
+/**
+ * ●<NoGrow>タグを持つか
+ */
+AdditionalClass.prototype.isNoGrow = function () {
+    return this._data && this._data.meta.NoGrow;
+};
 (function () {
     'use strict';
     // function toBoolean(str, def) {
@@ -796,7 +802,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         // for (let i = 0; i < additionalClasses.length; i++) {
         //     const additionalClass = additionalClasses[i];
         //     // 経験値の増減
-        if (additionalClass) {
+        if (additionalClass && !additionalClass.isNoGrow()) {
             additionalClass.changeExp(additionalClass.exp() + exp, show);
         }
         // }
@@ -891,7 +897,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         //         }
         //     }
         const additionalClass = actor.additionalClass();
-        if (additionalClass) {
+        if (additionalClass && !additionalClass.isNoGrow()) {
             additionalClass.changeLevel(additionalClass.level + level, show);
         }
     }
@@ -1651,7 +1657,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
             }
             // 追加職業にも経験値を加算
             const additionalClass = this.additionalClass();
-            if (additionalClass) {
+            if (additionalClass && !additionalClass.isNoGrow()) {
                 const newExp = additionalClass.exp() + value;
                 additionalClass.changeExp(newExp, show);
             }
@@ -1679,9 +1685,8 @@ AdditionalClass.prototype.getNeedsExpData = function () {
         const a = this; // eval参照用
         let classExp = 0;
         // 設定値が存在する場合
-        const metaClassExp = String(this.enemy().meta.ClassExp);
-        if (metaClassExp != undefined) {
-            classExp = eval(metaClassExp);
+        if (this.enemy().meta.ClassExp != undefined) {
+            classExp = eval(String(this.enemy().meta.ClassExp));
             // 既定値が存在する場合
         }
         else if (pDefaultClassExp != undefined) {
