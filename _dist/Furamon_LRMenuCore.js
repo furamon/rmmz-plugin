@@ -175,4 +175,15 @@
         Window.prototype.setCursorRect;
     Window_FormationMember.prototype.setCursorRect =
         Window.prototype.setCursorRect;
+    // 戦闘BGMをOFFだとレベルアップME後BGMが消えることがあるので二段構え
+    const _Game_Actor_displayLevelUp = Game_Actor.prototype.displayLevelUp;
+    Game_Actor.prototype.displayLevelUp = function (newSkills) {
+        if ($gameParty.inBattle()) {
+            const bgm = AudioManager.saveBgm();
+            _Game_Actor_displayLevelUp.call(this, newSkills);
+            AudioManager.replayBgm(bgm);
+            return;
+        }
+        _Game_Actor_displayLevelUp.call(this, newSkills);
+    };
 })();
