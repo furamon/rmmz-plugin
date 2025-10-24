@@ -599,7 +599,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
  * ●<NoGrow>タグを持つか
  */
 AdditionalClass.prototype.isNoGrow = function () {
-    return this._data && this._data.meta.NoGrow;
+    return !!(this._data && this._data.meta.NoGrow);
 };
 (function () {
     'use strict';

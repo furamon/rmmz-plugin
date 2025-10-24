@@ -41,6 +41,7 @@
 // 2025/09/09 1.5.6 HP回復がフェードアウト中にチラ見えするの修正。
 // 2025/09/12 1.5.7 戦闘開始時にもHPが回復するよう戻した。
 // 2025/09/15 1.5.8 リファクタリング。
+// 2025/10/24 1.6.0 LP0時に指定ステートを付加する機能を追加。
 /*:
  * @target MZ
  * @plugindesc 戦闘不能に関わるライフポイントを実装します。
@@ -141,6 +142,12 @@
  * @default false
  * @desc 戦闘後LPが残っていればHPが全回復します。
  *
+ * @param LPZeroStateId
+ * @text LP0時付加ステート
+ * @type state
+ * @default 0
+ * @desc LPが0になったときに自動で付加するステート。0なら付加しません。
+ *
  */
 (function () {
     const PLUGIN_NAME = 'Furamon_LP';
@@ -149,6 +156,7 @@
     const prmLPBreakMessage = parameters['LPBreakMessage'];
     const prmLPGainMessage = parameters['LPGainMessage'];
     const prmBattleEndRecover = parameters['BattleEndRecover'] === 'true';
+    const prmLPZeroStateId = Number(parameters['LPZeroStateId'] || 0);
     // プラグインコマンド
     PluginManager.registerCommand(PLUGIN_NAME, 'growLP', function (args) {
         const actorId = Number(args.actor);
@@ -197,12 +205,22 @@
     }
     // LP監視関数。LPが0なら戦闘不能に
     function lpUpdate() {
-        const deadActor = $gameParty
-            .aliveMembers()
-            .filter((actor) => actor.isActor() && actor.lp <= 0);
-        if (deadActor.length > 0) {
-            deadActor.map((member) => member.addNewState(1)); // ﾃｰﾚｯﾃｰ♪
-        }
+        const members = $gameParty
+            .members()
+            .filter((actor) => actor.isActor());
+        members.forEach((actor) => {
+            if (actor.lp <= 0) {
+                if (actor.isAlive()) {
+                    actor.addNewState(1); // ﾃｰﾚｯﾃｰ♪
+                }
+                if (prmLPZeroStateId > 0) {
+                    actor.addNewState(prmLPZeroStateId);
+                }
+            }
+            else if (prmLPZeroStateId > 0) {
+                actor.removeState(prmLPZeroStateId);
+            }
+        });
     }
     // ロード時に必要ならLPを初期化
     const _Game_System_onAfterLoad = Game_System.prototype.onAfterLoad;
