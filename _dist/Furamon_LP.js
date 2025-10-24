@@ -42,6 +42,7 @@
 // 2025/09/12 1.5.7 戦闘開始時にもHPが回復するよう戻した。
 // 2025/09/15 1.5.8 リファクタリング。
 // 2025/10/24 1.6.0 LP0時に指定ステートを付加する機能を追加。
+//                  戦闘不能でも勝利モーション優先と全滅時は戦闘不能モーションを強制する機能を追加。
 /*:
  * @target MZ
  * @plugindesc 戦闘不能に関わるライフポイントを実装します。
@@ -148,6 +149,18 @@
  * @default 0
  * @desc LPが0になったときに自動で付加するステート。0なら付加しません。
  *
+ * @param PreferVictoryOnDeadIfLP
+ * @text 戦闘不能でも勝利モーション優先
+ * @type boolean
+ * @default true
+ * @desc 戦闘終了時、LPが残っているなら戦闘不能状態でも勝利モーションを優先します。
+ *
+ * @param ForceCollapseOnWipe
+ * @text 全滅時は戦闘不能モーション
+ * @type boolean
+ * @default true
+ * @desc 全滅時は勝利モーションではなく戦闘不能モーションを表示します。
+ *
  */
 (function () {
     const PLUGIN_NAME = 'Furamon_LP';
@@ -157,6 +170,8 @@
     const prmLPGainMessage = parameters['LPGainMessage'];
     const prmBattleEndRecover = parameters['BattleEndRecover'] === 'true';
     const prmLPZeroStateId = Number(parameters['LPZeroStateId'] || 0);
+    const prmPreferVictoryOnDeadIfLP = parameters['PreferVictoryOnDeadIfLP'] === 'true';
+    const prmForceCollapseOnWipe = parameters['ForceCollapseOnWipe'] === 'true';
     // プラグインコマンド
     PluginManager.registerCommand(PLUGIN_NAME, 'growLP', function (args) {
         const actorId = Number(args.actor);
@@ -526,6 +541,43 @@
         }
         this.visible = true;
         _Sprite_Damage_update.call(this);
+    };
+    // 勝利演出時、LP>0の戦闘不能アクターにも勝利モーションを要求
+    const _Game_Party_performVictory = Game_Party.prototype.performVictory;
+    Game_Party.prototype.performVictory = function () {
+        _Game_Party_performVictory.call(this);
+        if (!prmPreferVictoryOnDeadIfLP)
+            return;
+        this.members()
+            .filter((m) => m && m.isActor())
+            .forEach((actor) => {
+            if (actor.isDead() && actor.lp > 0) {
+                if (actor.requestMotion) {
+                    actor.requestMotion('victory');
+                }
+                else if (actor.performVictory) {
+                    actor.performVictory();
+                }
+            }
+        });
+    };
+    // 全滅時は戦闘不能モーションを強制
+    const _BattleManager_processDefeat = BattleManager.processDefeat;
+    BattleManager.processDefeat = function () {
+        if (prmForceCollapseOnWipe) {
+            $gameParty
+                .members()
+                .filter((m) => m && m.isActor())
+                .forEach((actor) => {
+                if (actor.requestMotion) {
+                    actor.requestMotion('dead');
+                }
+                else if (actor.performCollapse) {
+                    actor.performCollapse();
+                }
+            });
+        }
+        _BattleManager_processDefeat.call(this);
     };
     const _Window_BattleLog_displayDamage = Window_BattleLog.prototype.displayDamage;
     Window_BattleLog.prototype.displayDamage = function (target) {
