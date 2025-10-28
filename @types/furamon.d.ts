@@ -68,6 +68,11 @@ declare namespace BattleManager {
     function displayExp(): void;
     let _subject: Game_Actor | Game_Enemy | null;
     function startInput(): void;
+    /**
+     * Returns whether the battle manager is currently in inputting state.
+     * Declared here to match runtime API that exposes BattleManager.isInputting().
+     */
+    export function isInputting(): boolean;
     function battleCommandRefresh(): void;
     function endTurn(): void;
     function rangeEx(
@@ -131,12 +136,12 @@ declare function getSplit(
     metaValue: string | undefined | null
 ): string[] | null;
 
-declare let Imported: {
-    [key: string]: boolean | undefined;
-    NUUN_PassiveSkill?: boolean;
-};
-
 interface BattleManager {
+    battleCommandRefresh(): void;
+    rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
+    gainClassExp(): void; // 追加
+    displayExp(): void; // 追加
+    isInputting(): boolean; // 追加: 型宣言を追加してエラーを解消
     battleCommandRefresh(): void;
     rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
     gainClassExp(): void; // 追加
