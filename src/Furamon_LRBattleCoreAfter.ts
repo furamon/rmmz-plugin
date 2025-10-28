@@ -132,9 +132,23 @@
     const _Scene_Battle_endCommandSelection = Scene_Battle.prototype.endCommandSelection;
     Scene_Battle.prototype.endCommandSelection = function() {
         _Scene_Battle_endCommandSelection.call(this);
-        // コマンド選択が終わったら入力無効化を解除
+        // コマンド選択が終わったら、ただしオートバトル中は入力無効化を維持する
         if (this._statusWindow && this._statusWindow._statusInputPatched && this._statusWindow._statusInputDisabled) {
-            this._statusWindow._statusInputDisabled = false;
+            if (!BattleManager._autoBattleMode) {
+                this._statusWindow._statusInputDisabled = false;
+            }
         }
+    };
+
+    // 戦闘BGMをOFFだとレベルアップME後BGMが消えることがあるので二段構え
+    const _Game_Actor_displayLevelUp = Game_Actor.prototype.displayLevelUp;
+    Game_Actor.prototype.displayLevelUp = function(newSkills) {
+        if ($gameParty.inBattle()) {
+            const bgm = AudioManager.saveBgm();
+            _Game_Actor_displayLevelUp.call(this, newSkills);
+            AudioManager.replayBgm(bgm);
+            return;
+        }
+        _Game_Actor_displayLevelUp.call(this, newSkills);
     };
 })();

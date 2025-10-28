@@ -77,6 +77,11 @@ declare namespace BattleManager {
     function setup(troopId: number, canEscape: boolean, canLose: boolean): void;
     function endBattle(result: number): void;
     let _escaped: boolean;
+    /**
+     * Indicates whether auto-battle mode is active; declared here so code
+     * referencing BattleManager._autoBattleMode type-checks correctly.
+     */
+    let _autoBattleMode: boolean;
     function canEscape(): boolean;
     function selectPreviousCommand(): void;
     function actor(): Game_Actor;
