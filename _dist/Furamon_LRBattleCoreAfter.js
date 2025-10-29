@@ -114,9 +114,10 @@
     const _Scene_Battle_endCommandSelection = Scene_Battle.prototype.endCommandSelection;
     Scene_Battle.prototype.endCommandSelection = function () {
         _Scene_Battle_endCommandSelection.call(this);
-        // コマンド選択が終わったら、ただしオートバトル中は入力無効化を維持する
+        // コマンド選択が終わったら入力無効解除
+        // ただし敵行動orオートバトル中は入力無効化を維持する
         if (this._statusWindow && this._statusWindow._statusInputPatched && this._statusWindow._statusInputDisabled) {
-            if (!BattleManager._autoBattleMode) {
+            if (!BattleManager._autoBattleMode || BattleManager.isInputting()) {
                 this._statusWindow._statusInputDisabled = false;
             }
         }
