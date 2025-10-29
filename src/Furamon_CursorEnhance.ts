@@ -87,6 +87,18 @@
  * @type number
  * @default 12
  * @desc カーソル画像がウィンドウからはみ出さないための内側余白（ピクセル）
+ *
+ * @param EnabledWindows
+ * @text 有効ウィンドウ一覧
+ * @type string[]
+ * @default []
+ * @desc カーソルを表示するウィンドウクラス名の一覧。空なら全ウィンドウで表示。例: "Window_MenuCommand"
+ *
+ * @param DisabledWindows
+ * @text 無効ウィンドウ一覧
+ * @type string[]
+ * @default []
+ * @desc カーソルを表示しないウィンドウクラス名の一覧。有効一覧より優先。例: "Window_BattleLog"
  */
 (function () {
     const PLUGIN_NAME = 'Furamon_CursorEnhance';
@@ -104,6 +116,14 @@
     const prmShowWhenInactive = (parameters['ShowWhenInactive'] || 'false') === 'true';
     const prmWindowPadding = Number(parameters['WindowPadding'] || 12);
 
+    // ウィンドウクラス制御用パラメータ
+    const prmEnabledWindows = parameters['EnabledWindows']
+        ? JSON.parse(parameters['EnabledWindows'])
+        : [];
+    const prmDisabledWindows = parameters['DisabledWindows']
+        ? JSON.parse(parameters['DisabledWindows'])
+        : [];
+
     // アニメーション状態（全カーソルスプライトで共有）
     let _animationTime = 0;
     let _currentFrame = 0;
@@ -113,6 +133,24 @@
 
     // ログ出力
     console.log(`[Furamon] ${PLUGIN_NAME} is loaded. image:${prmImageName}`);
+
+    // ウィンドウでカーソルを表示するか判定
+    function isWindowEnabled(win: Window_Selectable): boolean {
+        const className = win.constructor.name;
+
+        // 無効リストに含まれていたら表示しない
+        if (prmDisabledWindows.length > 0 && prmDisabledWindows.includes(className)) {
+            return false;
+        }
+
+        // 有効リストが空なら全て表示
+        if (prmEnabledWindows.length === 0) {
+            return true;
+        }
+
+        // 有効リストに含まれているか
+        return prmEnabledWindows.includes(className);
+    }
 
     // スプライトのアニメーションフレームを更新
     function updateSpriteFrame(sprite: Sprite) {
@@ -147,6 +185,9 @@
     // ウィンドウにカーソル画像スプライトを作成
     function createCursorEnhanceSprite(win: Window_Selectable) {
         if (!prmImageName) return;
+        // ウィンドウクラスのチェック
+        if (!isWindowEnabled(win)) return;
+
         const sprite = new Sprite();
         sprite.bitmap = ImageManager.loadPicture(prmImageName);
         // 縦方向の中心を基準に
