@@ -319,6 +319,7 @@ const COMMAND_HELP_DATA = [
             this._pendingIndex = -1;
             this._lastFrameCount = 0;
             this.opacity = 0;
+            this.padding = 0;
             this.refresh();
         }
         update() {
@@ -536,7 +537,7 @@ const COMMAND_HELP_DATA = [
             return 202;
         }
         setCursorRect(x, y, width, height) {
-            // 非表示
+            super.setCursorRect(x, y, width, height - 12);
         }
         refresh() {
             // 既存の背景スプライトをクリア
@@ -561,8 +562,8 @@ const COMMAND_HELP_DATA = [
             if (!actor)
                 return;
             const rect = this.itemRect(index);
-            const x = rect.x;
-            const y = rect.y;
+            const x = rect.x + 12; // 本来のパディングを足す
+            const y = rect.y + 12;
             // SVアクター画像(アニメーション対応、左側に配置)
             this.drawSvActor(actor, x + 16, y + 100);
             // 名前
@@ -644,7 +645,8 @@ const COMMAND_HELP_DATA = [
             if (!bitmap.isReady())
                 return;
             // BattleMotionMZ対応チェック
-            const hasBattleMotion = typeof Sprite_Battler !== 'undefined' && Sprite_Battler.MOTIONS;
+            const hasBattleMotion = typeof Sprite_Battler !== 'undefined' &&
+                Sprite_Battler.MOTIONS;
             let motionIndex = 0; // walkモーション
             if (hasBattleMotion) {
                 // BattleMotionMZ使用時

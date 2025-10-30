@@ -222,7 +222,9 @@ const COMMAND_HELP_DATA = [
         // 初回のコマンドヘルプを設定
         if (this._commandWindow && this._infoWindow) {
             const commandData = this._commandWindow.currentData();
-            this._infoWindow.setCommandName(commandData ? commandData.name : '');
+            this._infoWindow.setCommandName(
+                commandData ? commandData.name : ''
+            );
         }
     };
 
@@ -261,7 +263,9 @@ const COMMAND_HELP_DATA = [
             const scene = SceneManager._scene as Scene_Menu;
             if (scene && scene._infoWindow) {
                 const commandData = this.currentData();
-                scene._infoWindow.setCommandName(commandData ? commandData.name : '');
+                scene._infoWindow.setCommandName(
+                    commandData ? commandData.name : ''
+                );
             }
         }
     };
@@ -376,6 +380,7 @@ const COMMAND_HELP_DATA = [
             this._pendingIndex = -1;
             this._lastFrameCount = 0;
             this.opacity = 0;
+            this.padding = 0;
             this.refresh();
         }
 
@@ -503,7 +508,12 @@ const COMMAND_HELP_DATA = [
             return actor ? actor.name() : '';
         }
 
-        drawActorNameEx(actor: Game_Actor, x: number, y: number, width: number) {
+        drawActorNameEx(
+            actor: Game_Actor,
+            x: number,
+            y: number,
+            width: number
+        ) {
             this.drawTextEx(actor.name(), x, y);
         }
 
@@ -527,7 +537,12 @@ const COMMAND_HELP_DATA = [
             return 8;
         }
 
-        drawContentsBackground(x: number, y: number, width: number, height: number) {
+        drawContentsBackground(
+            x: number,
+            y: number,
+            width: number,
+            height: number
+        ) {
             // 実装不要
         }
 
@@ -602,11 +617,23 @@ const COMMAND_HELP_DATA = [
             // 実装不要(基本クラスに存在)
         }
 
-        drawFace(faceName: string, faceIndex: number, x: number, y: number, width?: number, height?: number) {
+        drawFace(
+            faceName: string,
+            faceIndex: number,
+            x: number,
+            y: number,
+            width?: number,
+            height?: number
+        ) {
             // 実装不要(基本クラスに存在)
         }
 
-        drawCharacter(characterName: string, characterIndex: number, x: number, y: number) {
+        drawCharacter(
+            characterName: string,
+            characterIndex: number,
+            x: number,
+            y: number
+        ) {
             // 実装不要(基本クラスに存在)
         }
 
@@ -615,11 +642,29 @@ const COMMAND_HELP_DATA = [
         }
 
         drawActorCharacter(actor: Game_Actor, x: number, y: number) {
-            this.drawCharacter(actor.characterName(), actor.characterIndex(), x, y);
+            this.drawCharacter(
+                actor.characterName(),
+                actor.characterIndex(),
+                x,
+                y
+            );
         }
 
-        drawActorFace(actor: Game_Actor, x: number, y: number, width?: number, height?: number) {
-            this.drawFace(actor.faceName(), actor.faceIndex(), x, y, width, height);
+        drawActorFace(
+            actor: Game_Actor,
+            x: number,
+            y: number,
+            width?: number,
+            height?: number
+        ) {
+            this.drawFace(
+                actor.faceName(),
+                actor.faceIndex(),
+                x,
+                y,
+                width,
+                height
+            );
         }
 
         drawActorName(actor: Game_Actor, x: number, y: number, width?: number) {
@@ -633,11 +678,21 @@ const COMMAND_HELP_DATA = [
             this.drawText(String(actor.level), x + 48, y, 36, 'right');
         }
 
-        drawActorIcons(actor: Game_Actor, x: number, y: number, width?: number) {
+        drawActorIcons(
+            actor: Game_Actor,
+            x: number,
+            y: number,
+            width?: number
+        ) {
             // 実装不要
         }
 
-        drawActorNickname(actor: Game_Actor, x: number, y: number, width: number) {
+        drawActorNickname(
+            actor: Game_Actor,
+            x: number,
+            y: number,
+            width: number
+        ) {
             this.drawText(actor.nickname(), x, y, width);
         }
 
@@ -659,7 +714,7 @@ const COMMAND_HELP_DATA = [
         }
 
         setCursorRect(x: number, y: number, width: number, height: number) {
-            // 非表示
+            super.setCursorRect(x, y, width, height - 12);
         }
 
         refresh() {
@@ -688,8 +743,8 @@ const COMMAND_HELP_DATA = [
             if (!actor) return;
 
             const rect = this.itemRect(index);
-            const x = rect.x;
-            const y = rect.y;
+            const x = rect.x + 12; // 本来のパディングを足す
+            const y = rect.y + 12;
 
             // SVアクター画像(アニメーション対応、左側に配置)
             this.drawSvActor(actor, x + 16, y + 100);
@@ -750,34 +805,70 @@ const COMMAND_HELP_DATA = [
             this.changeTextColor(ColorManager.systemColor());
             this.drawText('攻撃', x + 108, statY, 72);
             this.resetTextColor();
-            this.drawText(actor.param(2).toString(), x + 160, statY, 80, 'right');
+            this.drawText(
+                actor.param(2).toString(),
+                x + 160,
+                statY,
+                80,
+                'right'
+            );
 
             this.changeTextColor(ColorManager.systemColor());
             this.drawText('器用', x + 108, statY + 40, 72);
             this.resetTextColor();
-            this.drawText(actor.param(7).toString(), x + 160, statY + 40, 80, 'right');
+            this.drawText(
+                actor.param(7).toString(),
+                x + 160,
+                statY + 40,
+                80,
+                'right'
+            );
 
             // ステータス(中央列)
             this.changeTextColor(ColorManager.systemColor());
             this.drawText('防御', x + 248, statY, 72);
             this.resetTextColor();
-            this.drawText(actor.param(3).toString(), x + 300, statY, 80, 'right');
+            this.drawText(
+                actor.param(3).toString(),
+                x + 300,
+                statY,
+                80,
+                'right'
+            );
 
             this.changeTextColor(ColorManager.systemColor());
             this.drawText('集中', x + 248, statY + 40, 72);
             this.resetTextColor();
-            this.drawText(actor.param(5).toString(), x + 300, statY + 40, 80, 'right');
+            this.drawText(
+                actor.param(5).toString(),
+                x + 300,
+                statY + 40,
+                80,
+                'right'
+            );
 
             // ステータス(右列)
             this.changeTextColor(ColorManager.systemColor());
             this.drawText('増幅', x + 388, statY, 72);
             this.resetTextColor();
-            this.drawText(actor.param(4).toString(), x + 440, statY, 80, 'right');
+            this.drawText(
+                actor.param(4).toString(),
+                x + 440,
+                statY,
+                80,
+                'right'
+            );
 
             this.changeTextColor(ColorManager.systemColor());
             this.drawText('素早', x + 388, statY + 40, 72);
             this.resetTextColor();
-            this.drawText(actor.param(6).toString(), x + 440, statY + 40, 80, 'right');
+            this.drawText(
+                actor.param(6).toString(),
+                x + 440,
+                statY + 40,
+                80,
+                'right'
+            );
         }
 
         drawSvActor(actor: Game_Actor, x: number, y: number) {
@@ -786,7 +877,9 @@ const COMMAND_HELP_DATA = [
             if (!bitmap.isReady()) return;
 
             // BattleMotionMZ対応チェック
-            const hasBattleMotion = typeof Sprite_Battler !== 'undefined' && (Sprite_Battler as any).MOTIONS;
+            const hasBattleMotion =
+                typeof Sprite_Battler !== 'undefined' &&
+                (Sprite_Battler as any).MOTIONS;
             let motionIndex = 0; // walkモーション
 
             if (hasBattleMotion) {
@@ -847,7 +940,15 @@ const COMMAND_HELP_DATA = [
 
                 // 座標を調整
                 // (うちのフォーマットのSVアクターにしか対応しないが自分専用プラグインなので問題はない)
-                this.contents.blt(bitmap, sx, sy, cellSize, cellSize, x - 50, y - 100);
+                this.contents.blt(
+                    bitmap,
+                    sx,
+                    sy,
+                    cellSize,
+                    cellSize,
+                    x - 50,
+                    y - 100
+                );
             } else {
                 // 標準SVアクター: 9x6グリッド、往復アニメーション
                 const pw = bitmap.width / 9;
@@ -868,7 +969,8 @@ const COMMAND_HELP_DATA = [
                 // 座標を調整(FallBack)
                 this.contents.blt(bitmap, sx, sy, pw, ph, x, y - 50);
             }
-        }        changeFontSize(offset: number) {
+        }
+        changeFontSize(offset: number) {
             this.contents.fontSize = $gameSystem.mainFontSize() + offset;
         }
     }
