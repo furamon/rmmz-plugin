@@ -2,6 +2,13 @@ interface MetaObject {
     meta: Metadata; // metaプロパティの型をMetadata型で定義
 }
 
+// Scene_Menu拡張
+interface Scene_Menu {
+    _infoWindow: any;
+    createInfoWindow(): void;
+    infoWindowRect(): Rectangle;
+}
+
 declare var ApngLoader: any;
 declare var SceneManager: any;
 declare var Sprite_Enemy: any;
@@ -919,6 +926,17 @@ declare interface Window_MenuStatus {
     ): void; // 追加
 }
 
+declare interface Window_Status {
+    drawBlock1(y: number): void; // 追加
+    drawActorLevel(actor: Game_Actor, x: number, y: number): void; // 追加
+    drawExpInfo(x: number, y: number): void; // 追加
+    drawBlock2(y: number): void; // 追加
+    drawClassInfo(
+        additionalClass: AdditionalClass | undefined,
+        x: number,
+        y: number
+    ): void; // 追加
+}
 declare interface Window_Status {
     drawBlock1(y: number): void; // 追加
     drawActorLevel(actor: Game_Actor, x: number, y: number): void; // 追加
