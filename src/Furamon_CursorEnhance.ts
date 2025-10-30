@@ -130,6 +130,7 @@
     const _totalFrames = prmColumns * prmRows;
     let _frameWidth = 0; // スプライト読み込み時に設定
     let _frameHeight = 0;
+    let _lastUpdateFrame = 0; // 最後にアニメーション更新したフレーム番号
 
     // ログ出力
     console.log(`[Furamon] ${PLUGIN_NAME} is loaded. image:${prmImageName}`);
@@ -172,6 +173,15 @@
     // アニメーションの更新（毎フレーム呼び出し）
     function updateAnimation() {
         if (prmAnimSpeed <= 0 || _totalFrames <= 1) return;
+
+        // 現在のフレーム番号を取得（Graphics.frameCount が利用可能）
+        const currentFrame = Graphics.frameCount || 0;
+
+        // 同じフレーム内で複数回呼ばれても1回だけ更新
+        if (_lastUpdateFrame === currentFrame) {
+            return;
+        }
+        _lastUpdateFrame = currentFrame;
 
         _animationTime += SceneManager._deltaTime || 1/60;
         const frameTime = 1 / prmAnimSpeed;

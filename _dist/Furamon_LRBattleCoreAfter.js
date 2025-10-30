@@ -111,17 +111,17 @@
             }
         }
     };
-    const _Scene_Battle_endCommandSelection = Scene_Battle.prototype.endCommandSelection;
-    Scene_Battle.prototype.endCommandSelection = function () {
-        _Scene_Battle_endCommandSelection.call(this);
-        // コマンド選択が終わったら入力無効解除
-        // ただし敵行動orオートバトル中は入力無効化を維持する
-        if (this._statusWindow && this._statusWindow._statusInputPatched && this._statusWindow._statusInputDisabled) {
-            if (!BattleManager._autoBattleMode || BattleManager.isInputting()) {
-                this._statusWindow._statusInputDisabled = false;
-            }
-        }
-    };
+    // const _Scene_Battle_endCommandSelection = Scene_Battle.prototype.endCommandSelection;
+    // Scene_Battle.prototype.endCommandSelection = function() {
+    //     _Scene_Battle_endCommandSelection.call(this);
+    //     // コマンド選択が終わったら入力無効解除
+    //     // ただし誰かの行動処理orオートバトル中は入力無効化を維持する
+    //     if (this._statusWindow && this._statusWindow._statusInputPatched && this._statusWindow._statusInputDisabled) {
+    //         if (!BattleManager._autoBattleMode || BattleManager.isInputting()) {
+    //             this._statusWindow._statusInputDisabled = false;
+    //         }
+    //     }
+    // };
     // 戦闘BGMをOFFだとレベルアップME後BGMが消えることがあるので二段構え
     const _Game_Actor_displayLevelUp = Game_Actor.prototype.displayLevelUp;
     Game_Actor.prototype.displayLevelUp = function (newSkills) {
