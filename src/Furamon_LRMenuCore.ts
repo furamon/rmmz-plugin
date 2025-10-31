@@ -714,7 +714,7 @@ const COMMAND_HELP_DATA = [
         }
 
         setCursorRect(x: number, y: number, width: number, height: number) {
-            super.setCursorRect(x, y, width, height - 12);
+            super.setCursorRect(x, y, 100, height - 12);
         }
 
         refresh() {

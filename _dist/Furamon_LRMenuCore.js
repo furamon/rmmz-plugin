@@ -537,7 +537,7 @@ const COMMAND_HELP_DATA = [
             return 202;
         }
         setCursorRect(x, y, width, height) {
-            super.setCursorRect(x, y, width, height - 12);
+            super.setCursorRect(x, y, 100, height - 12);
         }
         refresh() {
             // 既存の背景スプライトをクリア

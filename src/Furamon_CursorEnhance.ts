@@ -132,9 +132,6 @@
     let _frameHeight = 0;
     let _lastUpdateFrame = 0; // 最後にアニメーション更新したフレーム番号
 
-    // ログ出力
-    console.log(`[Furamon] ${PLUGIN_NAME} is loaded. image:${prmImageName}`);
-
     // ウィンドウでカーソルを表示するか判定
     function isWindowEnabled(win: Window_Selectable): boolean {
         const className = win.constructor.name;
@@ -295,7 +292,6 @@
         _Window_Selectable_initialize.apply(this, args as any);
         try {
             createCursorEnhanceSprite(this);
-            console.log(this.itemPadding());
         }
         catch (e) {
             // エラーを無視
