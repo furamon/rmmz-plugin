@@ -218,8 +218,8 @@
     if (this._stateListWindow?.isOpen()) {
       this.closeStateListWindow();
     } else if (
-      (this._partyCommandWindow as any).active ||
-      (this._actorCommandWindow as any).active
+      (this._partyCommandWindow as unknown as Window_Command).active ||
+      (this._actorCommandWindow as unknown as Window_Command).active
     ) {
       this.openStateListWindow();
     }
@@ -227,10 +227,10 @@
 
   Scene_Battle.prototype.openStateListWindow = function () {
     this._openedStateListFrom = null;
-    if ((this._partyCommandWindow as any).active) {
+    if ((this._partyCommandWindow as unknown as Window_Command).active) {
       this._openedStateListFrom = "party";
       this._partyCommandWindow.hide();
-    } else if ((this._actorCommandWindow as any).active) {
+    } else if ((this._actorCommandWindow as unknown as Window_Command).active) {
       this._openedStateListFrom = "actor";
       this._actorCommandWindow.hide();
     }

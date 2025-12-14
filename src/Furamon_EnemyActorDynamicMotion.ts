@@ -53,8 +53,8 @@
   const hasNrpCollapse = PluginManager._scripts.includes("NRP_EnemyCollapse");
 
   // SVアクター敵かどうかを判定する関数
-  function isSvActorEnemy(battler: Game_Battler | null | undefined) {
-    if (!battler || !(battler instanceof Game_Enemy)) {
+  function isSvActorEnemy(battler: unknown): battler is Game_Enemy {
+    if (!(battler instanceof Game_Enemy)) {
       return false;
     }
     const enemy = battler.enemy();

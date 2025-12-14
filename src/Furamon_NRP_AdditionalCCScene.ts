@@ -611,7 +611,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
       // プラグインコマンドの場合は、
       // なぜか謎の文字コード（001B）が含まれているので\に変換
       const raw = args.AddClassList;
-      const addClassListStr = String(raw).replace(/\u001B/g, "\\");
+      const addClassListStr = String(raw).replaceAll("\u001B", "\\");
       // JSON形式をJS用に変換
       const addClassList = parseStruct2(addClassListStr);
       // リストを結合

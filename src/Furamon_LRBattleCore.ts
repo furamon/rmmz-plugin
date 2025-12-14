@@ -46,6 +46,7 @@
   const _Game_Battler_initTp = Game_Battler.prototype.initTp;
   Game_Battler.prototype.initTp = function () {
     if (prmInitialTP !== undefined) {
+      // biome-ignore lint/security/noGlobalEval: プラグインパラメータ(数式可)を評価するため。ローカル実行前提。
       this.setTp(eval(prmInitialTP));
       return;
     }

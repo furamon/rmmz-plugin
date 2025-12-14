@@ -21,6 +21,8 @@
 
 ## 型定義
 - 型は `@types/*.d.ts`（RMMZ + 追加定義）を前提にしています。`tsconfig.json` の `typeRoots` に従ってください。
+- `@types/` 配下のうち **`@types/rmmz*.d.ts` と `@types/data.d.ts` 、 `@types/lib/**` は編集しない**でください（外部由来/基盤のため）。
+	- 型の衝突や不足が疑われる場合は、まずプラグイン側で `unknown` + `instanceof` などで吸収する方針です（例: `src/Furamon_EnemyActorAnimation.ts`）。
 
 ## よく使うコマンド（Bun）
 - 依存導入: `bun install`

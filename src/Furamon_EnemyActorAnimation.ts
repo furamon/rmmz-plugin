@@ -146,8 +146,8 @@
    * SVアクター使用の敵かどうか判定
    */
 
-  function isSvActorEnemy(battler: Game_Battler) {
-    if (!battler || !(battler instanceof Game_Enemy)) {
+  function isSvActorEnemy(battler: unknown): battler is Game_Enemy {
+    if (!(battler instanceof Game_Enemy)) {
       return false;
     }
 
@@ -211,7 +211,7 @@
   Game_Enemy.prototype.performAction = function (this: Game_Enemy, action) {
     _Game_Enemy_performAction.call(this, action);
     if (
-      isSvActorEnemy(this as any) &&
+      isSvActorEnemy(this) &&
       !PluginManager._scripts.includes("Furamon_EnemyActorDynamicMotion")
     ) {
       let motionName = "walk";
@@ -234,7 +234,7 @@
   const _Game_Enemy_performDamage = Game_Enemy.prototype.performDamage;
   Game_Enemy.prototype.performDamage = function () {
     _Game_Enemy_performDamage.call(this);
-    if (isSvActorEnemy(this as any)) {
+    if (isSvActorEnemy(this)) {
       this._damaged = true; // ダメージ受けてるフラグ
       this._damageMotionCount = 18; // ダメージモーションを取るフレーム
       this.requestMotion("damage");
@@ -244,7 +244,7 @@
   const _Game_Enemy_performEvasion = Game_Enemy.prototype.performEvasion;
   Game_Enemy.prototype.performEvasion = function () {
     _Game_Enemy_performEvasion.call(this);
-    if (isSvActorEnemy(this as any)) {
+    if (isSvActorEnemy(this)) {
       this._damaged = true; // 回避フラグ(ダメージと共用)
       // 回避モーションを取るフレーム(ダメージと共用)
       this._damageMotionCount = 18;
@@ -256,7 +256,7 @@
     Game_Enemy.prototype.performMagicEvasion;
   Game_Enemy.prototype.performMagicEvasion = function () {
     _Game_Enemy_performMagicEvasion.call(this);
-    if (isSvActorEnemy(this as any)) {
+    if (isSvActorEnemy(this)) {
       this._damaged = true; // 回避フラグ(ダメージと共用)
       // 回避モーションを取るフレーム(ダメージと共用)
       this._damageMotionCount = 18;
