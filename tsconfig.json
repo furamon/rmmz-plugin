@@ -13,7 +13,8 @@
         "skipLibCheck": true
     },
     "exclude": [
-        "src/dist",
+        "_dist",
+        "tests",
         "node_modules",
         "@types/lib/lib.dom.d.ts",
         "@types/furamon.ts"

@@ -1631,7 +1631,8 @@ AdditionalClass.prototype.isNoGrow = function () {
     const additionalClass = this.additionalClass();
     if (additionalClass) {
       // 習得スキルを削除
-      for (const learning of additionalClass._data?.learnings) {
+      // learnings が未設定(undefined)のケースがあるため、空配列として扱う
+      for (const learning of (additionalClass._data?.learnings ?? [])) {
         // 転職時も維持するスキルなら削除しない。
         if (isKeepSkill(learning.skillId)) {
           continue;
@@ -2531,14 +2532,14 @@ AdditionalClass.prototype.isNoGrow = function () {
 
   const _AdditionalClass_displayLevelUp =
     AdditionalClass.prototype.displayLevelUp;
-  AdditionalClass.prototype.displayLevelUp = function (_newSkills: MZ.Skill[]) {
+  AdditionalClass.prototype.displayLevelUp = function (newSkills: MZ.Skill[]) {
     // 現在のスキル一覧を取得
     const currentSkills = this.actor().skills({
       includeHasAbilitySkills: true,
     });
 
     // 前回のスキルと比較して新しく習得したスキルを抽出
-    const _newSkills = currentSkills
+    const learnedSkills = currentSkills
       .filter((skill: number | MZ.Skill) => {
         // 前回のスキル一覧に含まれていないスキルを抽出
         return !_lastSkills.some(
@@ -2551,6 +2552,8 @@ AdditionalClass.prototype.isNoGrow = function () {
         typeof skill === "number" ? $dataSkills[skill] : skill,
       );
 
-    _AdditionalClass_displayLevelUp.call(this, _newSkills);
+    // 互換のため引数を受け取るが、実際には差分計算した結果を優先して渡す
+    void newSkills;
+    _AdditionalClass_displayLevelUp.call(this, learnedSkills);
   };
 })();
