@@ -155,368 +155,386 @@
  * @type boolean
  * @default true
  */
-(function () {
-    const PLUGIN_NAME = 'Furamon_SmartJump';
+(() => {
+  const PLUGIN_NAME = "Furamon_SmartJump";
 
-    // Game_Playerに最後に移動した方向を記憶するプロパティを追加
-    const _Game_Player_initMembers = Game_Player.prototype.initMembers;
-    Game_Player.prototype.initMembers = function () {
-        _Game_Player_initMembers.call(this);
-        this._lastMoveDirection = 2; // 初期値は下向き
+  // Game_Playerに最後に移動した方向を記憶するプロパティを追加
+  const _Game_Player_initMembers = Game_Player.prototype.initMembers;
+  Game_Player.prototype.initMembers = function () {
+    _Game_Player_initMembers.call(this);
+    this._lastMoveDirection = 2; // 初期値は下向き
+  };
+
+  // プレイヤーの移動時に方向を記憶
+  const _Game_Player_executeMove = Game_Player.prototype.executeMove;
+  Game_Player.prototype.executeMove = function (direction) {
+    if (direction > 0) {
+      this._lastMoveDirection = direction;
+    }
+    _Game_Player_executeMove.call(this, direction);
+  };
+  const parameters = PluginManager.parameters(PLUGIN_NAME);
+
+  const prmNoJumpRegionId = Number(parameters["noJumpRegionId"]) || 0;
+  const prmJumpSoundName = parameters["jumpSoundName"] || "Jump1";
+  const prmJumpSoundVolume = Number(parameters["jumpSoundVolume"]) || 90;
+  const prmJumpSoundPitch = Number(parameters["jumpSoundPitch"]) || 80;
+  const prmJumpSpeed = Number(parameters["jumpSpeed"]) || 50;
+  const prmJumpHeight = Number(parameters["jumpHeight"]) || 200;
+  const prmEnableThrough = parameters["enableThrough"] === "true";
+  const prmJumpKey = parameters["jumpKey"] || "control";
+  const prmRequireSwitch = Number(parameters["requireSwitch"]) || 0;
+  const prmDisableInMenu = parameters["disableInMenu"] === "true";
+
+  /**
+   * 8方向移動プラグイン（HalfMove.js or PD_8DirDash.js）が有効か検出
+   */
+  function is8DirMoveActive() {
+    const halfMoveRegistered = PluginManager._scripts.some(
+      (name) => name.toLowerCase() === "halfmove",
+    );
+    const pd8DirDashRegistered = PluginManager._scripts.some(
+      (name) => name.toLowerCase() === "pd_8dirdash",
+    );
+
+    if (pd8DirDashRegistered) {
+      return true;
+    }
+
+    if (halfMoveRegistered) {
+      // isHalfMoveプロパティの存在は、未ロード時のエラーを防ぐためにチェックが必要です。
+      if ($gamePlayer.isHalfMove && $gamePlayer.isHalfMove()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 方向に応じたオフセットを取得（常に1マス単位）
+   */
+  function getDirectionOffset(direction: number) {
+    const offsets: Record<number, number[]> = {
+      2: [0, 1], // 下
+      4: [-1, 0], // 左
+      6: [1, 0], // 右
+      8: [0, -1], // 上
     };
+    return offsets[direction] || [0, 0];
+  }
 
-    // プレイヤーの移動時に方向を記憶
-    const _Game_Player_executeMove = Game_Player.prototype.executeMove;
-    Game_Player.prototype.executeMove = function (direction) {
-        if (direction > 0) {
-            this._lastMoveDirection = direction;
-        }
-        _Game_Player_executeMove.call(this, direction);
+  /**
+   * 斜め方向に応じたオフセットを取得
+   */
+  function getDiagonalDirectionOffset(direction: number) {
+    const offsets: Record<number, number[]> = {
+      1: [-1, 1], // 左下
+      3: [1, 1], // 右下
+      7: [-1, -1], // 左上
+      9: [1, -1], // 右上
     };
-    const parameters = PluginManager.parameters(PLUGIN_NAME);
+    return offsets[direction] || [0, 0];
+  }
 
-    const prmNoJumpRegionId = Number(parameters['noJumpRegionId']) || 0;
-    const prmJumpSoundName = parameters['jumpSoundName'] || 'Jump1';
-    const prmJumpSoundVolume = Number(parameters['jumpSoundVolume']) || 90;
-    const prmJumpSoundPitch = Number(parameters['jumpSoundPitch']) || 80;
-    const prmJumpSpeed = Number(parameters['jumpSpeed']) || 50;
-    const prmJumpHeight = Number(parameters['jumpHeight']) || 200;
-    const prmEnableThrough = parameters['enableThrough'] === 'true';
-    const prmJumpKey = parameters['jumpKey'] || 'control';
-    const prmRequireSwitch = Number(parameters['requireSwitch']) || 0;
-    const prmDisableInMenu = parameters['disableInMenu'] === 'true';
+  /**
+   * 通行判定を行う（HalfMove対応版）
+   */
+  function canPassToPosition(
+    fromX: number,
+    fromY: number,
+    direction: number,
+    distance: number,
+  ) {
+    const player = $gamePlayer;
+    let targetX: number, targetY: number;
 
-    /**
-     * 8方向移動プラグイン（HalfMove.js or PD_8DirDash.js）が有効か検出
-     */
-    function is8DirMoveActive() {
-        const halfMoveRegistered = PluginManager._scripts.some(name => name.toLowerCase() === 'halfmove');
-        const pd8DirDashRegistered = PluginManager._scripts.some(name => name.toLowerCase() === 'pd_8dirdash');
+    if (direction % 2 !== 0 && is8DirMoveActive()) {
+      // 斜め方向
+      const [dx, dy] = getDiagonalDirectionOffset(direction);
+      targetX = fromX + dx * distance;
+      targetY = fromY + dy * distance;
+    } else {
+      // 上下左右
+      const [dx, dy] = getDirectionOffset(direction);
+      targetX = fromX + dx * distance;
+      targetY = fromY + dy * distance;
+    }
 
-        if (pd8DirDashRegistered) {
-            return true;
-        }
-
-        if (halfMoveRegistered) {
-            // isHalfMoveプロパティの存在は、未ロード時のエラーを防ぐためにチェックが必要です。
-            if ($gamePlayer.isHalfMove && $gamePlayer.isHalfMove()) {
-                return true;
-            }
-        }
+    // 0. ジャンプ禁止リージョンチェック
+    if (prmNoJumpRegionId > 0) {
+      const regionId = $gameMap.regionId(
+        Math.floor(targetX),
+        Math.floor(targetY),
+      );
+      if (regionId === prmNoJumpRegionId) {
         return false;
+      }
     }
 
-    /**
-     * 方向に応じたオフセットを取得（常に1マス単位）
-     */
-    function getDirectionOffset(direction: number) {
-        const offsets: Record<number, number[]> = {
-            2: [0, 1], // 下
-            4: [-1, 0], // 左
-            6: [1, 0], // 右
-            8: [0, -1], // 上
-        };
-        return offsets[direction] || [0, 0];
+    // 1. イベントとの衝突チェック
+    if (player.isCollidedWithCharacters(targetX, targetY)) {
+      return false;
     }
 
-    /**
-     * 斜め方向に応じたオフセットを取得
-     */
-    function getDiagonalDirectionOffset(direction: number) {
-        const offsets: Record<number, number[]> = {
-            1: [-1, 1], // 左下
-            3: [1, 1],  // 右下
-            7: [-1, -1], // 左上
-            9: [1, -1], // 右上
-        };
-        return offsets[direction] || [0, 0];
+    // 2. タイルの通行可能性チェック
+    const isPassableTile = (x: number, y: number) => {
+      const player = $gamePlayer;
+      // HalfMove.jsが有効な場合、isMapPassableを使って判定する
+      if (
+        typeof Game_Map.prototype.tileUnit !== "undefined" &&
+        player.isHalfMove &&
+        player.isHalfMove()
+      ) {
+        // ジャンプ先からいずれかの方向に移動できれば、そこは通行可能とみなす
+        return (
+          player.isMapPassable(x, y, 2) ||
+          player.isMapPassable(x, y, 4) ||
+          player.isMapPassable(x, y, 6) ||
+          player.isMapPassable(x, y, 8)
+        );
+      }
+      // 通常のタイル通行判定
+      return $gameMap.checkPassage(Math.floor(x), Math.floor(y), 0x0f);
+    };
+
+    if (!isPassableTile(targetX, targetY)) {
+      return false;
     }
 
-
-    /**
-     * 通行判定を行う（HalfMove対応版）
-     */
-    function canPassToPosition(
-        fromX: number,
-        fromY: number,
-        direction: number,
-        distance: number
+    // 3. HalfMove.js の特殊な通行不可設定（リージョン/地形タグ）をチェック
+    if (
+      typeof Game_Map.prototype.tileUnit !== "undefined" &&
+      $gamePlayer.isHalfMove &&
+      $gamePlayer.isHalfMove()
     ) {
-        const player = $gamePlayer;
-        let targetX: number, targetY: number;
-
-        if (direction % 2 !== 0 && is8DirMoveActive()) {
-            // 斜め方向
-            const [dx, dy] = getDiagonalDirectionOffset(direction);
-            targetX = fromX + dx * distance;
-            targetY = fromY + dy * distance;
-        } else {
-            // 上下左右
-            const [dx, dy] = getDirectionOffset(direction);
-            targetX = fromX + dx * distance;
-            targetY = fromY + dy * distance;
-        }
-
-        // 0. ジャンプ禁止リージョンチェック
-        if (prmNoJumpRegionId > 0) {
-            const regionId = $gameMap.regionId(Math.floor(targetX), Math.floor(targetY));
-            if (regionId === prmNoJumpRegionId) {
-                return false;
-            }
-        }
-
-        // 1. イベントとの衝突チェック
-        if (player.isCollidedWithCharacters(targetX, targetY)) {
-            return false;
-        }
-
-        // 2. タイルの通行可能性チェック
-        const isPassableTile = (x: number, y: number) => {
-            const player = $gamePlayer;
-            // HalfMove.jsが有効な場合、isMapPassableを使って判定する
-            if (typeof Game_Map.prototype.tileUnit !== 'undefined' && player.isHalfMove && player.isHalfMove()) {
-                // ジャンプ先からいずれかの方向に移動できれば、そこは通行可能とみなす
-                return player.isMapPassable(x, y, 2) || player.isMapPassable(x, y, 4) ||
-                       player.isMapPassable(x, y, 6) || player.isMapPassable(x, y, 8);
-            }
-            // 通常のタイル通行判定
-            return $gameMap.checkPassage(Math.floor(x), Math.floor(y), 0x0f);
-        };
-
-        if (!isPassableTile(targetX, targetY)) {
-            return false;
-        }
-
-        // 3. HalfMove.js の特殊な通行不可設定（リージョン/地形タグ）をチェック
-        if (typeof Game_Map.prototype.tileUnit !== 'undefined' && $gamePlayer.isHalfMove && $gamePlayer.isHalfMove()) {
-            // @ts-ignore
-            if (!$gameMap.isPassableByHalfRegionAndTag(targetX, targetY)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-    /**
-     * ジャンプ効果音を再生
-     */
-    function playJumpSound() {
-        const se = {
-            name: prmJumpSoundName,
-            volume: prmJumpSoundVolume,
-            pitch: prmJumpSoundPitch,
-            pan: 0,
-        };
-        AudioManager.playSe(se);
+      // @ts-expect-error
+      if (!$gameMap.isPassableByHalfRegionAndTag(targetX, targetY)) {
+        return false;
+      }
     }
 
-    /**
-     * ジャンプを実行
-     */
-    function executeJump(jumpX: number, jumpY: number, useThrough = false) {
-        const player = $gamePlayer;
+    return true;
+  }
+  /**
+   * ジャンプ効果音を再生
+   */
+  function playJumpSound() {
+    const se = {
+      name: prmJumpSoundName,
+      volume: prmJumpSoundVolume,
+      pitch: prmJumpSoundPitch,
+      pan: 0,
+    };
+    AudioManager.playSe(se);
+  }
 
-        // すり抜け設定
-        if (useThrough && prmEnableThrough) {
-            player.setThrough(true);
-        }
+  /**
+   * ジャンプを実行
+   */
+  function executeJump(jumpX: number, jumpY: number, useThrough = false) {
+    const player = $gamePlayer;
 
-        // ジャンプ設定と実行
-        player.setJumpSpeed(prmJumpSpeed);
-        player.setJumpHeight(prmJumpHeight);
-        player.jump(jumpX, jumpY);
-
-        // すり抜け解除（ジャンプ完了後）
-        if (useThrough && prmEnableThrough) {
-            const originalUpdate = player.updateJump;
-            player.updateJump = function () {
-                originalUpdate.call(this);
-                if (!this.isJumping()) {
-                    this.setThrough(false);
-                    this.updateJump = originalUpdate;
-                }
-            };
-        }
+    // すり抜け設定
+    if (useThrough && prmEnableThrough) {
+      player.setThrough(true);
     }
 
-    /**
-     * スマートジャンプのメイン処理
-     */
-    function executeSmartJump() {
-        const player = $gamePlayer;
-        let direction = Input.dir8;
-        if (direction === 0) {
-            // @ts-ignore
-            direction = player._lastMoveDirection || player.direction();
+    // ジャンプ設定と実行
+    player.setJumpSpeed(prmJumpSpeed);
+    player.setJumpHeight(prmJumpHeight);
+    player.jump(jumpX, jumpY);
+
+    // すり抜け解除（ジャンプ完了後）
+    if (useThrough && prmEnableThrough) {
+      const originalUpdate = player.updateJump;
+      player.updateJump = function () {
+        originalUpdate.call(this);
+        if (!this.isJumping()) {
+          this.setThrough(false);
+          this.updateJump = originalUpdate;
         }
-        const [px, py] = [player.x, player.y];
+      };
+    }
+  }
 
-        // 現在地がジャンプ禁止リージョンの場合、ジャンプしない
-        if (prmNoJumpRegionId > 0) {
-            const regionId = $gameMap.regionId(Math.floor(px), Math.floor(py));
-            if (regionId === prmNoJumpRegionId) {
-                return; // 何もせずに終了
-            }
-        }
+  /**
+   * スマートジャンプのメイン処理
+   */
+  function executeSmartJump() {
+    const player = $gamePlayer;
+    let direction = Input.dir8;
+    if (direction === 0) {
+      direction = player._lastMoveDirection || player.direction();
+    }
+    const [px, py] = [player.x, player.y];
 
-        // 効果音再生
-        playJumpSound();
-
-        // 1マス先と2マス先への着地可能性を判定
-        if (is8DirMoveActive() && direction % 2 !== 0) {
-            // 斜めジャンプ処理
-            const jumpDistance = 1.5;
-            const canPass = canPassToPosition(px, py, direction, jumpDistance);
-            if (canPass) {
-                const [dx, dy] = getDiagonalDirectionOffset(direction);
-                executeJump(dx * jumpDistance, dy * jumpDistance, true);
-            } else {
-                // 斜めに飛べない場合はその場でジャンプ
-                executeJump(0, 0, false);
-            }
-        } else {
-            // 上下左右ジャンプ処理
-            const can1Pass = canPassToPosition(px, py, direction, 1);
-            const can2Pass = canPassToPosition(px, py, direction, 2);
-
-            // ジャンプ距離を決定（常に通常の1マス＝1単位で計算）
-            const [dx, dy] = getDirectionOffset(direction);
-
-            if (can2Pass) {
-                // 2マス先が通れる場合：2マスジャンプ（すり抜け有効）
-                executeJump(dx * 2, dy * 2, true);
-            } else if (can1Pass) {
-                // 1マス先だけ通れる場合：1マスジャンプ
-                executeJump(dx, dy, false);
-            } else {
-                // どちらも通れない場合：その場ジャンプ
-                executeJump(0, 0, false);
-            }
-        }
+    // 現在地がジャンプ禁止リージョンの場合、ジャンプしない
+    if (prmNoJumpRegionId > 0) {
+      const regionId = $gameMap.regionId(Math.floor(px), Math.floor(py));
+      if (regionId === prmNoJumpRegionId) {
+        return; // 何もせずに終了
+      }
     }
 
-    /**
-     * スイッチ条件付きでスマートジャンプを実行
-     */
-    function executeSmartJumpWithSwitch(switchId: number) {
-        if ($gameSwitches.value(switchId)) {
-            executeSmartJump();
-        }
+    // 効果音再生
+    playJumpSound();
+
+    // 1マス先と2マス先への着地可能性を判定
+    if (is8DirMoveActive() && direction % 2 !== 0) {
+      // 斜めジャンプ処理
+      const jumpDistance = 1.5;
+      const canPass = canPassToPosition(px, py, direction, jumpDistance);
+      if (canPass) {
+        const [dx, dy] = getDiagonalDirectionOffset(direction);
+        executeJump(dx * jumpDistance, dy * jumpDistance, true);
+      } else {
+        // 斜めに飛べない場合はその場でジャンプ
+        executeJump(0, 0, false);
+      }
+    } else {
+      // 上下左右ジャンプ処理
+      const can1Pass = canPassToPosition(px, py, direction, 1);
+      const can2Pass = canPassToPosition(px, py, direction, 2);
+
+      // ジャンプ距離を決定（常に通常の1マス＝1単位で計算）
+      const [dx, dy] = getDirectionOffset(direction);
+
+      if (can2Pass) {
+        // 2マス先が通れる場合：2マスジャンプ（すり抜け有効）
+        executeJump(dx * 2, dy * 2, true);
+      } else if (can1Pass) {
+        // 1マス先だけ通れる場合：1マスジャンプ
+        executeJump(dx, dy, false);
+      } else {
+        // どちらも通れない場合：その場ジャンプ
+        executeJump(0, 0, false);
+      }
+    }
+  }
+
+  /**
+   * スイッチ条件付きでスマートジャンプを実行
+   */
+  function executeSmartJumpWithSwitch(switchId: number) {
+    if ($gameSwitches.value(switchId)) {
+      executeSmartJump();
+    }
+  }
+
+  /**
+   * プレイヤーが移動中でないかチェック
+   */
+  function canExecuteSmartJump() {
+    return !$gamePlayer.isMoving() && !$gamePlayer.isJumping();
+  }
+
+  /**
+   * キー入力でジャンプ可能かチェック
+   */
+  function canExecuteByKey() {
+    if (!canExecuteSmartJump()) return false;
+
+    if (prmDisableInMenu) {
+      const scene = SceneManager._scene;
+      if (!scene || scene.constructor !== Scene_Map) return false;
+      if ($gameMessage.isBusy()) return false;
+      if ($gameMap.isEventRunning()) return false;
     }
 
-    /**
-     * プレイヤーが移動中でないかチェック
-     */
-    function canExecuteSmartJump() {
-        return !$gamePlayer.isMoving() && !$gamePlayer.isJumping();
+    if (prmRequireSwitch > 0) {
+      if (!$gameSwitches.value(prmRequireSwitch)) return false;
     }
 
-    /**
-     * キー入力でジャンプ可能かチェック
-     */
-    function canExecuteByKey() {
-        if (!canExecuteSmartJump()) return false;
+    return true;
+  }
 
-        if (prmDisableInMenu) {
-            if (SceneManager._scene.constructor !== Scene_Map) return false;
-            if ($gameMessage.isBusy()) return false;
-            if ($gameMap.isEventRunning()) return false;
-        }
+  /**
+   * 指定されたキーが押されたかチェック
+   */
+  function isJumpKeyPressed() {
+    if (prmJumpKey === "none") return false;
 
-        if (prmRequireSwitch > 0) {
-            if (!$gameSwitches.value(prmRequireSwitch)) return false;
-        }
+    const keyMap: { [key: string]: string } = {
+      control: "control",
+      shift: "shift",
+      alt: "alt",
+      space: "ok",
+      ok: "ok",
+      escape: "escape",
+      tab: "tab",
+      z: "ok",
+      x: "escape",
+      c: "pageup",
+      v: "pagedown",
+      a: "shift",
+      s: "control",
+      d: "tab",
+      q: "pageup",
+      w: "up",
+      e: "pagedown",
+    };
 
-        return true;
+    const mappedKey = keyMap[prmJumpKey];
+    if (!mappedKey) return false;
+
+    return Input.isTriggered(mappedKey);
+  }
+
+  /**
+   * キー入力によるスマートジャンプ処理
+   */
+  function handleKeyInput() {
+    if (isJumpKeyPressed() && canExecuteByKey()) {
+      executeSmartJump();
     }
+  }
 
-    /**
-     * 指定されたキーが押されたかチェック
-     */
-    function isJumpKeyPressed() {
-        if (prmJumpKey === 'none') return false;
-
-        const keyMap: { [key: string]: string } = {
-            control: 'control',
-            shift: 'shift',
-            alt: 'alt',
-            space: 'ok',
-            ok: 'ok',
-            escape: 'escape',
-            tab: 'tab',
-            z: 'ok',
-            x: 'escape',
-            c: 'pageup',
-            v: 'pagedown',
-            a: 'shift',
-            s: 'control',
-            d: 'tab',
-            q: 'pageup',
-            w: 'up',
-            e: 'pagedown',
-        };
-
-        const mappedKey = keyMap[prmJumpKey];
-        if (!mappedKey) return false;
-
-        return Input.isTriggered(mappedKey);
+  /**
+   * 安全にスマートジャンプを実行
+   */
+  function safeExecuteSmartJump() {
+    if (canExecuteSmartJump()) {
+      executeSmartJump();
     }
+  }
 
-    /**
-     * キー入力によるスマートジャンプ処理
-     */
-    function handleKeyInput() {
-        if (isJumpKeyPressed() && canExecuteByKey()) {
-            executeSmartJump();
-        }
+  /**
+   * 安全にスイッチ条件付きスマートジャンプを実行
+   */
+  function safeExecuteSmartJumpWithSwitch(switchId: number) {
+    if (canExecuteSmartJump()) {
+      executeSmartJumpWithSwitch(switchId);
     }
+  }
 
-    /**
-     * 安全にスマートジャンプを実行
-     */
-    function safeExecuteSmartJump() {
-        if (canExecuteSmartJump()) {
-            executeSmartJump();
-        }
-    }
+  function registerKeyHandlers() {
+    const originalUpdateInputData = Input.update;
+    Input.update = function () {
+      originalUpdateInputData.call(this);
+      if ($gameMap && $gamePlayer) {
+        handleKeyInput();
+      }
+    };
+  }
 
-    /**
-     * 安全にスイッチ条件付きスマートジャンプを実行
-     */
-    function safeExecuteSmartJumpWithSwitch(switchId: number) {
-        if (canExecuteSmartJump()) {
-            executeSmartJumpWithSwitch(switchId);
-        }
-    }
+  /**
+   * プラグインコマンド登録
+   */
+  PluginManager.registerCommand(PLUGIN_NAME, "execute", (args) => {
+    safeExecuteSmartJump();
+  });
 
-    function registerKeyHandlers() {
-        const originalUpdateInputData = Input.update;
-        Input.update = function () {
-            originalUpdateInputData.call(this);
-            if ($gameMap && $gamePlayer) {
-                handleKeyInput();
-            }
-        };
-    }
+  PluginManager.registerCommand(PLUGIN_NAME, "executeWithSwitch", (args) => {
+    safeExecuteSmartJumpWithSwitch(Number(args.switchId));
+  });
 
-    /**
-     * プラグインコマンド登録
-     */
-    PluginManager.registerCommand(PLUGIN_NAME, 'execute', (args) => {
-        safeExecuteSmartJump();
-    });
+  /**
+   * プラグイン初期化
+   */
+  function initialize() {
+    registerKeyHandlers();
+  }
 
-    PluginManager.registerCommand(PLUGIN_NAME, 'executeWithSwitch', (args) => {
-        safeExecuteSmartJumpWithSwitch(Number(args.switchId));
-    });
-
-    /**
-     * プラグイン初期化
-     */
-    function initialize() {
-        registerKeyHandlers();
-    }
-
-    // プラグイン開始時に初期化を実行
-    initialize();
+  // プラグイン開始時に初期化を実行
+  initialize();
 })();

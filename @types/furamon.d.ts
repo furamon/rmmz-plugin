@@ -1,22 +1,15 @@
-interface MetaObject {
-    meta: Metadata; // metaプロパティの型をMetadata型で定義
-}
-
-// Scene_Menu拡張
-interface Scene_Menu {
-    _infoWindow: any;
-    createInfoWindow(): void;
-    infoWindowRect(): Rectangle;
-}
-
-declare var ApngLoader: any;
-declare var SceneManager: any;
-declare var Sprite_Enemy: any;
+// Furamon plugins: project-local ambient typings / augmentations
+// NOTE: Avoid redeclaring core RMMZ globals as `any` (it breaks downstream typing).
 declare var obtainSkill: string;
 declare let EnemyStatePosition: number;
 declare let State_X: number;
 declare let State_Y: number;
 declare let stateVisible: number;
+
+// Furamon_CursorEnhance.ts で参照される内部フィールド（実行環境依存のため optional）
+interface SceneManager {
+    _deltaTime?: number;
+}
 
 // Motion関連の型定義を修正・追加
 interface StandardMotion {
@@ -101,12 +94,10 @@ declare namespace BattleManager {
     function startTurn(): void;
 }
 
-declare class TextManager {
-    public static readonly file: string;
-    public static readonly autosave: string;
-    public static readonly obtainSkill: string; // 追加
-    public static readonly levelA: string; // 追加
-    public static readonly exp: string; // 追加
+declare namespace TextManager {
+    const file: string;
+    const autosave: string;
+    const obtainSkill: string;
 }
 
 declare namespace ImageManager {
@@ -123,9 +114,8 @@ declare namespace ConfigManager {
     let messageSpeed: number;
 }
 
-interface PluginManager {
-    public static checkErrors(): void;
-    public static isLoaded(name: string): boolean;
+declare namespace PluginManager {
+    function isLoaded(name: string): boolean;
 }
 
 // Sprite_Battler のコンストラクタ関数の型定義（プロトタイプ操作用）
@@ -142,18 +132,6 @@ declare var Sprite_Battler: Sprite_BattlerConstructor;
 declare function getSplit(
     metaValue: string | undefined | null
 ): string[] | null;
-
-interface BattleManager {
-    battleCommandRefresh(): void;
-    rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
-    gainClassExp(): void; // 追加
-    displayExp(): void; // 追加
-    isInputting(): boolean; // 追加: 型宣言を追加してエラーを解消
-    battleCommandRefresh(): void;
-    rangeEx(action: Game_Action, target: Game_Battler[]): Game_Battler[];
-    gainClassExp(): void; // 追加
-    displayExp(): void; // 追加
-}
 
 // For Furamon_TorigoyaMZ_FrameTween
 interface TweenableWindowSetting {
@@ -186,6 +164,13 @@ declare class Scene_KeyConfig {
 interface Scene_MenuBase {
     _statusWindow: Window_Status;
     _slotWindow: Window_Selectable;
+}
+
+// Furamon_LRMenuCore.ts で追加するコマンド説明ウィンドウ
+interface Scene_Menu {
+    _infoWindow?: Window_MenuInfo;
+    createInfoWindow(): void;
+    infoWindowRect(): Rectangle;
 }
 
 interface Scene_Map {
@@ -231,8 +216,6 @@ interface Game_Player {
 
 interface Game_BattlerBase {
     isDummyEnemy(): boolean;
-    isActor(): this is Game_Actor;
-    isEnemy(): this is Game_Enemy;
 }
 
 interface Game_Battler {
@@ -242,7 +225,6 @@ interface Game_Battler {
     makeSPName?(action?: Game_Action): string | null;
     enemy(): MZ.Enemy;
     setWt(battler): void;
-    isActor(): this is Game_Actor; // 追加
     gainClassExp?(classExp: number, ignoreBench?: boolean): void;
 }
 
@@ -298,8 +280,8 @@ interface Game_Enemy {
     enemy(): MZ.Enemy;
     requestMotion(motionName: string): void;
     makeSPName?(action?: Game_Action): string | null;
-    _motion?: string;
-    _motionRefresh?: boolean;
+    _motion?: string | null;
+    _motionRefresh: boolean;
     getHPGaugePositionX(): number;
     getHPGaugePositionY(): number;
     performAttackDynamicMotion(weaponId: number, weaponType: string): void;
@@ -372,7 +354,7 @@ interface Sprite_Enemy {
     _savedMotion?: any;
     // 既存のプロパティ
     battlerOverlay: PIXI.Container;
-    _battler: Game_Enemy;
+    _battler: Game_Enemy | null;
 }
 
 // Game_Temp インターフェースを拡張
@@ -383,11 +365,10 @@ declare interface Game_Temp {
     formationRefresh: boolean;
 }
 
-// Sprite_StateIcon インターフェースを拡張
-declare class Sprite_StateIcon {
+// Sprite_StateIcon は既存クラスを再宣言せず、増補で追加する
+interface Sprite_StateIcon {
     _pseudo3dType: string;
     stateVisible(): void;
-    // 既存のメソッドやプロパティ...
 }
 
 // Sprite_SvActor のコンストラクタシグネチャを修正
@@ -429,29 +410,20 @@ interface _Window {
     Sprite_SvActor?: Sprite_SvActorConstructor;
 }
 
-interface Sprite_SvActorConstructor {
-    new (...args: any[]): Sprite_SvActor;
-}
-
-interface WindowLike extends Window_Base {}
-
-interface Window_Base {
-    window: WindowLike;
-    setting: TweenSetting;
-    enable: boolean;
-    moveX: string;
-    moveY: string;
-    easing: EasingFunc;
-    duration: number;
-    delay: number;
-}
+type MakeMapAnimation = (
+    interpreter: Game_Interpreter,
+    subject: Game_Battler,
+    wait: boolean,
+    noScroll: boolean,
+    action: Game_Action
+) => void;
 
 interface Window_BattleLog {
     showDynamicAnimation(
         targets: Game_Battler[],
         action: Game_Action,
         noWait: boolean,
-        mapAnimation: makeMapAnimation
+        mapAnimation: MakeMapAnimation
     );
 }
 
@@ -491,7 +463,7 @@ interface Window_StatusBase {
 }
 
 interface Game_Interpreter {
-    _temporaryWindow: Window_TemporaryText;
+    _temporaryWindow: Window_TemporaryText | null;
 }
 declare let Gauge_X: number | undefined;
 declare let Gauge_Y: number | undefined;
@@ -515,13 +487,13 @@ function makeMapAnimationEvent(
     isParallel: boolean;
 };
 
-function makeMapAnimation(
-    interpreter: interpreter,
+declare function makeMapAnimation(
+    interpreter: Game_Interpreter,
     subject: Game_Battler,
     wait: boolean,
     noScroll: boolean,
     action: Game_Action
-) {}
+): void;
 
 // 型定義
 type EasingFunc = (n: number) => number;
@@ -544,7 +516,7 @@ interface TorigoyaTween {
     stacks: { duration: number; delay: number }[];
 }
 
-interface WindowLike extends Window_Base {
+interface WindowLike {
     x: number;
     y: number;
     opacity: number;
@@ -560,24 +532,9 @@ declare const Torigoya: {
 };
 
 // For Furamon_BattleStateList.ts
-declare class Window_BattleStateList extends Window_Base {
-    constructor(rect: Rectangle);
-    _dataStates: MZ.State[];
-    makeItemList(): void;
-    refresh(): void;
-}
+// Minimal augmentations for Furamon plugin (moved to a separate file)
+// This block is intentionally left as a backup. The real augmentations are in @types/furamon_bsl.d.ts
 
-declare interface Scene_Battle {
-    _openedStateListFrom: string | null;
-    _stateListWindow: Window_BattleStateList;
-    createStateListWindow(): void;
-    stateListWindowRect(): Rectangle;
-    updateStateListWindow(): void;
-    isStateListTriggered(): boolean;
-    toggleStateListWindow(): void;
-    openStateListWindow(): void;
-    closeStateListWindow(): void;
-}
 
 interface Bitmap {
     getAlphaPixel(x: number, y: number);
@@ -664,20 +621,12 @@ interface AdditionalClass {
 declare function getExpActor(): Game_Actor;
 declare function isKeepSkill(skillId: number): boolean;
 
-interface Game_BattlerBase {
-    isDummyEnemy(): boolean;
-    isActor(): this is Game_Actor;
-    isEnemy(): this is Game_Enemy;
-}
-
 // For Furamon_LP.ts
 declare interface Game_Temp {
     _justWonBattle: boolean;
     setJustWonBattle(value: boolean): void;
     isJustWonBattle(): boolean;
 }
-
-type TriggerList = number[];
 
 type EventRangeEvent = {
     rangeEventPlayer?: (x: number, y: number) => boolean;
@@ -688,23 +637,14 @@ type EventRangeEvent = {
     start?: () => void;
 };
 
-type PlayerWithRange = {
-    setDistanceFrom?: (dx: number, dy: number) => void;
-    rangeFollower?: (x: number, y: number, event: unknown) => boolean;
-    pos: (x: number, y: number) => boolean;
-    followers?: () => GameFollowersLike;
-};
-
-type MapWithRange = {
-    eventsRangeEventPlayerXy?: (x: number, y: number) => unknown[];
-    roundXWithDirection: (x: number, d: number) => number;
-    roundYWithDirection: (y: number, d: number) => number;
-    isEventRunning: () => boolean;
-};
-
 declare class DotMoveSystem {}
 
+// EventRange / DotMoveSystem まわり
 type TriggerList = readonly number[];
+
+type GameFollowersLike = {
+    data?: () => any[];
+};
 
 type RealPositionCharacter = {
     x: number;
@@ -713,19 +653,8 @@ type RealPositionCharacter = {
     _realY?: number;
 };
 
-const realX = (character: RealPositionCharacter): number => {
-    const value = character._realX;
-    return typeof value === 'number' ? value : character.x;
-};
-
-const realY = (character: RealPositionCharacter): number => {
-    const value = character._realY;
-    return typeof value === 'number' ? value : character.y;
-};
-
-type GameFollowersLike = {
-    data?: () => any[];
-};
+declare function realX(character: RealPositionCharacter): number;
+declare function realY(character: RealPositionCharacter): number;
 
 type PlayerWithRange = RealPositionCharacter & {
     setDistanceFrom?: (dx: number, dy: number) => void;
@@ -937,17 +866,6 @@ declare interface Window_Status {
         y: number
     ): void; // 追加
 }
-declare interface Window_Status {
-    drawBlock1(y: number): void; // 追加
-    drawActorLevel(actor: Game_Actor, x: number, y: number): void; // 追加
-    drawExpInfo(x: number, y: number): void; // 追加
-    drawBlock2(y: number): void; // 追加
-    drawClassInfo(
-        additionalClass: AdditionalClass | undefined,
-        x: number,
-        y: number
-    ): void; // 追加
-}
 
 declare let mForceClassId: number | null; // 追加
 
@@ -973,4 +891,4 @@ interface TraitObject {
     note?: string;
 }
 
-declare var AdditionalClass: AdditionalClassConstructor;
+// trimmed

@@ -27,27 +27,24 @@
  * Claude 4 sonnetの力を借りました。
  */
 
-(function () {
+(() => {
+  const pluginName = "Furamon_DashButtonDisable";
+  const parameters = PluginManager.parameters(pluginName);
+  const alwaysDash = parameters["alwaysDash"] === "true";
 
-    const pluginName = 'Furamon_DashButtonDisable';
-    const parameters = PluginManager.parameters(pluginName);
-    const alwaysDash = parameters['alwaysDash'] === 'true';
+  // Game_Player のダッシュ機能を制御
+  Game_Player.prototype.isDashButtonPressed = () => alwaysDash;
 
-    // Game_Player のダッシュ機能を制御
-    Game_Player.prototype.isDashButtonPressed = function () {
-        return alwaysDash;
-    };
-
-    // Window_Options からalwaysDashオプションを除外
-    const _Window_Options_makeCommandList =
-        Window_Options.prototype.makeCommandList;
-    Window_Options.prototype.makeCommandList = function () {
-        _Window_Options_makeCommandList.call(this);
-        // alwaysDashコマンドを削除
-        for (let i = this._list.length - 1; i >= 0; i--) {
-            if (this._list[i].symbol === 'alwaysDash') {
-                this._list.splice(i, 1);
-            }
-        }
-    };
+  // Window_Options からalwaysDashオプションを除外
+  const _Window_Options_makeCommandList =
+    Window_Options.prototype.makeCommandList;
+  Window_Options.prototype.makeCommandList = function () {
+    _Window_Options_makeCommandList.call(this);
+    // alwaysDashコマンドを削除
+    for (let i = this._list.length - 1; i >= 0; i--) {
+      if (this._list[i].symbol === "alwaysDash") {
+        this._list.splice(i, 1);
+      }
+    }
+  };
 })();

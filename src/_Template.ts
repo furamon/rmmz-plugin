@@ -37,9 +37,9 @@
  * @default HogeHoge
  * @desc ほにゃらら
  */
-(function () {
-    const PLUGIN_NAME = 'Furamon_xxx';
-    const parameters = PluginManager.parameters(PLUGIN_NAME);
+(() => {
+  const PLUGIN_NAME = "Furamon_xxx";
+  const parameters = PluginManager.parameters(PLUGIN_NAME);
 
-    console.log(`[Furamon] ${PLUGIN_NAME} is loaded.`);
+  console.log(`[Furamon] ${PLUGIN_NAME} is loaded.`);
 })();

@@ -1240,7 +1240,7 @@ declare class Game_Actor extends Game_Battler {
 
   public hide(): void;
 
-  public isActor(): boolean;
+  public isActor(): this is Game_Actor;
   public friendsUnit(): Game_Unit;
   public opponentsUnit(): Game_Unit;
   public index(): number;
@@ -1347,7 +1347,7 @@ declare class Game_Enemy extends Game_Battler {
   public initMembers(): void;
   public setup(enemyId: number, x: number, y: number): void;
 
-  public isEnemy(): boolean;
+  public isEnemy(): this is Game_Enemy;
   public friendsUnit(): Game_Unit;
   public opponentsUnit(): Game_Unit;
   public index(): number;

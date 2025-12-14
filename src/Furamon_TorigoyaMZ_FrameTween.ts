@@ -182,196 +182,232 @@
  */
 
 (() => {
-    'use strict';
+  if (!Torigoya || !Torigoya.FrameTween) {
+    const error =
+      "「[鳥小屋.txt ベースプラグイン] Tweenアニメーション」が見つかりません。";
+    console.error(error);
+    alert(error);
+    return;
+  }
 
-    if (!Torigoya || !Torigoya.FrameTween) {
-        const error = '「[鳥小屋.txt ベースプラグイン] Tweenアニメーション」が見つかりません。';
-        console.error(error);
-        alert(error);
-        return;
-    }
+  const PLUGIN_NAME = "Furamon_TorigoyaMZ_FrameTween";
+  const params = PluginManager.parameters(PLUGIN_NAME);
 
+  const customTweenParams = JSON.parse(params.CustomTween || "[]") as string[];
+  const parsedCustomSettings = customTweenParams.map((json: string) => {
+    const obj = JSON.parse(json);
+    return {
+      windowClass: String(obj.WindowClass),
+      sceneClass: String(obj.SceneClass || ""),
+      openSetting: {
+        enable: obj.openEnable === "true",
+        moveX: obj.openMoveX || "0",
+        moveY: obj.openMoveY || "0",
+        alpha: Number(obj.openAlpha || 0),
+        easing:
+          Torigoya.FrameTween.Easing[obj.openEasing] ||
+          Torigoya.FrameTween.Easing.linear,
+        duration: Number(obj.openDuration || 15),
+        delay: Number(obj.openDelay || 0),
+      },
+      closeSetting: {
+        enable: obj.closeEnable === "true",
+        moveX: obj.closeMoveX || "0",
+        moveY: obj.closeMoveY || "0",
+        alpha: Number(obj.closeAlpha || 0),
+        easing:
+          Torigoya.FrameTween.Easing[obj.closeEasing] ||
+          Torigoya.FrameTween.Easing.linear,
+        duration: Number(obj.closeDuration || 15),
+        delay: Number(obj.closeDelay || 0),
+      },
+    };
+  });
 
-    const PLUGIN_NAME = 'Furamon_TorigoyaMZ_FrameTween';
-    const params = PluginManager.parameters(PLUGIN_NAME);
+  function findSettingForWindow(windowObject: WindowLike) {
+    if (!windowObject) return null;
+    const windowClassName = (windowObject.constructor as any).name;
+    const sceneClassName = ((SceneManager._scene?.constructor as any)?.name ?? "") as string;
 
-    const customTweenParams = JSON.parse(params.CustomTween || '[]') as string[];
-    const parsedCustomSettings = customTweenParams.map((json: string) => {
-        const obj = JSON.parse(json);
-        return {
-            windowClass: String(obj.WindowClass),
-            sceneClass: String(obj.SceneClass || ''),
-            openSetting: {
-                enable: obj.openEnable === 'true',
-                moveX: obj.openMoveX || '0',
-                moveY: obj.openMoveY || '0',
-                alpha: Number(obj.openAlpha || 0),
-                easing: Torigoya.FrameTween.Easing[obj.openEasing] || Torigoya.FrameTween.Easing.linear,
-                duration: Number(obj.openDuration || 15),
-                delay: Number(obj.openDelay || 0),
-            },
-            closeSetting: {
-                enable: obj.closeEnable === 'true',
-                moveX: obj.closeMoveX || '0',
-                moveY: obj.closeMoveY || '0',
-                alpha: Number(obj.closeAlpha || 0),
-                easing: Torigoya.FrameTween.Easing[obj.closeEasing] || Torigoya.FrameTween.Easing.linear,
-                duration: Number(obj.closeDuration || 15),
-                delay: Number(obj.closeDelay || 0),
-            },
-        };
+    const customSetting = parsedCustomSettings.find((s) => {
+      if (s.windowClass !== windowClassName) return false;
+      if (s.sceneClass && s.sceneClass !== sceneClassName) return false;
+      return true;
     });
 
-    function findSettingForWindow(windowObject: WindowLike){
-        if (!windowObject) return null;
-        const windowClassName = (windowObject.constructor as any).name;
-        const sceneClassName = (SceneManager._scene.constructor as any).name;
+    return customSetting
+      ? {
+          openSetting: customSetting.openSetting,
+          closeSetting: customSetting.closeSetting,
+        }
+      : null;
+  }
 
-        const customSetting = parsedCustomSettings.find(s => {
-            if (s.windowClass !== windowClassName) return false;
-            if (s.sceneClass && s.sceneClass !== sceneClassName) return false;
-            return true;
-        });
+  // -------------------------------------------------------------------------
+  // TweenManager
 
-        return customSetting ? { openSetting: customSetting.openSetting, closeSetting: customSetting.closeSetting } : null;
+  const TweenManager = {
+    applyOpen(windowObject: WindowLike, setting: TweenSetting | null): void {
+      if (!setting || !setting.enable || !windowObject) return;
+
+      const moveX = this.parseMoveValue(
+        setting.moveX,
+        windowObject,
+        windowObject.width,
+      );
+      const moveY = this.parseMoveValue(
+        setting.moveY,
+        windowObject,
+        windowObject.height,
+      );
+
+      const finishParams: { [key: string]: number } = {};
+
+      if (moveX !== 0) {
+        windowObject.x -= moveX;
+        finishParams.x = windowObject.x + moveX;
+      }
+      if (moveY !== 0) {
+        windowObject.y -= moveY;
+        finishParams.y = windowObject.y + moveY;
+      }
+      if (setting.alpha !== windowObject.opacity) {
+        finishParams.opacity = windowObject.opacity;
+        windowObject.opacity = setting.alpha;
+      }
+
+      if (Object.keys(finishParams).length === 0) return;
+
+      Torigoya.FrameTween.create(windowObject)
+        .wait(setting.delay)
+        .to(finishParams, setting.duration, setting.easing)
+        .start();
+    },
+
+    applyClose(
+      windowObject: WindowLike,
+      setting: TweenSetting | null,
+    ): TorigoyaTween | null {
+      if (!setting || !setting.enable || !windowObject) return null;
+
+      const moveX = this.parseMoveValue(
+        setting.moveX,
+        windowObject,
+        windowObject.width,
+      );
+      const moveY = this.parseMoveValue(
+        setting.moveY,
+        windowObject,
+        windowObject.height,
+      );
+
+      const finishParams: { [key: string]: number } = {};
+
+      if (moveX !== 0) {
+        finishParams.x = windowObject.x + moveX;
+      }
+      if (moveY !== 0) {
+        finishParams.y = windowObject.y + moveY;
+      }
+      if (setting.alpha !== windowObject.opacity) {
+        finishParams.opacity = setting.alpha;
+      }
+
+      if (Object.keys(finishParams).length === 0) return null;
+
+      return Torigoya.FrameTween.create(windowObject)
+        .wait(setting.delay)
+        .to(finishParams, setting.duration, setting.easing);
+    },
+
+    parseMoveValue(
+      value: string,
+      windowObject: WindowLike,
+      baseValue: number,
+    ): number {
+      if (!value) return 0;
+
+      if (value.includes("%")) {
+        const percentage = parseFloat(value) / 100;
+        return baseValue * percentage;
+      }
+
+      try {
+        const scope = {
+          window: windowObject,
+          w: windowObject,
+          width: windowObject.width,
+          height: windowObject.height,
+          Graphics: Graphics,
+          g: Graphics,
+          boxWidth: Graphics.boxWidth,
+          boxHeight: Graphics.boxHeight,
+        };
+        const func = new Function(...Object.keys(scope), `return (${value})`);
+        const result = func(...Object.values(scope));
+        if (typeof result === "number" && !isNaN(result)) {
+          return result;
+        }
+      } catch (e) {
+        // Not a valid expression, fall back to simple parsing.
+      }
+
+      return parseFloat(value);
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // 各シーンへの適用
+
+  const _Scene_Base_initialize = Scene_Base.prototype.initialize;
+  Scene_Base.prototype.initialize = function () {
+    _Scene_Base_initialize.call(this);
+    this._tweenableWindows = [];
+    this._isPoppingWithTween = false;
+  };
+
+  const _Scene_Base_addWindow = Scene_Base.prototype.addWindow;
+  Scene_Base.prototype.addWindow = function (windowObject) {
+    const settings = findSettingForWindow(windowObject as WindowLike);
+    if (settings) {
+      this._tweenableWindows.push({ window: windowObject, setting: settings });
+      TweenManager.applyOpen(windowObject as WindowLike, settings.openSetting);
     }
+    _Scene_Base_addWindow.call(this, windowObject);
+  };
 
-    // -------------------------------------------------------------------------
-    // TweenManager
+  const _Scene_Base_popScene = Scene_Base.prototype.popScene;
+  Scene_Base.prototype.popScene = function () {
+    if (this._isPoppingWithTween) return;
 
-    const TweenManager = {
-        applyOpen(windowObject: WindowLike, setting: TweenSetting | null): void {
-            if (!setting || !setting.enable || !windowObject) return;
+    if (this._tweenableWindows && this._tweenableWindows.length > 0) {
+      const tweens = this._tweenableWindows
+        .filter((w) => w && w.window)
+        .map((w) => TweenManager.applyClose(w.window, w.setting.closeSetting))
+        .filter((tween): tween is TorigoyaTween => !!tween);
 
-            const moveX = this.parseMoveValue(setting.moveX, windowObject, windowObject.width);
-            const moveY = this.parseMoveValue(setting.moveY, windowObject, windowObject.height);
-
-            const finishParams: { [key: string]: number } = {};
-
-            if (moveX !== 0) {
-                windowObject.x -= moveX;
-                finishParams.x = windowObject.x + moveX;
-            }
-            if (moveY !== 0) {
-                windowObject.y -= moveY;
-                finishParams.y = windowObject.y + moveY;
-            }
-            if (setting.alpha !== windowObject.opacity) {
-                finishParams.opacity = windowObject.opacity;
-                windowObject.opacity = setting.alpha;
-            }
-
-            if (Object.keys(finishParams).length === 0) return;
-
-            Torigoya.FrameTween.create(windowObject)
-                .wait(setting.delay)
-                .to(finishParams, setting.duration, setting.easing)
-                .start();
-        },
-
-        applyClose(windowObject: WindowLike, setting: TweenSetting | null): TorigoyaTween | null {
-            if (!setting || !setting.enable || !windowObject) return null;
-
-            const moveX = this.parseMoveValue(setting.moveX, windowObject, windowObject.width);
-            const moveY = this.parseMoveValue(setting.moveY, windowObject, windowObject.height);
-
-            const finishParams: { [key: string]: number } = {};
-
-            if (moveX !== 0) {
-                finishParams.x = windowObject.x + moveX;
-            }
-            if (moveY !== 0) {
-                finishParams.y = windowObject.y + moveY;
-            }
-            if (setting.alpha !== windowObject.opacity) {
-                finishParams.opacity = setting.alpha;
-            }
-
-            if (Object.keys(finishParams).length === 0) return null;
-
-            return Torigoya.FrameTween.create(windowObject)
-                .wait(setting.delay)
-                .to(finishParams, setting.duration, setting.easing);
-        },
-
-        parseMoveValue(value: string, windowObject: WindowLike, baseValue: number): number {
-            if (!value) return 0;
-
-            if (value.includes('%')) {
-                const percentage = parseFloat(value) / 100;
-                return baseValue * percentage;
-            }
-
-            try {
-                const scope = {
-                    window: windowObject,
-                    w: windowObject,
-                    width: windowObject.width,
-                    height: windowObject.height,
-                    Graphics: Graphics,
-                    g: Graphics,
-                    boxWidth: Graphics.boxWidth,
-                    boxHeight: Graphics.boxHeight,
-                };
-                const func = new Function(...Object.keys(scope), `return (${value})`);
-                const result = func(...Object.values(scope));
-                if (typeof result === 'number' && !isNaN(result)) {
-                    return result;
-                }
-            } catch (e) {
-                // Not a valid expression, fall back to simple parsing.
-            }
-
-            return parseFloat(value);
-        },
-    };
-
-    // -------------------------------------------------------------------------
-    // 各シーンへの適用
-
-    const _Scene_Base_initialize = Scene_Base.prototype.initialize;
-    Scene_Base.prototype.initialize = function () {
-        _Scene_Base_initialize.call(this);
-        this._tweenableWindows = [];
-        this._isPoppingWithTween = false;
-    };
-
-    const _Scene_Base_addWindow = Scene_Base.prototype.addWindow;
-    Scene_Base.prototype.addWindow = function (windowObject) {
-        const settings = findSettingForWindow(windowObject as WindowLike);
-        if (settings) {
-            this._tweenableWindows.push({ window: windowObject, setting: settings });
-            TweenManager.applyOpen(windowObject as WindowLike, settings.openSetting);
-        }
-        _Scene_Base_addWindow.call(this, windowObject);
-    };
-
-    const _Scene_Base_popScene = Scene_Base.prototype.popScene;
-    Scene_Base.prototype.popScene = function () {
-        if (this._isPoppingWithTween) return;
-
-        if (this._tweenableWindows && this._tweenableWindows.length > 0) {
-            const tweens = this._tweenableWindows
-                .filter(w => w && w.window)
-                .map(w => TweenManager.applyClose(w.window, w.setting.closeSetting))
-                .filter((tween): tween is TorigoyaTween => !!tween);
-
-            if (tweens.length > 0) {
-                this._isPoppingWithTween = true;
-                const lastTween = tweens.sort((a, b) => {
-                    const durationA = a.stacks.reduce((acc, s) => acc + (s.duration || 0) + (s.delay || 0), 0);
-                    const durationB = b.stacks.reduce((acc, s) => acc + (s.duration || 0) + (s.delay || 0), 0);
-                    return durationB - durationA;
-                })[0];
-                lastTween.call(() => _Scene_Base_popScene.call(this)).start();
-                tweens.forEach(tween => {
-                    if (tween !== lastTween) tween.start();
-                });
-            } else {
-                _Scene_Base_popScene.call(this);
-            }
-        } else {
-            _Scene_Base_popScene.call(this);
-        }
-    };
+      if (tweens.length > 0) {
+        this._isPoppingWithTween = true;
+        const lastTween = tweens.sort((a, b) => {
+          const durationA = a.stacks.reduce(
+            (acc, s) => acc + (s.duration || 0) + (s.delay || 0),
+            0,
+          );
+          const durationB = b.stacks.reduce(
+            (acc, s) => acc + (s.duration || 0) + (s.delay || 0),
+            0,
+          );
+          return durationB - durationA;
+        })[0];
+        lastTween.call(() => _Scene_Base_popScene.call(this)).start();
+        tweens.forEach((tween) => {
+          if (tween !== lastTween) tween.start();
+        });
+      } else {
+        _Scene_Base_popScene.call(this);
+      }
+    } else {
+      _Scene_Base_popScene.call(this);
+    }
+  };
 })();

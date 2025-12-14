@@ -35,127 +35,126 @@
  * @decimals 2
  */
 
-(function () {
-    const PLUGIN_NAME = 'Furamon_LRBattleCore';
-    const parameters = PluginManager.parameters(PLUGIN_NAME);
-    const prmInitialTP = parameters['initialTp'];
-    const prmNoChargeTpByDamage =
-        parameters['noChargeTpByDamage'] === 'true' ? true : false;
-    const prmExpRate = parseFloat(parameters['expRate']);
+(() => {
+  const PLUGIN_NAME = "Furamon_LRBattleCore";
+  const parameters = PluginManager.parameters(PLUGIN_NAME);
+  const prmInitialTP = parameters["initialTp"];
+  const prmNoChargeTpByDamage =
+    parameters["noChargeTpByDamage"] === "true" ? true : false;
+  const prmExpRate = parseFloat(parameters["expRate"]);
 
-    // 初期TP
-    const _Game_Battler_initTp = Game_Battler.prototype.initTp;
-    Game_Battler.prototype.initTp = function () {
-        const a = this;
-        if (prmInitialTP != undefined) {
-            this.setTp(eval(prmInitialTP));
-            return;
-        }
-        _Game_Battler_initTp.call(this);
-    };
-
-    // 被ダメージ時のTP回復
-    if (prmNoChargeTpByDamage) {
-        Game_Battler.prototype.chargeTpByDamage = function () {};
+  // 初期TP
+  const _Game_Battler_initTp = Game_Battler.prototype.initTp;
+  Game_Battler.prototype.initTp = function () {
+    if (prmInitialTP != undefined) {
+      this.setTp(eval(prmInitialTP));
+      return;
     }
+    _Game_Battler_initTp.call(this);
+  };
 
-    // <IgnoreExp>のついた特徴を持つアクターがいる場合は
-    // 戦闘勝利時の獲得経験値を0にする
-    // またメモ欄に<DoubleExp>のついた特徴を持つアクターがいる場合は
-    // 戦闘勝利時の獲得経験値を倍増
-    const _Game_Enemy_exp = Game_Enemy.prototype.exp;
-    Game_Enemy.prototype.exp = function () {
-        // パーティの特徴を持つオブジェクトのmetaデータを抽出
-        const party = $gameParty.allMembers();
-        let allTraitsMeta: MetaObject[] = []; // 初期化
+  // 被ダメージ時のTP回復
+  if (prmNoChargeTpByDamage) {
+    Game_Battler.prototype.chargeTpByDamage = () => {};
+  }
 
-        party.forEach((actor) => {
-            const objects: MetaObject[] = actor
-                .skills()
-                .map((skill) => ({
-                    meta: skill.meta,
-                }))
-                .concat(this.traitObjects().map((obj) => ({ meta: obj.meta })));
-            allTraitsMeta = allTraitsMeta.concat(objects);
-        });
+  // <IgnoreExp>のついた特徴を持つアクターがいる場合は
+  // 戦闘勝利時の獲得経験値を0にする
+  // またメモ欄に<DoubleExp>のついた特徴を持つアクターがいる場合は
+  // 戦闘勝利時の獲得経験値を倍増
+  const _Game_Enemy_exp = Game_Enemy.prototype.exp;
+  Game_Enemy.prototype.exp = function () {
+    // パーティの特徴を持つオブジェクトのmetaデータを抽出
+    const party = $gameParty.allMembers();
+    let allTraitsMeta: MetaObject[] = []; // 初期化
 
-        if (
-            allTraitsMeta.some(
-                (trait) => trait.meta && trait.meta.hasOwnProperty('IgnoreEXP')
-            )
-        ) {
-            return 0;
-        }
-        if (
-            allTraitsMeta.some(
-                (trait) => trait.meta && trait.meta.hasOwnProperty('DoubleEXP')
-            )
-        ) {
-            return Math.floor(_Game_Enemy_exp.call(this) * (prmExpRate || 1));
-        }
-        return _Game_Enemy_exp.call(this);
-    };
+    party.forEach((actor) => {
+      const objects: MetaObject[] = actor
+        .skills()
+        .map((skill) => ({
+          meta: skill.meta,
+        }))
+        .concat(this.traitObjects().map((obj) => ({ meta: obj.meta })));
+      allTraitsMeta = allTraitsMeta.concat(objects);
+    });
 
-    // アクターコマンドから逃げられるようにする
-    const _Scene_Battle_createActorCommandWindow =
-        Scene_Battle.prototype.createActorCommandWindow;
+    if (
+      allTraitsMeta.some(
+        (trait) => trait.meta && Object.hasOwn(trait.meta, "IgnoreEXP"),
+      )
+    ) {
+      return 0;
+    }
+    if (
+      allTraitsMeta.some(
+        (trait) => trait.meta && Object.hasOwn(trait.meta, "DoubleEXP"),
+      )
+    ) {
+      return Math.floor(_Game_Enemy_exp.call(this) * (prmExpRate || 1));
+    }
+    return _Game_Enemy_exp.call(this);
+  };
 
-    Scene_Battle.prototype.createActorCommandWindow = function () {
-        _Scene_Battle_createActorCommandWindow.call(this);
-        this._actorCommandWindow.setHandler(
-            'escape',
-            this.commandEscape.bind(this)
-        );
-    };
+  // アクターコマンドから逃げられるようにする
+  const _Scene_Battle_createActorCommandWindow =
+    Scene_Battle.prototype.createActorCommandWindow;
 
-    const _Window_ActorCommand_makeCommandList =
-        Window_ActorCommand.prototype.makeCommandList;
+  Scene_Battle.prototype.createActorCommandWindow = function () {
+    _Scene_Battle_createActorCommandWindow.call(this);
+    this._actorCommandWindow.setHandler(
+      "escape",
+      this.commandEscape.bind(this),
+    );
+  };
 
-    Window_ActorCommand.prototype.makeCommandList = function () {
-        _Window_ActorCommand_makeCommandList.call(this);
-        if (this._actor)
-            this._list.splice(5, 0, {
-                name: '逃げる',
-                symbol: 'escape',
+  const _Window_ActorCommand_makeCommandList =
+    Window_ActorCommand.prototype.makeCommandList;
 
-                enabled: BattleManager.canEscape(),
-                ext: null,
-            });
-    };
+  Window_ActorCommand.prototype.makeCommandList = function () {
+    _Window_ActorCommand_makeCommandList.call(this);
+    if (this._actor)
+      this._list.splice(5, 0, {
+        name: "逃げる",
+        symbol: "escape",
 
-    // ダミーターゲット処理。スキル効果を全て無効化する
-    const _Game_Action_apply = Game_Action.prototype.apply;
-    Game_Action.prototype.apply = function (target: Game_Battler) {
-        if (target.isDummyEnemy()) {
-            const result = target.result();
-            this.subject().clearResult();
-            result.clear();
-            if (result._isHitConfirm === false) {
-                result._isHitConfirm = true;
-            }
-            return;
-        }
-        _Game_Action_apply.call(this, target);
-    };
+        enabled: BattleManager.canEscape(),
+        ext: null,
+      });
+  };
 
-    Game_BattlerBase.prototype.isDummyEnemy = function () {
-        return this.traitObjects().some((object) => object.meta.DummyEnemy);
-    };
+  // ダミーターゲット処理。スキル効果を全て無効化する
+  const _Game_Action_apply = Game_Action.prototype.apply;
+  Game_Action.prototype.apply = function (target: Game_Battler) {
+    if (target.isDummyEnemy()) {
+      const result = target.result();
+      this.subject().clearResult();
+      result.clear();
+      if (result._isHitConfirm === false) {
+        result._isHitConfirm = true;
+      }
+      return;
+    }
+    _Game_Action_apply.call(this, target);
+  };
 
-    // 対象選択中はコマンド・スキルウィンドウを閉じる
-    const _Scene_Battle_startEnemySelection =
-        Scene_Battle.prototype.startEnemySelection;
-    Scene_Battle.prototype.startEnemySelection = function () {
-        this._actorCommandWindow.hide();
-        this._skillWindow.hide();
-        _Scene_Battle_startEnemySelection.apply(this);
-    };
+  Game_BattlerBase.prototype.isDummyEnemy = function () {
+    return this.traitObjects().some((object) => object.meta.DummyEnemy);
+  };
 
-    const _Scene_Battle_onEnemyCancel = Scene_Battle.prototype.onEnemyCancel;
-    Scene_Battle.prototype.onEnemyCancel = function () {
-        if (this._actorCommandWindow.currentSymbol() === 'attack') {
-            this._actorCommandWindow.show();
-        }
-        _Scene_Battle_onEnemyCancel.apply(this);
-    };
+  // 対象選択中はコマンド・スキルウィンドウを閉じる
+  const _Scene_Battle_startEnemySelection =
+    Scene_Battle.prototype.startEnemySelection;
+  Scene_Battle.prototype.startEnemySelection = function () {
+    this._actorCommandWindow.hide();
+    this._skillWindow.hide();
+    _Scene_Battle_startEnemySelection.apply(this);
+  };
+
+  const _Scene_Battle_onEnemyCancel = Scene_Battle.prototype.onEnemyCancel;
+  Scene_Battle.prototype.onEnemyCancel = function () {
+    if (this._actorCommandWindow.currentSymbol() === "attack") {
+      this._actorCommandWindow.show();
+    }
+    _Scene_Battle_onEnemyCancel.apply(this);
+  };
 })();

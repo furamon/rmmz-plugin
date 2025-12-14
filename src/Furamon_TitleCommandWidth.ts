@@ -9,10 +9,7 @@
  */
 
 (() => {
-    'use strict';
-    var parameters = PluginManager.parameters('Furamon_TitleCommandWidth');
-    var param_CommandWidth = Number(parameters['CommandWidth'] || 240);
-    Scene_Title.prototype.mainCommandWidth = function () {
-        return param_CommandWidth;
-    };
+  var parameters = PluginManager.parameters("Furamon_TitleCommandWidth");
+  var param_CommandWidth = Number(parameters["CommandWidth"] || 240);
+  Scene_Title.prototype.mainCommandWidth = () => param_CommandWidth;
 })();

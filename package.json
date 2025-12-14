@@ -4,12 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -p tsconfig.json --outDir _dist && tsc -p tsconfig.json --outDir ../src/js/plugins/Furamon",
+    "format": "biome check --write .",
+    "check": "biome check ."
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.8",
+    "@tsconfig/bun": "^1.0.10",
+    "@tsconfig/strictest": "^2.0.8"
   }
 }
