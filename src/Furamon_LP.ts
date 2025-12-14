@@ -166,14 +166,14 @@
 (() => {
   const PLUGIN_NAME = "Furamon_LP";
   const parameters = PluginManager.parameters(PLUGIN_NAME);
-  const prmMaxLP = parameters["MaxLP"];
-  const prmLPBreakMessage = parameters["LPBreakMessage"];
-  const prmLPGainMessage = parameters["LPGainMessage"];
-  const prmBattleEndRecover = parameters["BattleEndRecover"] === "true";
-  const prmLPZeroStateId = Number(parameters["LPZeroStateId"] || 0);
+  const prmMaxLP = parameters.MaxLP;
+  const prmLPBreakMessage = parameters.LPBreakMessage;
+  const prmLPGainMessage = parameters.LPGainMessage;
+  const prmBattleEndRecover = parameters.BattleEndRecover === "true";
+  const prmLPZeroStateId = Number(parameters.LPZeroStateId || 0);
   const prmPreferVictoryOnDeadIfLP =
-    parameters["PreferVictoryOnDeadIfLP"] === "true";
-  const prmForceCollapseOnWipe = parameters["ForceCollapseOnWipe"] === "true";
+    parameters.PreferVictoryOnDeadIfLP === "true";
+  const prmForceCollapseOnWipe = parameters.ForceCollapseOnWipe === "true";
   // プラグインコマンド
   PluginManager.registerCommand(
     PLUGIN_NAME,
@@ -271,11 +271,11 @@
     let bonusLP = 0;
 
     for (const obj of objects) {
-      if (obj.meta["LP_Bonus"]) {
-        bonusLP += Number(obj.meta["LP_Bonus"]);
+      if (obj.meta.LP_Bonus) {
+        bonusLP += Number(obj.meta.LP_Bonus);
       }
     }
-    if (bonusLP != 0) {
+    if (bonusLP !== 0) {
       this.mlp = Math.max(Math.floor(eval(prmMaxLP)) + bonusLP, 0);
     } else {
       this.mlp = Math.floor(eval(prmMaxLP));
@@ -342,7 +342,7 @@
   // LP回復アイテムの使用判定もここで行う
   const Game_Action_testApply = Game_Action.prototype.testApply;
   Game_Action.prototype.testApply = function (target: Game_Battler) {
-    const lpRecover = Number(this.item()?.meta["LP_Recover"]);
+    const lpRecover = Number(this.item()?.meta.LP_Recover);
     if (
       target.isActor() &&
       target.lp > 0 &&
@@ -393,7 +393,7 @@
         }
       }
       // <LP_Recover>指定があるなら増減
-      const lpRecover = String(this.item()?.meta["LP_Recover"] || null);
+      const lpRecover = String(this.item()?.meta.LP_Recover || null);
       if (lpRecover != null) {
         const recoverValue = Math.floor(eval(lpRecover));
         gainLP(target, recoverValue);
@@ -409,7 +409,7 @@
   Game_Actor.prototype.addNewState = function (stateId: number) {
     _Game_Actor_addNewState.call(this, stateId);
     const state = $dataStates[stateId];
-    const lpGain = state.meta["LP_Gain"];
+    const lpGain = state.meta.LP_Gain;
     if (lpGain) {
       gainLP(this, Number(lpGain));
     }
@@ -426,7 +426,7 @@
       const _parameters = PluginManager.parameters(
         "NRP_DynamicReturningAction",
       );
-      if (_parameters["WaitRegeneration"] === "true" || true) {
+      if (_parameters.WaitRegeneration === "true" || true) {
         this._regeneDeath = true;
       }
     }
@@ -439,7 +439,7 @@
   Game_Actor.prototype.canPaySkillCost = function (skill: MZ.Skill) {
     // アクターのみ対象
     if (this.isActor()) {
-      const LPCost = Number(skill.meta["LP_Cost"]);
+      const LPCost = Number(skill.meta.LP_Cost);
       if (LPCost) {
         return (
           _Game_Actor_canPaySkillCost.call(this, skill) && this.lp > LPCost
@@ -456,7 +456,7 @@
 
     // アクターのみ対象
     if (this.isActor()) {
-      const LPCost = Number(skill.meta["LP_Cost"]);
+      const LPCost = Number(skill.meta.LP_Cost);
       if (LPCost) {
         gainLP(this, -LPCost);
       }
@@ -537,7 +537,7 @@
   Sprite_Battler.prototype.createDamageSprite = function () {
     _Sprite_Battler_createDamageSprite.call(this);
     const battler = this._battler;
-    if (battler?._result.lpDamage != 0 && battler?.isActor()) {
+    if (battler?._result.lpDamage !== 0 && battler?.isActor()) {
       // 負の再生ダメージで死んだ、かつ
       // NRP_DynamicReturningAction.jsの再生待ちがONの場合の処理。
       // 苦肉の策として処理を移植。
@@ -605,7 +605,7 @@
     _Game_Party_performVictory.call(this);
     if (!prmPreferVictoryOnDeadIfLP) return;
     this.members()
-      .filter((m): m is Game_Actor => m && m.isActor())
+      .filter((m): m is Game_Actor => m?.isActor())
       .forEach((actor) => {
         if (actor.isDead() && (actor as any).lp > 0) {
           if ((actor as any).requestMotion) {
@@ -623,7 +623,7 @@
     if (prmForceCollapseOnWipe) {
       $gameParty
         .members()
-        .filter((m): m is Game_Actor => m && m.isActor())
+        .filter((m): m is Game_Actor => m?.isActor())
         .forEach((actor) => {
           if ((actor as any).requestMotion) {
             (actor as any).requestMotion("dead");

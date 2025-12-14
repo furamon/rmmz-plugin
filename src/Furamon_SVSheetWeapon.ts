@@ -44,7 +44,7 @@
  */
 
 (() => {
-  const PLUGIN_NAME = "Furamon_SVSheetWeapon";
+  const _PLUGIN_NAME = "Furamon_SVSheetWeapon";
   const hasBattleMotion = PluginManager._scripts.includes("BattleMotionMZ");
 
   //-----------------------------------------------------------------------------
@@ -108,8 +108,9 @@
         const weapons = actor.weapons();
         const weapon = weapons[0];
         // デフォルトの武器画像名
-        let weaponName =
-          weapon && weapon.meta.SVWeapon ? String(weapon.meta.SVWeapon) : "";
+        let weaponName = weapon?.meta.SVWeapon
+          ? String(weapon.meta.SVWeapon)
+          : "";
 
         // アクターIDとモーションに応じた武器画像の上書き処理
         if (weapon) {
@@ -152,7 +153,7 @@
               if (offsetData.length === 2) {
                 const ox = parseInt(offsetData[0].trim(), 10);
                 const oy = parseInt(offsetData[1].trim(), 10);
-                if (!isNaN(ox) && !isNaN(oy)) {
+                if (!Number.isNaN(ox) && !Number.isNaN(oy)) {
                   this._offsetX = ox;
                   this._offsetY = oy;
                 }
@@ -168,7 +169,7 @@
     updateFrame() {
       if (!this._battler || !this._battler._motion) return;
       const bitmap = this.bitmap;
-      if (bitmap && bitmap.isReady()) {
+      if (bitmap?.isReady()) {
         if (hasBattleMotion) {
           this.updateFrameBmmz(bitmap);
         } else {
@@ -230,7 +231,7 @@
   };
 
   Sprite_Actor.prototype.setupWeaponAnimation = function () {
-    if (this._actor && this._actor.isWeaponAnimationRequested()) {
+    if (this._actor?.isWeaponAnimationRequested()) {
       this._actor.clearWeaponAnimation();
     }
   };

@@ -38,15 +38,14 @@
 (() => {
   const PLUGIN_NAME = "Furamon_LRBattleCore";
   const parameters = PluginManager.parameters(PLUGIN_NAME);
-  const prmInitialTP = parameters["initialTp"];
-  const prmNoChargeTpByDamage =
-    parameters["noChargeTpByDamage"] === "true" ? true : false;
-  const prmExpRate = parseFloat(parameters["expRate"]);
+  const prmInitialTP = parameters.initialTp;
+  const prmNoChargeTpByDamage = parameters.noChargeTpByDamage === "true";
+  const prmExpRate = parseFloat(parameters.expRate);
 
   // 初期TP
   const _Game_Battler_initTp = Game_Battler.prototype.initTp;
   Game_Battler.prototype.initTp = function () {
-    if (prmInitialTP != undefined) {
+    if (prmInitialTP !== undefined) {
       this.setTp(eval(prmInitialTP));
       return;
     }

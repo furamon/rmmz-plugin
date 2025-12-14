@@ -106,12 +106,12 @@
  */
 (() => {
   const PLUGIN_NAME = "Furamon_VariableWindow";
-  const parameters = PluginManager.parameters(PLUGIN_NAME);
+  const _parameters = PluginManager.parameters(PLUGIN_NAME);
 
   // NRP_MessageSpeed連携
   const nrpParams = PluginManager.parameters("NRP_MessageSpeed");
-  const nrpDefaultSpeed = Number(nrpParams["DefaultSpeed"] || 100);
-  const nrpSpeedVariable = Number(nrpParams["SpeedVariable"] || 0);
+  const nrpDefaultSpeed = Number(nrpParams.DefaultSpeed || 100);
+  const nrpSpeedVariable = Number(nrpParams.SpeedVariable || 0);
 
   type Game_Interpreter_TemporaryText = Game_Interpreter & {
     _temporaryWindow?: Window_TemporaryText | null;

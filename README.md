@@ -6,16 +6,16 @@
 すべてMIT Licenseです。Furamonの名前をREADMEなどに書きさえすればあとは好きにしていいのよ。  
 自作と言えるものはニッチなものばかりであとはちょこちょことしたものや既存のものの改造がほとんど。それでも役に立てば嬉しいです。
 
-| 名前                        | ファイル名                                                                                                       | 説明                                                                                                                                             |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ライフポイント              | [Furamon_LP](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_LP.js)                               | 戦闘不能に関わるライフポイントを実装します。<br>いわゆる残機システム。SaGa シリーズのあれ。                                                      |
-| 能力特徴底上げ式            | [Furamon_TraitRaiseBottom](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_TraitRaiseBottom.js)   | 能力値乗算特徴が複数ついているときに一番高いものだけを反映させます。<br> 要するにFFVの「弓矢装備」「格闘」みたいなアレの補正特徴の再現をします。                                                                           |
-| ステート付加率操作            | [Furamon_StateRateLuck](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_StateRateLuck.js)   | ステート付与式に計算式を加えます。<br>「基本計算式+運の差」みたいなステート付与式が作れます。                                                                           |
-| 壁越えジャンプ              | [Furamon_SmartJump](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_SmartJump.js)                 | 障害物を飛び越せるジャンプができるようになります。                                                                                               |
+| 名前                    | ファイル名                                                                                                               | 説明                                                                                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ライフポイント          | [Furamon_LP](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_LP.js)                                       | 戦闘不能に関わるライフポイントを実装します。<br>いわゆる残機システム。SaGa シリーズのあれ。                                                                       |
+| 能力特徴底上げ式        | [Furamon_TraitRaiseBottom](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_TraitRaiseBottom.js)           | 能力値乗算特徴が複数ついているときに一番高いものだけを反映させます。<br> 要するにFFVの「弓矢装備」「格闘」みたいなアレの補正特徴の再現をします。                  |
+| ステート付加率操作      | [Furamon_StateRateLuck](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_StateRateLuck.js)                 | ステート付与式に計算式を加えます。<br>「基本計算式+運の差」みたいなステート付与式が作れます。                                                                     |
+| 壁越えジャンプ          | [Furamon_SmartJump](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_SmartJump.js)                         | 障害物を飛び越せるジャンプができるようになります。                                                                                                                |
 | Torigoya_FrameTween補助 | [Furamon_TorigoyaMZ_FrameTween](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_TorigoyaMZ_FrameTween.js) | [Torigoya_FrameTween](https://torigoya-plugin.rutan.dev/base/tween)（Ruたん様）のラッパープラグインです。<br>パラメータ指定でウィンドウをぐいんぐいん動かせます。 |
-| 汎用ウィンドウ | [Furamon_VariableWindow](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_VariableWindow.js) | プラグインコマンドで指定したテキストを指定時間表示します。 |
-| メニュー高さ調整            | [Furamon_MenuHeight](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_MenuHeight.js)               | メニュー画面の各項目の高さをフォントサイズに合わせて変えられるようにします。                                                                     |
-| ダッシュボタン無効化        | [Furamon_DashButtonDisable](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_DashButtonDisable.js) | ダッシュボタンを押したときに何も起きなくし、常時ダッシュを固定化します。|
+| 汎用ウィンドウ          | [Furamon_VariableWindow](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_VariableWindow.js)               | プラグインコマンドで指定したテキストを指定時間表示します。                                                                                                        |
+| メニュー高さ調整        | [Furamon_MenuHeight](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_MenuHeight.js)                       | メニュー画面の各項目の高さをフォントサイズに合わせて変えられるようにします。                                                                                      |
+| ダッシュボタン無効化    | [Furamon_DashButtonDisable](https://github.com/furamon/rmmz_plugin/blob/main/_dist/Furamon_DashButtonDisable.js)         | ダッシュボタンを押したときに何も起きなくし、常時ダッシュを固定化します。                                                                                          |
 
 ## Thanks!
 

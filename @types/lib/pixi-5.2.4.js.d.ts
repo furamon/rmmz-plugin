@@ -9054,7 +9054,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -10250,7 +10250,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -13439,7 +13439,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -14472,7 +14472,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -15231,7 +15231,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -15992,7 +15992,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -16754,7 +16754,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -17567,7 +17567,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -19066,7 +19066,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -19955,7 +19955,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -20756,7 +20756,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -21689,7 +21689,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *
@@ -22928,7 +22928,7 @@ declare namespace PIXI {
          *
          * @member {?PIXI.Filter[]} PIXI.DisplayObject#filters
          */
-        filters: PIXI.Filter[];
+        filters: PIXI.Filter[]|null;
         /**
          * The bounds object, this is used to calculate and store the bounds of the displayObject.
          *

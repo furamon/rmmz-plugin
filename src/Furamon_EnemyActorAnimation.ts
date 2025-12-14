@@ -76,15 +76,14 @@
 (() => {
   const pluginName = "Furamon_EnemyActorAnimation";
   const parameters = PluginManager.parameters(pluginName);
-  const prmAutoMirror = parameters["autoMirror"] === "true";
+  const prmAutoMirror = parameters.autoMirror === "true";
 
   const hasBattleMotion = PluginManager._scripts.includes("BattleMotionMZ");
   const prmBattleMotion =
     PluginManager._scripts.includes("BattleMotionMZ") &&
     PluginManager.parameters("BattleMotionMZ");
-  const prmMotionCol =
-    prmBattleMotion && prmBattleMotion["motionCol"] === "true";
-  const prmBlueFps = prmBattleMotion && prmBattleMotion["blueFps"] === "true";
+  const prmMotionCol = prmBattleMotion && prmBattleMotion.motionCol === "true";
+  const prmBlueFps = prmBattleMotion && prmBattleMotion.blueFps === "true";
 
   // NUUN_ButlerHPGaugeのパラメータを取得
   let nuunHpGaugeParams: {
@@ -94,7 +93,7 @@
   } = {};
   try {
     nuunHpGaugeParams = PluginManager.parameters("NUUN_ButlerHPGauge") || {};
-  } catch (e) {
+  } catch (_e) {
     console.log("NUUN_ButlerHPGauge parameters not found");
   }
 
@@ -123,7 +122,7 @@
       return undefined;
     }
     const meta = enemy.meta;
-    const value = meta["SVActor"] || meta["SVアクター"];
+    const value = meta.SVActor || meta.SVアクター;
     if (typeof value === "string" && value.length > 0) {
       return value.split(",").map((s) => s.trim());
     }
@@ -135,10 +134,10 @@
       return 0; // 0 means no wrapping, i.e. infinite columns
     }
     const meta = enemy.meta;
-    const value = meta["SVActorCols"] || meta["SVアクター列数"];
+    const value = meta.SVActorCols || meta.SVアクター列数;
     if (value) {
       const cols = parseInt(String(value), 10);
-      return isNaN(cols) ? 0 : cols;
+      return Number.isNaN(cols) ? 0 : cols;
     }
     return 0;
   }
@@ -445,7 +444,7 @@
     }
 
     // SVアクタースプライトも削除
-    if (this._svActorSprite && this._svActorSprite.parent) {
+    if (this._svActorSprite?.parent) {
       this._svActorSprite.parent.removeChild(this._svActorSprite);
       this._svActorSprite.destroy();
       this._svActorSprite = null;
@@ -468,7 +467,7 @@
       const svSprite = this._svActorSprite;
       const mainSprite = svSprite._mainSprite;
 
-      if (mainSprite && mainSprite.bitmap && mainSprite.bitmap.isReady()) {
+      if (mainSprite?.bitmap?.isReady()) {
         const frameHeight = mainSprite.height / 6;
         return {
           x: svSprite.x,
@@ -519,7 +518,7 @@
 
     // 標準のSVアクターモーション定義
     const standardMotions = getStandardMotions();
-    return standardMotions[motionType] || standardMotions["walk"];
+    return standardMotions[motionType] || standardMotions.walk;
   };
 
   Object.defineProperty(Sprite_Enemy.prototype, "_motionCount", {
@@ -615,11 +614,7 @@
     _collapseStartY: number | null;
 
     isReady() {
-      return (
-        this._mainSprite &&
-        this._mainSprite.bitmap &&
-        this._mainSprite.bitmap.isReady()
-      );
+      return this._mainSprite?.bitmap?.isReady();
     }
 
     getCols() {
@@ -776,7 +771,7 @@
 
     startMotion(motion: string) {
       const standardMotions = getStandardMotions();
-      const standardMotion = standardMotions[motion] || standardMotions["walk"];
+      const standardMotion = standardMotions[motion] || standardMotions.walk;
 
       this._motion = {
         index: standardMotion.index,
@@ -785,7 +780,7 @@
       this._motionCount = 0;
       this._pattern = 0;
 
-      if (this._motion && this._motion.loop) {
+      if (this._motion?.loop) {
         this._patternDirection = 1;
       }
     }
@@ -980,7 +975,7 @@
             this._pattern = 0;
           }
         } else {
-          if (this._motion && this._motion.loop) {
+          if (this._motion?.loop) {
             if (frameCount > 0) {
               this._pattern = (this._pattern + 1) % frameCount;
             } else {
@@ -1041,7 +1036,7 @@
         const canvas = bitmap.canvas || (bitmap as any)._canvas;
         if (!canvas) return false;
         const context = canvas.getContext("2d");
-        const imageData = context!.getImageData(checkX, checkY, 1, 1);
+        const imageData = context?.getImageData(checkX, checkY, 1, 1);
         const [r, g, b, a] = imageData.data;
         return a > 128 && !(r === 0 && g === 0 && b === 0);
       } catch (e) {
@@ -1057,8 +1052,8 @@
         const context = canvas.getContext("2d");
         const sampleX = x + 1;
         const sampleY = y + 1;
-        const imageData = context!.getImageData(sampleX, sampleY, 1, 1);
-        const [r, g, b, a] = imageData.data;
+        const imageData = context?.getImageData(sampleX, sampleY, 1, 1);
+        const [r, g, _b, a] = imageData.data;
         if (a > 128) {
           if (r === 255 && g === 255) return { animType: "pingpong" };
           if (r === 255) return { animType: "freeze" };
@@ -1111,7 +1106,7 @@
         const canvas = bitmap.canvas || (bitmap as any)._canvas;
         if (!canvas) return 0;
         const context = canvas.getContext("2d");
-        const imageData = context!.getImageData(x + 1, y + 1, 1, 1);
+        const imageData = context?.getImageData(x + 1, y + 1, 1, 1);
         const [, , b, a] = imageData.data;
         return a > 128 ? b : 0;
       } catch (e) {
@@ -1279,8 +1274,8 @@
         const states = this._battler.states();
         for (let i = 0; i < states.length; i++) {
           const state = states[i];
-          if (state && state.meta) {
-            const enemyMotion = state.meta["EnemyMotion"];
+          if (state?.meta) {
+            const enemyMotion = state.meta.EnemyMotion;
             if (
               typeof enemyMotion === "string" &&
               enemyMotion.trim().length > 0
@@ -1305,10 +1300,8 @@
 
     getMotionIndex(motionType: string): number {
       const motions: Record<string, { index: number }> =
-        (typeof (window as any).Sprite_Battler !== "undefined" &&
-          (window as any).Sprite_Battler.MOTIONS) ||
-        (typeof (window as any).Sprite_Actor !== "undefined" &&
-          (window as any).Sprite_Actor.MOTIONS) ||
+        (window as any).Sprite_Battler?.MOTIONS ||
+        (window as any).Sprite_Actor?.MOTIONS ||
         {};
 
       return motions[motionType]?.index ?? 0;
@@ -1342,7 +1335,7 @@
         const svSprite = this._svActorSprite;
         const mainSprite = svSprite._mainSprite;
 
-        if (mainSprite && mainSprite.bitmap && mainSprite.bitmap.isReady()) {
+        if (mainSprite?.bitmap?.isReady()) {
           // SVアクタースプライトの1フレーム分の高さを返す
           const frameHeight = mainSprite.bitmap.height / 6;
           return Math.floor(frameHeight * 0.9);

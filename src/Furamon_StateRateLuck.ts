@@ -79,19 +79,19 @@
 
   const PLUGIN_NAME = "Furamon_StateRateLuck";
   const parameters = PluginManager.parameters(PLUGIN_NAME);
-  const prmEvalStateRate = parameters["EvalStateRate"] || "stateRate";
-  const prmEvalStateRateMethod = parameters["EvalStateRateMethod"] || "add";
-  const prmResistState = parseInt(parameters["ResistState"], 10);
-  const prmFailureState = parseInt(parameters["FailureState"], 10);
-  const prmStateResistToFailure = parameters["StateResistToFailure"] === "true";
+  const prmEvalStateRate = parameters.EvalStateRate || "stateRate";
+  const prmEvalStateRateMethod = parameters.EvalStateRateMethod || "add";
+  const prmResistState = parseInt(parameters.ResistState, 10);
+  const prmFailureState = parseInt(parameters.FailureState, 10);
+  const prmStateResistToFailure = parameters.StateResistToFailure === "true";
 
   // 計算式評価用のヘルパー関数
   function evaluateStateRate(
     subject: Game_Battler,
     target: Game_Battler,
   ): number {
-    const a = subject; // 行動者
-    const b = target; // 対象
+    const _a = subject; // 行動者
+    const _b = target; // 対象
     try {
       return eval(prmEvalStateRate) / 100;
     } catch (e) {
@@ -102,7 +102,7 @@
 
   // デフォの運の影響廃止
   // そもそもlukEffectRateがある場所を潰したが他プラグインのことも考えて念の為
-  Game_Action.prototype.lukEffectRate = (target: Game_Battler) => 1;
+  Game_Action.prototype.lukEffectRate = (_target: Game_Battler) => 1;
 
   Game_Action.prototype.itemEffectAddAttackState = function (target, effect) {
     // NRP_CalcResultFirst の事前計算中かどうかの推測

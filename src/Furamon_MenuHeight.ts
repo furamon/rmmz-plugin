@@ -39,6 +39,6 @@
     $gameSystem.mainFontSize() + 10 + parseFloat(params.commandSpacing);
 
   Scene_MenuBase.prototype.helpAreaHeight = function () {
-    return this.calcWindowHeight(parseInt(params.helpAreaRow), false);
+    return this.calcWindowHeight(parseInt(params.helpAreaRow, 10), false);
   };
 })();

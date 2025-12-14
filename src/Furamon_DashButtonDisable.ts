@@ -30,7 +30,7 @@
 (() => {
   const pluginName = "Furamon_DashButtonDisable";
   const parameters = PluginManager.parameters(pluginName);
-  const alwaysDash = parameters["alwaysDash"] === "true";
+  const alwaysDash = parameters.alwaysDash === "true";
 
   // Game_Player のダッシュ機能を制御
   Game_Player.prototype.isDashButtonPressed = () => alwaysDash;

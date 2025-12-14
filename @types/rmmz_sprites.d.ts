@@ -283,7 +283,7 @@ declare class Sprite_Animation extends Sprite {
   public _animation: MZ.Animation | null;
   public _mirror: boolean;
   public _delay: number;
-  public _previous: Sprite_Animation | Sprite_AnimationMV;
+  public _previous: Sprite_Animation | Sprite_AnimationMV | undefined | null;
   public _effect: EffekseerEffect | null;
   public _handle: EffekseerHandle | null;
   public _playing: boolean;
@@ -295,7 +295,7 @@ declare class Sprite_Animation extends Sprite {
   public _viewportSize: number;
   public _originalViewport: Int32Array | null;
 
-  public targetObjects: Game_Character[]|Game_Battler[];
+  public targetObjects: Game_Character[]|Game_BattlerBase[];
 
   public z: number;
 
@@ -307,7 +307,7 @@ declare class Sprite_Animation extends Sprite {
     animation: MZ.Animation | null,
     mirror: boolean,
     delay: number,
-    previous: Sprite_Animation | Sprite_AnimationMV | null
+    previous: Sprite_Animation | Sprite_AnimationMV | null | undefined
   ): void;
 
   public update(): void;
@@ -361,7 +361,7 @@ declare class Sprite_AnimationMV extends Sprite {
   public _cellSprites: Sprite[];
   public _screenFlashSprite: ScreenSprite;
   
-  public targetObjects: Game_Character[]|Game_Battler[];
+  public targetObjects: Game_Character[]|Game_BattlerBase[];
   public z: number;
 
   public initialize(...args: any[]): void;
@@ -721,6 +721,8 @@ declare class Spriteset_Base extends Sprite {
   public _effectsContainer: Tilemap|Sprite;
 
   public initialize(...args: any[]): void;
+  public destroy(options?: any[]): void;
+  public loadSystemImages(): void;
 
   public createLowerLayer(): void;
   public createUpperLayer(): void;
@@ -728,36 +730,33 @@ declare class Spriteset_Base extends Sprite {
   public update(): void;
 
   public createBaseSprite(): void;
-  public createToneChanger(): void;
-  public createWebGLToneChanger(): void;
-  public createCanvasToneChanger(): void;
+  public createBaseFilters(): void;
   public createPictures(): void;
+  public pictureContainerRect(): Rectangle;
   public createTimer(): void;
-  public createScreenSprites(): void;
+  public createOverallFilters(): void;
 
-  public updateScreenSprites(): void;
-  public updateToneChanger(): void;
-  public updateWebGLToneChanger(): void;
-  public updateCanvasToneChanger(): void;
+  public updateBaseFilters(): void;
+  public updateOverallFilters(): void;
   public updatePosition(): void;
 
-  public findTargetSprite(target: Game_Character|Game_Battler): Sprite_Character|Sprite_Battler;
+  public findTargetSprite(target: Game_Character|Game_BattlerBase): Sprite_Character|Sprite_Battler;
   public updateAnimations(): void;
   public processAnimationRequests(): void;
   public createAnimation(request: Game_Temp.AnimationRequest): void;
   public createAnimationSprite(
-    targets: Game_Character[]|Game_Battler[],
+    targets: Game_Character[]|Game_BattlerBase[],
     animation: MZ.Animation|MZ.AnimationMV,
     mirror: boolean,
     delay: number
   ): void;
   public isMVAnimation(animation: MZ.Animation|MZ.AnimationMV): animation is MZ.AnimationMV;
-  public makeTargetSprites(targets: Game_Character[]|Game_Battler[]): Sprite_Character[]|Sprite_Battler[];
+  public makeTargetSprites(targets: Game_Character[]|Game_BattlerBase[]): Sprite_Character[]|Sprite_Battler[];
   public lastAnimationSprite(): Sprite_Animation|Sprite_AnimationMV|undefined;
   public isAnimationForEach(animation: MZ.Animation|MZ.AnimationMV): boolean;
   public animationBaseDelay(): number;
   public animationNextDelay(): number;
-  public animationShouldMirror(target: Game_BattlerBase|null): boolean;
+  public animationShouldMirror(target: Game_Characer|Game_BattlerBase|null): boolean;
   public removeAnimation(sprite: Sprite_Animation|Sprite_AnimationMV): void;
   public removeAllAnimations(): void;
   public isAnimationPlaying(): boolean;
@@ -825,6 +824,7 @@ declare class Spriteset_Battle extends Spriteset_Base {
   public update(): void;
 
   public createBattleField(): void;
+  public battleFieldOffsetY(): number;
   public createBattleback(): void;
 
   public updateBattleback(): void;

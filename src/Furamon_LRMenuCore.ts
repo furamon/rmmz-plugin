@@ -107,7 +107,7 @@ const COMMAND_HELP_DATA = [
       this.drawText("クイックセーブ", x, y, 240);
     } else {
       const fileNo = savefileId - 1;
-      this.drawText(TextManager.file + " " + fileNo, x, y, 180);
+      this.drawText(`${TextManager.file} ${fileNo}`, x, y, 180);
     }
   };
 
@@ -147,11 +147,11 @@ const COMMAND_HELP_DATA = [
     // (constructor.name を使う方法。コード圧縮に注意)
     if (this.constructor.name === "Scene_AdditionalCC") {
       // _statusWindow, _slotWindowを無理やり画面外に
-      if (this._statusWindow && this._statusWindow.visible) {
+      if (this._statusWindow?.visible) {
         const statusWindowX = 9999; // 画面外
         this._statusWindow.x = statusWindowX;
       }
-      if (this._slotWindow && this._slotWindow.visible) {
+      if (this._slotWindow?.visible) {
         const slotWindowX = 9999; // 画面外
         this._slotWindow.x = slotWindowX;
       }
@@ -253,7 +253,7 @@ const COMMAND_HELP_DATA = [
     // インデックスが変わったらヘルプを更新
     if (this.index() !== lastIndex) {
       const scene = SceneManager._scene as Scene_Menu;
-      if (scene && scene._infoWindow) {
+      if (scene?._infoWindow) {
         const commandData = this.currentData();
         scene._infoWindow.setCommandName(commandData ? commandData.name : "");
       }
@@ -421,7 +421,7 @@ const COMMAND_HELP_DATA = [
     isCurrentItemEnabled(): boolean {
       if (this._formationMode) {
         const actor = $gameParty.members()[this.index()];
-        return actor && actor.isFormationChangeOk();
+        return actor?.isFormationChangeOk();
       } else {
         return true;
       }
@@ -446,11 +446,11 @@ const COMMAND_HELP_DATA = [
       }
     }
 
-    drawItemImage(index: number) {
+    drawItemImage(_index: number) {
       // 実装不要(drawItemで描画)
     }
 
-    drawItemStatus(index: number) {
+    drawItemStatus(_index: number) {
       // 実装不要(drawItemで描画)
     }
 
@@ -467,23 +467,23 @@ const COMMAND_HELP_DATA = [
       return this.actor(this.index());
     }
 
-    drawBackGroundActor(index: number) {
+    drawBackGroundActor(_index: number) {
       // 背景は既にdrawItemで描画済み
     }
 
-    drawBackGroundActorContents(index: number) {
+    drawBackGroundActorContents(_index: number) {
       // 背景は既にdrawItemで描画済み
     }
 
-    actorBackGroundImage(index: number): string {
+    actorBackGroundImage(_index: number): string {
       return "";
     }
 
-    actorFrontImageDate(index: number): any {
+    actorFrontImageDate(_index: number): any {
       return null;
     }
 
-    actorFrontImageEX(index: number): any {
+    actorFrontImageEX(_index: number): any {
       return null;
     }
 
@@ -492,15 +492,15 @@ const COMMAND_HELP_DATA = [
       return actor ? actor.name() : "";
     }
 
-    drawActorNameEx(actor: Game_Actor, x: number, y: number, width: number) {
+    drawActorNameEx(actor: Game_Actor, x: number, y: number, _width: number) {
       this.drawTextEx(actor.name(), x, y);
     }
 
-    drawActorSimpleStatus(actor: Game_Actor, x: number, y: number) {
+    drawActorSimpleStatus(_actor: Game_Actor, _x: number, _y: number) {
       // 実装不要(drawItemで描画)
     }
 
-    drawItemBackground(index: number) {
+    drawItemBackground(_index: number) {
       // 実装不要
     }
 
@@ -517,10 +517,10 @@ const COMMAND_HELP_DATA = [
     }
 
     drawContentsBackground(
-      x: number,
-      y: number,
-      width: number,
-      height: number,
+      _x: number,
+      _y: number,
+      _width: number,
+      _height: number,
     ) {
       // 実装不要
     }
@@ -529,7 +529,7 @@ const COMMAND_HELP_DATA = [
       return "";
     }
 
-    drawAdditionalClassLevel(additionalClass: any, x: number, y: number) {
+    drawAdditionalClassLevel(_additionalClass: any, _x: number, _y: number) {
       // 実装不要(drawItemで描画)
     }
 
@@ -547,27 +547,27 @@ const COMMAND_HELP_DATA = [
       // 実装不要
     }
 
-    actorBackImg(actor: Game_Actor): string {
+    actorBackImg(_actor: Game_Actor): string {
       return "";
     }
 
-    actorFrontImg(actor: Game_Actor): string {
+    actorFrontImg(_actor: Game_Actor): string {
       return "";
     }
 
-    actorBackGroundImageContents(actor: Game_Actor): any {
+    actorBackGroundImageContents(_actor: Game_Actor): any {
       return null;
     }
 
-    drawActorGraphicImg(index: number) {
+    drawActorGraphicImg(_index: number) {
       // 実装不要
     }
 
-    drawActorFrontImg(index: number) {
+    drawActorFrontImg(_index: number) {
       // 実装不要
     }
 
-    graphicMode(actor: Game_Actor): string {
+    graphicMode(_actor: Game_Actor): string {
       return "img";
     }
 
@@ -575,48 +575,48 @@ const COMMAND_HELP_DATA = [
       this.drawTextEx(actor.name(), x, y);
     }
 
-    placeStateIcon(actor: Game_Actor, x: number, y: number) {
+    placeStateIcon(_actor: Game_Actor, _x: number, _y: number) {
       // 実装不要
     }
 
-    placeGauge(actor: Game_Actor, type: string, x: number, y: number) {
+    placeGauge(_actor: Game_Actor, _type: string, _x: number, _y: number) {
       // 実装不要
     }
 
-    createInnerSprite(key: string, spriteClass: any) {
+    createInnerSprite(_key: string, _spriteClass: any) {
       // 実装不要
       return new Sprite();
     }
 
-    placeTimeGauge(actor: Game_Actor, x: number, y: number) {
+    placeTimeGauge(_actor: Game_Actor, _x: number, _y: number) {
       // 実装不要
     }
 
-    drawIcon(iconIndex: number, x: number, y: number) {
+    drawIcon(_iconIndex: number, _x: number, _y: number) {
       // 実装不要(基本クラスに存在)
     }
 
     drawFace(
-      faceName: string,
-      faceIndex: number,
-      x: number,
-      y: number,
-      width?: number,
-      height?: number,
+      _faceName: string,
+      _faceIndex: number,
+      _x: number,
+      _y: number,
+      _width?: number,
+      _height?: number,
     ) {
       // 実装不要(基本クラスに存在)
     }
 
     drawCharacter(
-      characterName: string,
-      characterIndex: number,
-      x: number,
-      y: number,
+      _characterName: string,
+      _characterIndex: number,
+      _x: number,
+      _y: number,
     ) {
       // 実装不要(基本クラスに存在)
     }
 
-    placeBasicGauges(actor: Game_Actor, x: number, y: number) {
+    placeBasicGauges(_actor: Game_Actor, _x: number, _y: number) {
       // 実装不要
     }
 
@@ -634,7 +634,7 @@ const COMMAND_HELP_DATA = [
       this.drawFace(actor.faceName(), actor.faceIndex(), x, y, width, height);
     }
 
-    drawActorName(actor: Game_Actor, x: number, y: number, width?: number) {
+    drawActorName(actor: Game_Actor, x: number, y: number, _width?: number) {
       this.drawTextEx(actor.name(), x, y);
     }
 
@@ -645,7 +645,12 @@ const COMMAND_HELP_DATA = [
       this.drawText(String(actor.level), x + 48, y, 36, "right");
     }
 
-    drawActorIcons(actor: Game_Actor, x: number, y: number, width?: number) {
+    drawActorIcons(
+      _actor: Game_Actor,
+      _x: number,
+      _y: number,
+      _width?: number,
+    ) {
       // 実装不要
     }
 
@@ -670,7 +675,7 @@ const COMMAND_HELP_DATA = [
       return 202;
     }
 
-    setCursorRect(x: number, y: number, width: number, height: number) {
+    setCursorRect(x: number, y: number, _width: number, height: number) {
       super.setCursorRect(x, y, 100, height - 12);
     }
 
@@ -723,12 +728,12 @@ const COMMAND_HELP_DATA = [
         ? (actor as any).additionalClass()
         : null;
       let jobText = "";
-      if (job && job._data && !job._data.meta.NoGrow) {
+      if (job?._data && !job._data.meta.NoGrow) {
         const jobName = job.name.substring(0, 7);
         const levelSuffix =
           job.level === 6 || (job.id === 24 && job.level === 3)
             ? "M!"
-            : "L" + (job.level - 1);
+            : `L${job.level - 1}`;
         jobText = jobName + levelSuffix;
       }
       this.drawText(jobText, x + 108, y + 43, 280);
@@ -825,7 +830,7 @@ const COMMAND_HELP_DATA = [
         // BattleMotionMZ使用時
         const cellSize = bitmap.height / 6; // 正方形セル
         const motions = (Sprite_Battler as any).MOTIONS;
-        const walkMotion = motions["walk"];
+        const walkMotion = motions.walk;
 
         if (walkMotion) {
           motionIndex = walkMotion.index;

@@ -105,24 +105,24 @@
   const parameters = PluginManager.parameters(PLUGIN_NAME);
 
   // プラグインパラメータ（デフォルト値）
-  const prmImageName = String(parameters["ImageName"] || "");
-  const prmOffsetX = Number(parameters["OffsetX"] || 8);
-  const prmOffsetY = Number(parameters["OffsetY"] || 0);
-  const prmScale = Number(parameters["Scale"] || 1.0);
-  const prmPosition = String(parameters["CursorPosition"] || "left");
-  const prmColumns = Number(parameters["Columns"] || 1);
-  const prmRows = Number(parameters["Rows"] || 1);
-  const prmAnimSpeed = Number(parameters["AnimationSpeed"] || 12);
+  const prmImageName = String(parameters.ImageName || "");
+  const prmOffsetX = Number(parameters.OffsetX || 8);
+  const prmOffsetY = Number(parameters.OffsetY || 0);
+  const prmScale = Number(parameters.Scale || 1.0);
+  const prmPosition = String(parameters.CursorPosition || "left");
+  const prmColumns = Number(parameters.Columns || 1);
+  const prmRows = Number(parameters.Rows || 1);
+  const prmAnimSpeed = Number(parameters.AnimationSpeed || 12);
   const prmShowWhenInactive =
-    (parameters["ShowWhenInactive"] || "false") === "true";
-  const prmWindowPadding = Number(parameters["WindowPadding"] || 12);
+    (parameters.ShowWhenInactive || "false") === "true";
+  const _prmWindowPadding = Number(parameters.WindowPadding || 12);
 
   // ウィンドウクラス制御用パラメータ
-  const prmEnabledWindows = parameters["EnabledWindows"]
-    ? JSON.parse(parameters["EnabledWindows"])
+  const prmEnabledWindows = parameters.EnabledWindows
+    ? JSON.parse(parameters.EnabledWindows)
     : [];
-  const prmDisabledWindows = parameters["DisabledWindows"]
-    ? JSON.parse(parameters["DisabledWindows"])
+  const prmDisabledWindows = parameters.DisabledWindows
+    ? JSON.parse(parameters.DisabledWindows)
     : [];
 
   // アニメーション状態（全カーソルスプライトで共有）
@@ -236,7 +236,7 @@
     let rect: Rectangle;
     try {
       rect = (win as any).itemRect(idx) as Rectangle;
-    } catch (e) {
+    } catch (_e) {
       // フォールバック: cursorRect を試す
       rect = (win as any).cursorRectForItem
         ? (win as any).cursorRectForItem(idx)
@@ -309,7 +309,7 @@
     _Window_Selectable_initialize.apply(this, args as any);
     try {
       createCursorEnhanceSprite(this);
-    } catch (e) {
+    } catch (_e) {
       // エラーを無視
     }
   };
@@ -323,7 +323,7 @@
     _Window_Selectable_update.apply(this, args as any);
     try {
       updateCursorEnhanceForWindow(this);
-    } catch (e) {
+    } catch (_e) {
       // エラーを無視
     }
   };

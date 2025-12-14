@@ -57,7 +57,7 @@ declare class DataManager {
   public static _globalInfo: DataManager.SaveFileInfo[] | null;
   public static _errors: DataManager.Error[];
 
-  public static _databaseFiles: { name: DatabaseNames; src: string }[];
+  public static _databaseFiles: { name: DatabaseNames | string; src: string }[];
 
   public static loadGlobalInfo(): void;
   public static removeInvalidGlobalInfo(): void;
@@ -257,6 +257,11 @@ declare class FontManager {
  */
 declare class ImageManager {
   private constructor();
+
+  public static standardIconWidth: number;
+  public static standardIconHeight: number;
+  public static standardFaceWidth: number;
+  public static standardFaceHeight: number;
 
   public static iconWidth: number;
   public static iconHeight: number;

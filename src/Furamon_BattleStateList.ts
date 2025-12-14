@@ -202,10 +202,10 @@
   Scene_Battle.prototype.updateStateListWindow = function () {
     if (this.isStateListTriggered()) {
       this.toggleStateListWindow();
-    } else if (this._stateListWindow!.isOpen()) {
+    } else if (this._stateListWindow?.isOpen()) {
       if (Input.isTriggered("cancel")) {
         this.closeStateListWindow();
-      } else if (!this._stateListWindow!.active && this._openedStateListFrom) {
+      } else if (!this._stateListWindow?.active && this._openedStateListFrom) {
         this.closeStateListWindow();
       }
     }
@@ -215,7 +215,7 @@
     Input.isTriggered(stateButton);
 
   Scene_Battle.prototype.toggleStateListWindow = function () {
-    if (this._stateListWindow!.isOpen()) {
+    if (this._stateListWindow?.isOpen()) {
       this.closeStateListWindow();
     } else if (
       (this._partyCommandWindow as any).active ||
@@ -235,10 +235,10 @@
       this._actorCommandWindow.hide();
     }
 
-    this._stateListWindow!.refresh();
-    if (this._stateListWindow!._dataStates.length > 0) {
-      this._stateListWindow!.open();
-      this._stateListWindow!.activate();
+    this._stateListWindow?.refresh();
+    if (this._stateListWindow?._dataStates.length > 0) {
+      this._stateListWindow?.open();
+      this._stateListWindow?.activate();
     } else {
       SoundManager.playBuzzer();
       this.closeStateListWindow();
@@ -246,8 +246,8 @@
   };
 
   Scene_Battle.prototype.closeStateListWindow = function () {
-    this._stateListWindow!.close();
-    this._stateListWindow!.deactivate();
+    this._stateListWindow?.close();
+    this._stateListWindow?.deactivate();
     if (this._openedStateListFrom === "party") {
       this._partyCommandWindow.show();
     } else if (this._openedStateListFrom === "actor") {

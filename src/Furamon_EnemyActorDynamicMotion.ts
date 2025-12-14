@@ -91,7 +91,7 @@
     svSprite._pattern = 0;
     svSprite._motionDuration = dynamicMotion.motionDuration;
     svSprite._motionPattern = dynamicMotion.motionPattern;
-    if (dynamicMotion.motionStartPattern != undefined) {
+    if (dynamicMotion.motionStartPattern !== undefined) {
       svSprite._motionStartPattern = dynamicMotion.motionStartPattern;
     }
     if (dynamicMotion.motion) {
@@ -183,11 +183,11 @@
     // 敵本体のスプライト（静止画）は描画しないようにフレームを空にする
     this.setFrame(0, 0, 0, 0);
 
-    const a = this._battler;
+    const _a = this._battler;
     let duration = 32;
     try {
       duration = Number(eval(collapseData.Duration) || 32);
-    } catch (e) {
+    } catch (_e) {
       /* ignore */
     }
     const progress = (duration - this._effectDuration) / duration;
@@ -195,14 +195,14 @@
     let shake = 0;
     try {
       shake = Number(eval(collapseData.ShakeStrength) || 0);
-    } catch (e) {
+    } catch (_e) {
       /* ignore */
     }
     svSprite.x += Math.round(Math.random() * shake * 2) - shake;
 
     try {
       svSprite.blendMode = Number(eval(collapseData.BlendMode) || 1);
-    } catch (e) {
+    } catch (_e) {
       svSprite.blendMode = 1;
     }
 
@@ -210,11 +210,11 @@
     try {
       const color = JSON.parse(colorText);
       svSprite.setBlendColor(color);
-    } catch (e) {
+    } catch (_e) {
       try {
         const color = eval(colorText);
         svSprite.setBlendColor(color);
-      } catch (e2) {
+      } catch (_e2) {
         svSprite.setBlendColor([255, 255, 255, 128]);
       }
     }
@@ -266,7 +266,7 @@
             pan: 0,
           });
         }
-      } catch (e) {
+      } catch (_e) {
         /* ignore */
       }
     }

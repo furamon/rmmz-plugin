@@ -175,16 +175,16 @@
   };
   const parameters = PluginManager.parameters(PLUGIN_NAME);
 
-  const prmNoJumpRegionId = Number(parameters["noJumpRegionId"]) || 0;
-  const prmJumpSoundName = parameters["jumpSoundName"] || "Jump1";
-  const prmJumpSoundVolume = Number(parameters["jumpSoundVolume"]) || 90;
-  const prmJumpSoundPitch = Number(parameters["jumpSoundPitch"]) || 80;
-  const prmJumpSpeed = Number(parameters["jumpSpeed"]) || 50;
-  const prmJumpHeight = Number(parameters["jumpHeight"]) || 200;
-  const prmEnableThrough = parameters["enableThrough"] === "true";
-  const prmJumpKey = parameters["jumpKey"] || "control";
-  const prmRequireSwitch = Number(parameters["requireSwitch"]) || 0;
-  const prmDisableInMenu = parameters["disableInMenu"] === "true";
+  const prmNoJumpRegionId = Number(parameters.noJumpRegionId) || 0;
+  const prmJumpSoundName = parameters.jumpSoundName || "Jump1";
+  const prmJumpSoundVolume = Number(parameters.jumpSoundVolume) || 90;
+  const prmJumpSoundPitch = Number(parameters.jumpSoundPitch) || 80;
+  const prmJumpSpeed = Number(parameters.jumpSpeed) || 50;
+  const prmJumpHeight = Number(parameters.jumpHeight) || 200;
+  const prmEnableThrough = parameters.enableThrough === "true";
+  const prmJumpKey = parameters.jumpKey || "control";
+  const prmRequireSwitch = Number(parameters.requireSwitch) || 0;
+  const prmDisableInMenu = parameters.disableInMenu === "true";
 
   /**
    * 8方向移動プラグイン（HalfMove.js or PD_8DirDash.js）が有効か検出
@@ -203,7 +203,7 @@
 
     if (halfMoveRegistered) {
       // isHalfMoveプロパティの存在は、未ロード時のエラーを防ぐためにチェックが必要です。
-      if ($gamePlayer.isHalfMove && $gamePlayer.isHalfMove()) {
+      if ($gamePlayer.isHalfMove?.()) {
         return true;
       }
     }
@@ -520,7 +520,7 @@
   /**
    * プラグインコマンド登録
    */
-  PluginManager.registerCommand(PLUGIN_NAME, "execute", (args) => {
+  PluginManager.registerCommand(PLUGIN_NAME, "execute", (_args) => {
     safeExecuteSmartJump();
   });
 

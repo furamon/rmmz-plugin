@@ -42,7 +42,7 @@ declare class Game_Temp {
   public retrieveCommonEvent(): MZ.CommonEvent;
   public isCommonEventReserved(): boolean;
 
-  public requestAnimation(targets: Game_Character[], animationId: number, mirror?: boolean): void;
+  public requestAnimation(targets: Game_Character[]|Game_BattlerBase[], animationId: number, mirror?: boolean): void;
   public retrieveAnimation(): Game_Temp.AnimationRequest;
   public requestBalloon(target: Game_Character, balloonId: number): void;
   public retrieveBalloon(): Game_Temp.BalloonRequest;
@@ -683,7 +683,7 @@ declare class Game_Action {
 
   public updateLastUsed(): void;
   public updateLastSubject(): void;
-  public updateLastTarget(): void;
+  public updateLastTarget(target: Game_Battler): void;
 }
 
 //-----------------------------------------------------------------------------
@@ -1240,7 +1240,7 @@ declare class Game_Actor extends Game_Battler {
 
   public hide(): void;
 
-  public isActor(): this is Game_Actor;
+  public isActor(): boolean;
   public friendsUnit(): Game_Unit;
   public opponentsUnit(): Game_Unit;
   public index(): number;
@@ -1347,7 +1347,7 @@ declare class Game_Enemy extends Game_Battler {
   public initMembers(): void;
   public setup(enemyId: number, x: number, y: number): void;
 
-  public isEnemy(): this is Game_Enemy;
+  public isEnemy(): boolean;
   public friendsUnit(): Game_Unit;
   public opponentsUnit(): Game_Unit;
   public index(): number;

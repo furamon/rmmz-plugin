@@ -227,7 +227,8 @@
   function findSettingForWindow(windowObject: WindowLike) {
     if (!windowObject) return null;
     const windowClassName = (windowObject.constructor as any).name;
-    const sceneClassName = ((SceneManager._scene?.constructor as any)?.name ?? "") as string;
+    const sceneClassName = ((SceneManager._scene?.constructor as any)?.name ??
+      "") as string;
 
     const customSetting = parsedCustomSettings.find((s) => {
       if (s.windowClass !== windowClassName) return false;
@@ -345,10 +346,10 @@
         };
         const func = new Function(...Object.keys(scope), `return (${value})`);
         const result = func(...Object.values(scope));
-        if (typeof result === "number" && !isNaN(result)) {
+        if (typeof result === "number" && !Number.isNaN(result)) {
           return result;
         }
-      } catch (e) {
+      } catch (_e) {
         // Not a valid expression, fall back to simple parsing.
       }
 
@@ -382,7 +383,7 @@
 
     if (this._tweenableWindows && this._tweenableWindows.length > 0) {
       const tweens = this._tweenableWindows
-        .filter((w) => w && w.window)
+        .filter((w) => w?.window)
         .map((w) => TweenManager.applyClose(w.window, w.setting.closeSetting))
         .filter((tween): tween is TorigoyaTween => !!tween);
 

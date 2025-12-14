@@ -52,7 +52,7 @@
       // 「アクターのターンが回っている」「アクターが死んでいる」「アクターが前衛にいない」のいずれかか
       if (
         actor === (BattleManager._subject as unknown as Game_Actor) ||
-        (actor && actor.isDead()) ||
+        actor?.isDead() ||
         !$gameParty.battleMembers().includes(actor) ||
         actor == null
       ) {
