@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_CursorEnhance.js
 // This software is released under the MIT License.
@@ -99,26 +100,26 @@
  * @default []
  * @desc カーソルを表示しないウィンドウクラス名の一覧。有効一覧より優先。例: "Window_BattleLog"
  */
-(function () {
-    const PLUGIN_NAME = 'Furamon_CursorEnhance';
+(() => {
+    const PLUGIN_NAME = "Furamon_CursorEnhance";
     const parameters = PluginManager.parameters(PLUGIN_NAME);
     // プラグインパラメータ（デフォルト値）
-    const prmImageName = String(parameters['ImageName'] || '');
-    const prmOffsetX = Number(parameters['OffsetX'] || 8);
-    const prmOffsetY = Number(parameters['OffsetY'] || 0);
-    const prmScale = Number(parameters['Scale'] || 1.0);
-    const prmPosition = String(parameters['CursorPosition'] || 'left');
-    const prmColumns = Number(parameters['Columns'] || 1);
-    const prmRows = Number(parameters['Rows'] || 1);
-    const prmAnimSpeed = Number(parameters['AnimationSpeed'] || 12);
-    const prmShowWhenInactive = (parameters['ShowWhenInactive'] || 'false') === 'true';
-    const prmWindowPadding = Number(parameters['WindowPadding'] || 12);
+    const prmImageName = String(parameters.ImageName || "");
+    const prmOffsetX = Number(parameters.OffsetX || 8);
+    const prmOffsetY = Number(parameters.OffsetY || 0);
+    const prmScale = Number(parameters.Scale || 1.0);
+    const prmPosition = String(parameters.CursorPosition || "left");
+    const prmColumns = Number(parameters.Columns || 1);
+    const prmRows = Number(parameters.Rows || 1);
+    const prmAnimSpeed = Number(parameters.AnimationSpeed || 12);
+    const prmShowWhenInactive = (parameters.ShowWhenInactive || "false") === "true";
+    const _prmWindowPadding = Number(parameters.WindowPadding || 12);
     // ウィンドウクラス制御用パラメータ
-    const prmEnabledWindows = parameters['EnabledWindows']
-        ? JSON.parse(parameters['EnabledWindows'])
+    const prmEnabledWindows = parameters.EnabledWindows
+        ? JSON.parse(parameters.EnabledWindows)
         : [];
-    const prmDisabledWindows = parameters['DisabledWindows']
-        ? JSON.parse(parameters['DisabledWindows'])
+    const prmDisabledWindows = parameters.DisabledWindows
+        ? JSON.parse(parameters.DisabledWindows)
         : [];
     // アニメーション状態（全カーソルスプライトで共有）
     let _animationTime = 0;
@@ -131,7 +132,8 @@
     function isWindowEnabled(win) {
         const className = win.constructor.name;
         // 無効リストに含まれていたら表示しない
-        if (prmDisabledWindows.length > 0 && prmDisabledWindows.includes(className)) {
+        if (prmDisabledWindows.length > 0 &&
+            prmDisabledWindows.includes(className)) {
             return false;
         }
         // 有効リストが空なら全て表示
@@ -174,7 +176,6 @@
             _currentFrame = (_currentFrame + 1) % _totalFrames;
         }
     }
-    // ウィンドウにカーソル画像スプライトを作成
     function createCursorEnhanceSprite(win) {
         if (!prmImageName)
             return;
@@ -190,12 +191,14 @@
         sprite.y = 0;
         sprite.scale.set(prmScale, prmScale);
         sprite.visible = false;
-        // ウィンドウにスプライトを保存（型チェック回避のためany使用）
-        win._cursorEnhanceSprite = sprite;
+        // ウィンドウにスプライトを保存
+        const enhanceWin = win;
+        enhanceWin._cursorEnhanceSprite = sprite;
         win.addChild(sprite);
     }
     function updateCursorEnhanceForWindow(win) {
-        const sprite = win._cursorEnhanceSprite;
+        const enhanceWin = win;
+        const sprite = enhanceWin._cursorEnhanceSprite;
         if (!sprite)
             return;
         const idx = win.index();
@@ -208,21 +211,24 @@
         try {
             rect = win.itemRect(idx);
         }
-        catch (e) {
+        catch (_e) {
             // フォールバック: cursorRect を試す
-            rect = win.cursorRectForItem ? win.cursorRectForItem(idx) : new Rectangle(0, 0, 0, 0);
+            rect = enhanceWin.cursorRectForItem
+                ? enhanceWin.cursorRectForItem(idx)
+                : new Rectangle(0, 0, 0, 0);
         }
         // アニメーションフレームを更新
         updateAnimation();
         updateSpriteFrame(sprite);
         // ウィンドウの origin からスクロールオフセットを取得（途中のスクロール量にも対応）
-        const originY = win.origin ? win.origin.y : 0;
+        const originY = enhanceWin.origin?.y ?? 0;
         // ウィンドウの itemPadding を取得（通常は 8 または 12px）
-        const itemPadding = win.itemPadding() ? win.itemPadding() : 8;
+        const itemPadding = enhanceWin.itemPadding?.() ?? 8;
         // 目標位置を計算（rect はコンテンツ座標系、origin.y でスクロール調整）
         // itemPadding 分を加算して正確な中心位置を計算
-        let targetX = rect.x + (prmPosition === 'right' ? rect.width + prmOffsetX : -prmOffsetX);
-        let targetY = rect.y - originY + rect.height / 2 + itemPadding * 1.5 + prmOffsetY;
+        const targetX = rect.x +
+            (prmPosition === "right" ? rect.width + prmOffsetX : -prmOffsetX);
+        const targetY = rect.y - originY + rect.height / 2 + itemPadding * 1.5 + prmOffsetY;
         // トゥイーンプロパティの初期化
         if (sprite._tweenCount === undefined) {
             sprite._tweenCount = 0;
@@ -236,8 +242,8 @@
             return;
         }
         // 新しいトゥイーンが必要かチェック
-        const needsUpdate = sprite._tweenCount === 0 && (Math.abs(targetX - sprite.x) > 1 ||
-            Math.abs(targetY - sprite.y) > 1);
+        const needsUpdate = sprite._tweenCount === 0 &&
+            (Math.abs(targetX - sprite.x) > 1 || Math.abs(targetY - sprite.y) > 1);
         if (needsUpdate) {
             // 新しいトゥイーンを開始
             sprite._targetX = targetX;
@@ -260,7 +266,7 @@
         try {
             createCursorEnhanceSprite(this);
         }
-        catch (e) {
+        catch (_e) {
             // エラーを無視
         }
     };
@@ -271,7 +277,7 @@
         try {
             updateCursorEnhanceForWindow(this);
         }
-        catch (e) {
+        catch (_e) {
             // エラーを無視
         }
     };

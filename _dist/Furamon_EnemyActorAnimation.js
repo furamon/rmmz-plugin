@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_EnemyActorAnimation.js
 // This software is released under the MIT License.
@@ -71,51 +72,50 @@
  * @default true
  *
  */
-(function () {
-    const pluginName = 'Furamon_EnemyActorAnimation';
+(() => {
+    const pluginName = "Furamon_EnemyActorAnimation";
     const parameters = PluginManager.parameters(pluginName);
-    const prmAutoMirror = parameters['autoMirror'] === 'true';
-    const hasBattleMotion = PluginManager._scripts.includes('BattleMotionMZ');
-    const prmBattleMotion = PluginManager._scripts.includes('BattleMotionMZ') &&
-        PluginManager.parameters('BattleMotionMZ');
-    const prmMotionCol = prmBattleMotion && prmBattleMotion['motionCol'] === 'true';
-    const prmBlueFps = prmBattleMotion && prmBattleMotion['blueFps'] === 'true';
+    const prmAutoMirror = parameters.autoMirror === "true";
+    const hasBattleMotion = PluginManager._scripts.includes("BattleMotionMZ");
+    const prmBattleMotion = PluginManager._scripts.includes("BattleMotionMZ") &&
+        PluginManager.parameters("BattleMotionMZ");
+    const prmMotionCol = prmBattleMotion && prmBattleMotion.motionCol === "true";
+    const prmBlueFps = prmBattleMotion && prmBattleMotion.blueFps === "true";
     // NUUN_ButlerHPGaugeのパラメータを取得
     let nuunHpGaugeParams = {};
     try {
-        nuunHpGaugeParams =
-            PluginManager.parameters('NUUN_ButlerHPGauge') || {};
+        nuunHpGaugeParams = PluginManager.parameters("NUUN_ButlerHPGauge") || {};
     }
-    catch (e) {
-        console.log('NUUN_ButlerHPGauge parameters not found');
+    catch (_e) {
+        console.log("NUUN_ButlerHPGauge parameters not found");
     }
     // グローバル変数の設定（NUUN_ButlerHPGaugeとの互換性）
-    if (typeof window.HPPosition === 'undefined') {
+    if (typeof window.HPPosition === "undefined") {
         window.HPPosition = nuunHpGaugeParams.HPPosition
             ? Number(nuunHpGaugeParams.HPPosition)
             : 0;
     }
-    if (typeof window.Gauge_X === 'undefined') {
+    if (typeof window.Gauge_X === "undefined") {
         window.Gauge_X = nuunHpGaugeParams.Gauge_X
             ? Number(nuunHpGaugeParams.Gauge_X)
             : 0;
     }
-    if (typeof window.Gauge_Y === 'undefined') {
+    if (typeof window.Gauge_Y === "undefined") {
         window.Gauge_Y = nuunHpGaugeParams.Gauge_Y
             ? Number(nuunHpGaugeParams.Gauge_Y)
             : 0;
     }
     /**
-    * 敵キャラのメモ欄からSVアクターファイル名の配列を取得
+     * 敵キャラのメモ欄からSVアクターファイル名の配列を取得
      */
     function getSvActorFileNames(enemy) {
         if (!enemy || !enemy.meta) {
             return undefined;
         }
         const meta = enemy.meta;
-        const value = meta['SVActor'] || meta['SVアクター'];
-        if (typeof value === 'string' && value.length > 0) {
-            return value.split(',').map(s => s.trim());
+        const value = meta.SVActor || meta.SVアクター;
+        if (typeof value === "string" && value.length > 0) {
+            return value.split(",").map((s) => s.trim());
         }
         return undefined;
     }
@@ -124,10 +124,10 @@
             return 0; // 0 means no wrapping, i.e. infinite columns
         }
         const meta = enemy.meta;
-        const value = meta['SVActorCols'] || meta['SVアクター列数'];
+        const value = meta.SVActorCols || meta.SVアクター列数;
         if (value) {
             const cols = parseInt(String(value), 10);
-            return isNaN(cols) ? 0 : cols;
+            return Number.isNaN(cols) ? 0 : cols;
         }
         return 0;
     }
@@ -135,7 +135,7 @@
      * SVアクター使用の敵かどうか判定
      */
     function isSvActorEnemy(battler) {
-        if (!battler || !(battler instanceof Game_Enemy)) {
+        if (!(battler instanceof Game_Enemy)) {
             return false;
         }
         const enemy = battler.enemy();
@@ -188,22 +188,22 @@
     Game_Enemy.prototype.performAction = function (action) {
         _Game_Enemy_performAction.call(this, action);
         if (isSvActorEnemy(this) &&
-            !PluginManager._scripts.includes('Furamon_EnemyActorDynamicMotion')) {
-            let motionName = 'walk';
+            !PluginManager._scripts.includes("Furamon_EnemyActorDynamicMotion")) {
+            let motionName = "walk";
             if (action.isAttack()) {
-                motionName = 'thrust';
+                motionName = "thrust";
             }
             else if (action.isGuard()) {
-                motionName = 'guard';
+                motionName = "guard";
             }
             else if (action.isMagicSkill()) {
-                motionName = 'spell';
+                motionName = "spell";
             }
             else if (action.isSkill()) {
-                motionName = 'skill';
+                motionName = "skill";
             }
             else if (action.isItem()) {
-                motionName = 'item';
+                motionName = "item";
             }
             this.requestMotion(motionName);
         }
@@ -214,7 +214,7 @@
         if (isSvActorEnemy(this)) {
             this._damaged = true; // ダメージ受けてるフラグ
             this._damageMotionCount = 18; // ダメージモーションを取るフレーム
-            this.requestMotion('damage');
+            this.requestMotion("damage");
         }
     };
     const _Game_Enemy_performEvasion = Game_Enemy.prototype.performEvasion;
@@ -224,7 +224,7 @@
             this._damaged = true; // 回避フラグ(ダメージと共用)
             // 回避モーションを取るフレーム(ダメージと共用)
             this._damageMotionCount = 18;
-            this.requestMotion('evade');
+            this.requestMotion("evade");
         }
     };
     const _Game_Enemy_performMagicEvasion = Game_Enemy.prototype.performMagicEvasion;
@@ -234,7 +234,7 @@
             this._damaged = true; // 回避フラグ(ダメージと共用)
             // 回避モーションを取るフレーム(ダメージと共用)
             this._damageMotionCount = 18;
-            this.requestMotion('evade');
+            this.requestMotion("evade");
         }
     };
     Game_Enemy.prototype.requestMotion = function (motion) {
@@ -242,7 +242,7 @@
         this._motionRefresh = true; // 即座に更新フラグを立てる
     };
     // Game_EnemyにBattleMotionMZメソッドを移植
-    if (typeof Game_Battler !== 'undefined' &&
+    if (typeof Game_Battler !== "undefined" &&
         Game_Battler.prototype.makeSPName) {
         Game_Enemy.prototype.makeSPName = Game_Battler.prototype.makeSPName;
     }
@@ -274,7 +274,7 @@
     const _Sprite_Enemy_setBattler = Sprite_Enemy.prototype.setBattler;
     Sprite_Enemy.prototype.setBattler = function (battler) {
         _Sprite_Enemy_setBattler.call(this, battler);
-        this._isSvActorEnemy = isSvActorEnemy(this._battler);
+        this._isSvActorEnemy = battler ? isSvActorEnemy(battler) : false;
         // SVアクター用の場合の処理
         if (this._isSvActorEnemy && this._battler) {
             this.hideOriginalSprite();
@@ -305,12 +305,12 @@
     Sprite_Enemy.prototype.createSvActorSprite = function () {
         // 既に作成済みの場合はスキップ
         if (this._svActorSprite) {
-            console.log('SV Actor sprite already exists, skipping creation');
+            console.log("SV Actor sprite already exists, skipping creation");
             return;
         }
         this.visible = false;
         // _motionがundefinedの場合はnullに変換
-        if (this._battler._motion === undefined) {
+        if (this._battler && this._battler._motion === undefined) {
             this._battler._motion = null;
         }
         this._svActorSprite = new Sprite_SvActor();
@@ -367,8 +367,7 @@
                 if (size) {
                     // 実際のスプライトサイズに基づく位置調整
                     this._stateIconSprite.x = this._svActorSprite.x;
-                    this._stateIconSprite.y =
-                        this._svActorSprite.y - size.height - 10;
+                    this._stateIconSprite.y = this._svActorSprite.y - size.height - 10;
                 }
                 else {
                     // フォールバック位置
@@ -391,7 +390,7 @@
             this._positionUpdateInterval = null;
         }
         // SVアクタースプライトも削除
-        if (this._svActorSprite && this._svActorSprite.parent) {
+        if (this._svActorSprite?.parent) {
             this._svActorSprite.parent.removeChild(this._svActorSprite);
             this._svActorSprite.destroy();
             this._svActorSprite = null;
@@ -399,9 +398,7 @@
         _Sprite_Enemy_destroy.call(this);
     };
     Sprite_Enemy.prototype.updateStateIconPosition = function () {
-        if (this._isSvActorEnemy &&
-            this._svActorSprite &&
-            this._stateIconSprite) {
+        if (this._isSvActorEnemy && this._svActorSprite && this._stateIconSprite) {
             const position = this.getStateIconPosition();
             this._stateIconSprite.x = position.x;
             this._stateIconSprite.y = position.y;
@@ -412,9 +409,7 @@
         if (this._isSvActorEnemy && this._svActorSprite) {
             const svSprite = this._svActorSprite;
             const mainSprite = svSprite._mainSprite;
-            if (mainSprite &&
-                mainSprite.bitmap &&
-                mainSprite.bitmap.isReady()) {
+            if (mainSprite?.bitmap?.isReady()) {
                 const frameHeight = mainSprite.height / 6;
                 return {
                     x: svSprite.x,
@@ -455,16 +450,16 @@
     Sprite_Enemy.prototype.move = function (x, y) {
         this.setPosition(this.x + x, this.y + y);
     };
-    Sprite_Enemy.prototype.getMotionDefinition = function (motionType) {
+    Sprite_Enemy.prototype.getMotionDefinition = (motionType) => {
         // BattleMotionMZのモーション定義を優先
-        if (typeof Sprite_Battler !== 'undefined' && Sprite_Battler.MOTIONS) {
+        if (typeof Sprite_Battler !== "undefined" && Sprite_Battler.MOTIONS) {
             return Sprite_Battler.MOTIONS[motionType];
         }
         // 標準のSVアクターモーション定義
         const standardMotions = getStandardMotions();
-        return standardMotions[motionType] || standardMotions['walk'];
+        return standardMotions[motionType] || standardMotions.walk;
     };
-    Object.defineProperty(Sprite_Enemy.prototype, '_motionCount', {
+    Object.defineProperty(Sprite_Enemy.prototype, "_motionCount", {
         get: function () {
             if (this._isSvActorEnemy && this._svActorSprite) {
                 return this._svActorSprite._motionCount;
@@ -480,7 +475,7 @@
             }
         },
     });
-    Object.defineProperty(Sprite_Enemy.prototype, '_pattern', {
+    Object.defineProperty(Sprite_Enemy.prototype, "_pattern", {
         get: function () {
             if (this._isSvActorEnemy && this._svActorSprite) {
                 return this._svActorSprite._pattern;
@@ -496,7 +491,7 @@
             }
         },
     });
-    Object.defineProperty(Sprite_Enemy.prototype, 'width', {
+    Object.defineProperty(Sprite_Enemy.prototype, "width", {
         get: function () {
             if (this._isSvActorEnemy && this._svActorSprite) {
                 return this._svActorSprite.getTotalActualWidth();
@@ -513,7 +508,7 @@
             }
         },
     });
-    Object.defineProperty(Sprite_Enemy.prototype, 'height', {
+    Object.defineProperty(Sprite_Enemy.prototype, "height", {
         get: function () {
             if (this._isSvActorEnemy && this._svActorSprite) {
                 const svSprite = this._svActorSprite;
@@ -554,7 +549,7 @@
         _collapseMask;
         _collapseStartY;
         isReady() {
-            return this._mainSprite && this._mainSprite.bitmap && this._mainSprite.bitmap.isReady();
+            return this._mainSprite?.bitmap?.isReady();
         }
         getCols() {
             if (!this._battler)
@@ -562,7 +557,9 @@
             return getSvActorCols(this._battler.enemy());
         }
         getNumRows() {
-            const numSprites = this._svActorFileNames ? this._svActorFileNames.length : 0;
+            const numSprites = this._svActorFileNames
+                ? this._svActorFileNames.length
+                : 0;
             if (numSprites === 0) {
                 return 1;
             }
@@ -600,7 +597,7 @@
         }
         createShadowSprite() {
             this._shadowSprite = new Sprite();
-            this._shadowSprite.bitmap = ImageManager.loadSystem('Shadow2');
+            this._shadowSprite.bitmap = ImageManager.loadSystem("Shadow2");
             this._shadowSprite.anchor.x = 0.5;
             this._shadowSprite.anchor.y = 0.5;
             this._shadowSprite.y = -2;
@@ -683,7 +680,7 @@
             this._motion = null;
             this._motionCount = 0;
             this._pattern = 0;
-            this.startMotion('walk');
+            this.startMotion("walk");
             if (this._battler) {
                 this._battler._motionRefresh = false;
                 this._battler._motion = null;
@@ -691,14 +688,14 @@
         }
         startMotion(motion) {
             const standardMotions = getStandardMotions();
-            const standardMotion = standardMotions[motion] || standardMotions['walk'];
+            const standardMotion = standardMotions[motion] || standardMotions.walk;
             this._motion = {
                 index: standardMotion.index,
                 loop: standardMotion.loop,
             };
             this._motionCount = 0;
             this._pattern = 0;
-            if (this._motion && this._motion.loop) {
+            if (this._motion?.loop) {
                 this._patternDirection = 1;
             }
         }
@@ -737,7 +734,7 @@
                 return;
             }
             if (this._battler.isDead()) {
-                this.startMotion('dead');
+                this.startMotion("dead");
                 return;
             }
             const sprites = [this._mainSprite, ...this._additionalSprites];
@@ -765,7 +762,7 @@
             const row = motionIndex % motionsPerColumn;
             const col = column * patternsPerMotion + pattern;
             if (col >= 9 || row >= 6) {
-                console.warn('Frame out of bounds, using fallback');
+                console.warn("Frame out of bounds, using fallback");
                 sprite.setFrame(0, 0, cw, ch);
                 return;
             }
@@ -841,7 +838,7 @@
         }
         updateMotionBMMZ() {
             this._motionCount++;
-            let speed = this.getCustomMotionSpeed();
+            const speed = this.getCustomMotionSpeed();
             if (this._motionCount >= speed) {
                 const bitmap = this._mainSprite.bitmap;
                 if (!bitmap || !bitmap.isReady())
@@ -851,7 +848,7 @@
                 const frameInfo = this.getMotionFrameInfo(bitmap, cellSize, motionIndex);
                 const frameCount = frameInfo.frameCount;
                 const animType = frameInfo.animType;
-                if (animType === 'freeze') {
+                if (animType === "freeze") {
                     if (this._pattern < frameCount - 1) {
                         this._pattern++;
                     }
@@ -859,7 +856,7 @@
                         this._pattern = frameCount > 0 ? frameCount - 1 : 0;
                     }
                 }
-                else if (animType === 'pingpong') {
+                else if (animType === "pingpong") {
                     if (this._patternDirection === undefined) {
                         this._patternDirection = 1;
                     }
@@ -880,7 +877,7 @@
                         this._pattern = 0;
                     }
                 }
-                else if (animType === 'loop') {
+                else if (animType === "loop") {
                     if (frameCount > 0) {
                         this._pattern = (this._pattern + 1) % frameCount;
                     }
@@ -889,7 +886,7 @@
                     }
                 }
                 else {
-                    if (this._motion && this._motion.loop) {
+                    if (this._motion?.loop) {
                         if (frameCount > 0) {
                             this._pattern = (this._pattern + 1) % frameCount;
                         }
@@ -902,8 +899,7 @@
                             this._pattern++;
                         }
                         else {
-                            this._pattern =
-                                frameCount > 0 ? frameCount - 1 : 0;
+                            this._pattern = frameCount > 0 ? frameCount - 1 : 0;
                         }
                     }
                 }
@@ -919,7 +915,7 @@
             if (!prmMotionCol) {
                 return {
                     frameCount: maxFramesPerMotion,
-                    animType: 'normal',
+                    animType: "normal",
                 };
             }
             const motionColumn = Math.floor(motionIndex / motionsPerRow);
@@ -948,13 +944,13 @@
                 const canvas = bitmap.canvas || bitmap._canvas;
                 if (!canvas)
                     return false;
-                const context = canvas.getContext('2d');
-                const imageData = context.getImageData(checkX, checkY, 1, 1);
+                const context = canvas.getContext("2d");
+                const imageData = context?.getImageData(checkX, checkY, 1, 1);
                 const [r, g, b, a] = imageData.data;
                 return a > 128 && !(r === 0 && g === 0 && b === 0);
             }
             catch (e) {
-                console.warn('isEndFrame check failed:', e);
+                console.warn("isEndFrame check failed:", e);
                 return false;
             }
         }
@@ -962,25 +958,25 @@
             try {
                 const canvas = bitmap.canvas || bitmap._canvas;
                 if (!canvas)
-                    return { animType: 'normal' };
-                const context = canvas.getContext('2d');
+                    return { animType: "normal" };
+                const context = canvas.getContext("2d");
                 const sampleX = x + 1;
                 const sampleY = y + 1;
-                const imageData = context.getImageData(sampleX, sampleY, 1, 1);
-                const [r, g, b, a] = imageData.data;
+                const imageData = context?.getImageData(sampleX, sampleY, 1, 1);
+                const [r, g, _b, a] = imageData.data;
                 if (a > 128) {
                     if (r === 255 && g === 255)
-                        return { animType: 'pingpong' };
+                        return { animType: "pingpong" };
                     if (r === 255)
-                        return { animType: 'freeze' };
+                        return { animType: "freeze" };
                     if (g === 255)
-                        return { animType: 'loop' };
+                        return { animType: "loop" };
                 }
-                return { animType: 'normal' };
+                return { animType: "normal" };
             }
             catch (e) {
-                console.warn('Color detection failed:', e);
-                return { animType: 'normal' };
+                console.warn("Color detection failed:", e);
+                return { animType: "normal" };
             }
         }
         getCustomMotionSpeed() {
@@ -1011,7 +1007,7 @@
                 }
             }
             catch (e) {
-                console.warn('Custom motion speed calculation failed:', e);
+                console.warn("Custom motion speed calculation failed:", e);
             }
             return 12;
         }
@@ -1020,13 +1016,13 @@
                 const canvas = bitmap.canvas || bitmap._canvas;
                 if (!canvas)
                     return 0;
-                const context = canvas.getContext('2d');
-                const imageData = context.getImageData(x + 1, y + 1, 1, 1);
+                const context = canvas.getContext("2d");
+                const imageData = context?.getImageData(x + 1, y + 1, 1, 1);
                 const [, , b, a] = imageData.data;
                 return a > 128 ? b : 0;
             }
             catch (e) {
-                console.warn('Blue value detection failed:', e);
+                console.warn("Blue value detection failed:", e);
                 return 0;
             }
         }
@@ -1040,8 +1036,7 @@
                 return;
             }
             const fileNames = getSvActorFileNames(this._battler.enemy());
-            if (JSON.stringify(fileNames) ===
-                JSON.stringify(this._svActorFileNames)) {
+            if (JSON.stringify(fileNames) === JSON.stringify(this._svActorFileNames)) {
                 return;
             }
             this._svActorFileNames = fileNames;
@@ -1068,15 +1063,15 @@
         updateLayoutWhenLoaded() {
             const allSprites = [this._mainSprite, ...this._additionalSprites];
             const allBitmaps = allSprites
-                .map(s => s.bitmap)
-                .filter(b => !!b);
-            const yetToLoad = allBitmaps.filter(b => !b.isReady());
+                .map((s) => s.bitmap)
+                .filter((b) => !!b);
+            const yetToLoad = allBitmaps.filter((b) => !b.isReady());
             if (yetToLoad.length === 0) {
                 this.updateLayout();
                 return;
             }
             let toLoadCount = yetToLoad.length;
-            yetToLoad.forEach(b => {
+            yetToLoad.forEach((b) => {
                 b.addLoadListener(() => {
                     toLoadCount--;
                     if (toLoadCount === 0) {
@@ -1091,7 +1086,7 @@
             }
             const cols = getSvActorCols(this._battler.enemy());
             const sprites = [this._mainSprite, ...this._additionalSprites];
-            if (sprites.some(s => !s.bitmap?.isReady())) {
+            if (sprites.some((s) => !s.bitmap?.isReady())) {
                 return;
             }
             const frameWidth = this.getFrameWidth(this._mainSprite.bitmap);
@@ -1155,17 +1150,16 @@
             if (!this._battler)
                 return;
             if (this._battler.hp <= 0) {
-                this.startMotion('dead');
+                this.startMotion("dead");
                 return;
             }
-            if (this._battler.states &&
-                typeof this._battler.states === 'function') {
+            if (this._battler.states && typeof this._battler.states === "function") {
                 const states = this._battler.states();
                 for (let i = 0; i < states.length; i++) {
                     const state = states[i];
-                    if (state && state.meta) {
-                        const enemyMotion = state.meta['EnemyMotion'];
-                        if (typeof enemyMotion === 'string' &&
+                    if (state?.meta) {
+                        const enemyMotion = state.meta.EnemyMotion;
+                        if (typeof enemyMotion === "string" &&
                             enemyMotion.trim().length > 0) {
                             this.forceMotion(enemyMotion);
                             return;
@@ -1180,13 +1174,11 @@
                 this.startMotion(requestedMotion);
                 return;
             }
-            this.startMotion('walk');
+            this.startMotion("walk");
         }
         getMotionIndex(motionType) {
-            const motions = (typeof window.Sprite_Battler !== 'undefined' &&
-                window.Sprite_Battler.MOTIONS) ||
-                (typeof window.Sprite_Actor !== 'undefined' &&
-                    window.Sprite_Actor.MOTIONS) ||
+            const motions = window.Sprite_Battler?.MOTIONS ||
+                window.Sprite_Actor?.MOTIONS ||
                 {};
             return motions[motionType]?.index ?? 0;
         }
@@ -1194,32 +1186,24 @@
     // グローバルに公開
     window.Sprite_SvActor = Sprite_SvActor;
     // getSplit関数のグローバル定義（NUUN_ButlerHPGaugeで使用）
-    if (typeof window.getSplit === 'undefined') {
-        window.getSplit = function (tag) {
-            return tag ? tag.split(',') : null;
-        };
+    if (typeof window.getSplit === "undefined") {
+        window.getSplit = (tag) => tag ? tag.split(",") : null;
     }
     // NUUN_ButlerHPGaugeとの互換性確保のため、必要なメソッドを追加
-    if (typeof Game_Enemy.prototype.getHPGaugePositionX === 'undefined') {
-        Game_Enemy.prototype.getHPGaugePositionX = function () {
-            return 0;
-        };
+    if (typeof Game_Enemy.prototype.getHPGaugePositionX === "undefined") {
+        Game_Enemy.prototype.getHPGaugePositionX = () => 0;
     }
-    if (typeof Game_Enemy.prototype.getHPGaugePositionY === 'undefined') {
-        Game_Enemy.prototype.getHPGaugePositionY = function () {
-            return 0;
-        };
+    if (typeof Game_Enemy.prototype.getHPGaugePositionY === "undefined") {
+        Game_Enemy.prototype.getHPGaugePositionY = () => 0;
     }
     // getBattlerOverlayHeightをSVアクター敵用に拡張（元の処理は保持）
-    if (typeof Sprite_Enemy.prototype.getBattlerOverlayHeight !== 'undefined') {
+    if (typeof Sprite_Enemy.prototype.getBattlerOverlayHeight !== "undefined") {
         const _Sprite_Enemy_getBattlerOverlayHeight = Sprite_Enemy.prototype.getBattlerOverlayHeight;
         Sprite_Enemy.prototype.getBattlerOverlayHeight = function () {
             if (this._isSvActorEnemy && this._svActorSprite) {
                 const svSprite = this._svActorSprite;
                 const mainSprite = svSprite._mainSprite;
-                if (mainSprite &&
-                    mainSprite.bitmap &&
-                    mainSprite.bitmap.isReady()) {
+                if (mainSprite?.bitmap?.isReady()) {
                     // SVアクタースプライトの1フレーム分の高さを返す
                     const frameHeight = mainSprite.bitmap.height / 6;
                     return Math.floor(frameHeight * 0.9);
@@ -1233,15 +1217,13 @@
             return _Sprite_Enemy_getBattlerOverlayHeight.call(this);
         };
     }
-    if (typeof Sprite_Enemy.prototype.getBattlerStatePosition !== 'undefined') {
+    if (typeof Sprite_Enemy.prototype.getBattlerStatePosition !== "undefined") {
         const _Sprite_Enemy_getBattlerStatePosition = Sprite_Enemy.prototype.getBattlerStatePosition;
         Sprite_Enemy.prototype.getBattlerStatePosition = function () {
             if (this._isSvActorEnemy && this._svActorSprite) {
                 const size = this.getSvActorSpriteSize();
                 if (size) {
-                    const enemyStatePosition = typeof EnemyStatePosition !== 'undefined'
-                        ? EnemyStatePosition
-                        : 0;
+                    const enemyStatePosition = typeof EnemyStatePosition !== "undefined" ? EnemyStatePosition : 0;
                     if (enemyStatePosition === 0) {
                         // 敵画像の上
                         return size.height + 20;

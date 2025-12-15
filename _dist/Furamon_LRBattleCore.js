@@ -1,3 +1,4 @@
+"use strict";
 /*:
  * @target MZ
  * @plugindesc Lightning Rubellum BattleCore
@@ -34,17 +35,17 @@
  * @default 2.00
  * @decimals 2
  */
-(function () {
-    const PLUGIN_NAME = 'Furamon_LRBattleCore';
+(() => {
+    const PLUGIN_NAME = "Furamon_LRBattleCore";
     const parameters = PluginManager.parameters(PLUGIN_NAME);
-    const prmInitialTP = parameters['initialTp'];
-    const prmNoChargeTpByDamage = parameters['noChargeTpByDamage'] === 'true' ? true : false;
-    const prmExpRate = parseFloat(parameters['expRate']);
+    const prmInitialTP = parameters.initialTp;
+    const prmNoChargeTpByDamage = parameters.noChargeTpByDamage === "true";
+    const prmExpRate = parseFloat(parameters.expRate);
     // 初期TP
     const _Game_Battler_initTp = Game_Battler.prototype.initTp;
     Game_Battler.prototype.initTp = function () {
-        const a = this;
-        if (prmInitialTP != undefined) {
+        if (prmInitialTP !== undefined) {
+            // biome-ignore lint/security/noGlobalEval: プラグインパラメータ(数式可)を評価するため。ローカル実行前提。
             this.setTp(eval(prmInitialTP));
             return;
         }
@@ -52,7 +53,7 @@
     };
     // 被ダメージ時のTP回復
     if (prmNoChargeTpByDamage) {
-        Game_Battler.prototype.chargeTpByDamage = function () { };
+        Game_Battler.prototype.chargeTpByDamage = () => { };
     }
     // <IgnoreExp>のついた特徴を持つアクターがいる場合は
     // 戦闘勝利時の獲得経験値を0にする
@@ -72,10 +73,10 @@
                 .concat(this.traitObjects().map((obj) => ({ meta: obj.meta })));
             allTraitsMeta = allTraitsMeta.concat(objects);
         });
-        if (allTraitsMeta.some((trait) => trait.meta && trait.meta.hasOwnProperty('IgnoreEXP'))) {
+        if (allTraitsMeta.some((trait) => trait.meta && Object.hasOwn(trait.meta, "IgnoreEXP"))) {
             return 0;
         }
-        if (allTraitsMeta.some((trait) => trait.meta && trait.meta.hasOwnProperty('DoubleEXP'))) {
+        if (allTraitsMeta.some((trait) => trait.meta && Object.hasOwn(trait.meta, "DoubleEXP"))) {
             return Math.floor(_Game_Enemy_exp.call(this) * (prmExpRate || 1));
         }
         return _Game_Enemy_exp.call(this);
@@ -84,15 +85,15 @@
     const _Scene_Battle_createActorCommandWindow = Scene_Battle.prototype.createActorCommandWindow;
     Scene_Battle.prototype.createActorCommandWindow = function () {
         _Scene_Battle_createActorCommandWindow.call(this);
-        this._actorCommandWindow.setHandler('escape', this.commandEscape.bind(this));
+        this._actorCommandWindow.setHandler("escape", this.commandEscape.bind(this));
     };
     const _Window_ActorCommand_makeCommandList = Window_ActorCommand.prototype.makeCommandList;
     Window_ActorCommand.prototype.makeCommandList = function () {
         _Window_ActorCommand_makeCommandList.call(this);
         if (this._actor)
             this._list.splice(5, 0, {
-                name: '逃げる',
-                symbol: 'escape',
+                name: "逃げる",
+                symbol: "escape",
                 enabled: BattleManager.canEscape(),
                 ext: null,
             });
@@ -123,7 +124,7 @@
     };
     const _Scene_Battle_onEnemyCancel = Scene_Battle.prototype.onEnemyCancel;
     Scene_Battle.prototype.onEnemyCancel = function () {
-        if (this._actorCommandWindow.currentSymbol() === 'attack') {
+        if (this._actorCommandWindow.currentSymbol() === "attack") {
             this._actorCommandWindow.show();
         }
         _Scene_Battle_onEnemyCancel.apply(this);

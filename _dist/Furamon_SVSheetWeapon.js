@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_SVSheetWeapon.js
 // This software is released under the MIT License.
@@ -42,8 +43,8 @@
  * 例: <SVWeaponOffset:10,-5>
  */
 (() => {
-    const PLUGIN_NAME = 'Furamon_SVSheetWeapon';
-    const hasBattleMotion = PluginManager._scripts.includes('BattleMotionMZ');
+    const _PLUGIN_NAME = "Furamon_SVSheetWeapon";
+    const hasBattleMotion = PluginManager._scripts.includes("BattleMotionMZ");
     //-----------------------------------------------------------------------------
     // ImageManager
     //
@@ -70,7 +71,7 @@
             this.anchor.x = 0.5;
             this.anchor.y = 0.5;
             this._battler = null;
-            this._weaponName = '';
+            this._weaponName = "";
             this._motion = null;
             this._pattern = 0;
             this._offsetX = 0;
@@ -82,7 +83,8 @@
         update() {
             super.update();
             // (NUUN_MenuScreenEX用)メニュー画面では描画しない
-            if (this._battler && SceneManager._scene.constructor !== Scene_Menu) {
+            const scene = SceneManager._scene;
+            if (this._battler && scene && scene.constructor !== Scene_Menu) {
                 this.updateBitmap();
                 this.updateFrame();
                 this.x = this._offsetX;
@@ -97,7 +99,9 @@
                 const weapons = actor.weapons();
                 const weapon = weapons[0];
                 // デフォルトの武器画像名
-                let weaponName = weapon && weapon.meta.SVWeapon ? String(weapon.meta.SVWeapon) : '';
+                let weaponName = weapon?.meta.SVWeapon
+                    ? String(weapon.meta.SVWeapon)
+                    : "";
                 // アクターIDとモーションに応じた武器画像の上書き処理
                 if (weapon) {
                     const actorId = actor.actorId();
@@ -108,7 +112,9 @@
                             ? weapon.meta[dynamicTag]
                             : [weapon.meta[dynamicTag]];
                         for (const setting of motionSettings) {
-                            const [motion, file] = String(setting).split(',').map(s => s.trim());
+                            const [motion, file] = String(setting)
+                                .split(",")
+                                .map((s) => s.trim());
                             if (motion === motionType) {
                                 weaponName = file;
                                 break;
@@ -127,11 +133,11 @@
                         const weaponMeta = weapon ? weapon.meta : {};
                         const offsetString = actorMeta.SVWeaponOffset || weaponMeta.SVWeaponOffset;
                         if (offsetString) {
-                            const offsetData = String(offsetString).split(',');
+                            const offsetData = String(offsetString).split(",");
                             if (offsetData.length === 2) {
                                 const ox = parseInt(offsetData[0].trim(), 10);
                                 const oy = parseInt(offsetData[1].trim(), 10);
-                                if (!isNaN(ox) && !isNaN(oy)) {
+                                if (!Number.isNaN(ox) && !Number.isNaN(oy)) {
                                     this._offsetX = ox;
                                     this._offsetY = oy;
                                 }
@@ -148,7 +154,7 @@
             if (!this._battler || !this._battler._motion)
                 return;
             const bitmap = this.bitmap;
-            if (bitmap && bitmap.isReady()) {
+            if (bitmap?.isReady()) {
                 if (hasBattleMotion) {
                     this.updateFrameBmmz(bitmap);
                 }
@@ -204,7 +210,7 @@
         this._motionType = motionType;
     };
     Sprite_Actor.prototype.setupWeaponAnimation = function () {
-        if (this._actor && this._actor.isWeaponAnimationRequested()) {
+        if (this._actor?.isWeaponAnimationRequested()) {
             this._actor.clearWeaponAnimation();
         }
     };

@@ -1,3 +1,4 @@
+"use strict";
 /*:
  * @target MZ
  * @plugindesc Lightning Rubellum BattleCore After
@@ -10,9 +11,9 @@
  * - NRP_CountTimeBattle.jsとNUUN_BattleStyleEX.jsの競合修正
  *
  */
-(function () {
-    const PLUGIN_NAME = 'Furamon_LRBattleCoreAfter';
-    const parameters = PluginManager.parameters(PLUGIN_NAME);
+(() => {
+    const PLUGIN_NAME = "Furamon_LRBattleCoreAfter";
+    const _parameters = PluginManager.parameters(PLUGIN_NAME);
     // 速度補正が負の行動なら魔法防御で割合相殺
     const _Game_Action_speed = Game_Action.prototype.speed;
     Game_Action.prototype.speed = function () {
@@ -21,10 +22,7 @@
         if (item) {
             if (item.speed < 0) {
                 return Math.min(speed +
-                    (-item.speed *
-                        this.subject().agi *
-                        this.subject().mdf) /
-                        10000, -item.speed);
+                    (-item.speed * this.subject().agi * this.subject().mdf) / 10000, -item.speed);
             }
         }
         return speed;
@@ -39,7 +37,7 @@
     const _BattleManager_selectPreviousCommand = BattleManager.selectPreviousCommand;
     BattleManager.selectPreviousCommand = function () {
         // NRP_CountTimeBattle.js が有効な場合
-        if (PluginManager._scripts.includes('NRP_CountTimeBattle') &&
+        if (PluginManager._scripts.includes("NRP_CountTimeBattle") &&
             this.actor()) {
             // アクションを防御に設定
             const action = this.inputtingAction();
@@ -94,7 +92,7 @@
     const _Scene_Battle_startActorCommandSelection = Scene_Battle.prototype.startActorCommandSelection;
     Scene_Battle.prototype.startActorCommandSelection = function () {
         _Scene_Battle_startActorCommandSelection.call(this);
-        if (PluginManager._scripts.includes('NRP_CountTimeBattle')) {
+        if (PluginManager._scripts.includes("NRP_CountTimeBattle")) {
             if (this._statusWindow) {
                 const actor = BattleManager.actor();
                 if (actor) {

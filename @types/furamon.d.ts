@@ -401,6 +401,9 @@ declare interface Sprite_ActorConstructor {
 declare var Sprite_Actor: Sprite_ActorConstructor;
 
 interface _Window {
+    requestAnimationFrame(scheduleCompat: () => void): unknown;
+    setTimeout(scheduleCompat: () => void, arg1: number): unknown;
+    PIXI: any;
     __TAURI__: any;
     enemyHPGaugeLength?: string[] | null;
     getSplit?: (tag: string | null | undefined) => string[] | null;

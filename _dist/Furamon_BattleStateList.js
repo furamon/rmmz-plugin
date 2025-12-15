@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_BattleStateList.js
 // This software is released under the MIT License.
@@ -65,19 +66,19 @@
  * @type multiline_string
  * @default ""
  */
-(function () {
-    const pluginName = 'Furamon_BattleStateList';
+(() => {
+    const pluginName = "Furamon_BattleStateList";
     const params = PluginManager.parameters(pluginName);
-    const stateButton = String(params.StateButton || 'tab');
-    const stateDescriptionsRaw = JSON.parse(params.StateDescriptions || '[]');
+    const stateButton = String(params.StateButton || "tab");
+    const stateDescriptionsRaw = JSON.parse(params.StateDescriptions || "[]");
     const stateDescriptions = stateDescriptionsRaw.map((item) => {
         const parsed = JSON.parse(item);
         return {
             stateId: parseInt(parsed.StateId, 10),
-            description: parsed.Description || ''
+            description: parsed.Description || "",
         };
     });
-    const stateDescMap = new Map(stateDescriptions.map(d => [d.stateId, d.description]));
+    const stateDescMap = new Map(stateDescriptions.map((d) => [d.stateId, d.description]));
     const windowWidth = Number(params.WindowWidth || 0);
     const windowHeight = Number(params.WindowHeight || 0);
     const itemSpacing = Number(params.ItemSpacing || 12);
@@ -92,21 +93,31 @@
             this.openness = 0;
             this._dataStates = [];
         }
+        isOpen() {
+            return super.isOpen();
+        }
+        isClosed() {
+            return super.isClosed();
+        }
         makeItemList() {
-            const actorStates = $gameParty.allMembers().reduce((acc, member) => {
+            const actorStates = $gameParty
+                .allMembers()
+                .reduce((acc, member) => {
                 return acc.concat(member.states());
             }, []);
-            const enemyStates = $gameTroop.members().reduce((acc, member) => {
+            const enemyStates = $gameTroop
+                .members()
+                .reduce((acc, member) => {
                 return acc.concat(member.states());
             }, []);
             const allStates = actorStates.concat(enemyStates);
-            const uniqueStateIds = [...new Set(allStates.map(state => state.id))];
+            const uniqueStateIds = [...new Set(allStates.map((state) => state.id))];
             this._dataStates = uniqueStateIds
-                .filter(id => {
+                .filter((id) => {
                 const desc = stateDescMap.get(id);
-                return desc && desc.trim() !== '';
+                return desc && desc.trim() !== "";
             })
-                .map(id => $dataStates[id])
+                .map((id) => $dataStates[id])
                 .filter((state) => !!state);
         }
         refresh() {
@@ -114,7 +125,7 @@
             this.makeItemList();
             let y = 0;
             for (const state of this._dataStates) {
-                const description = stateDescMap.get(state.id) || '';
+                const description = stateDescMap.get(state.id) || "";
                 const lineHeight = this.lineHeight();
                 // アイコンと名前を描画
                 this.drawIcon(state.iconIndex, 0, y + 2);
@@ -145,8 +156,6 @@
         const rect = this.stateListWindowRect();
         this._stateListWindow = new Window_BattleStateList(rect);
         this.addWindow(this._stateListWindow);
-    };
-    Scene_Battle.prototype.stateListWindowRect = function () {
         const ww = windowWidth > 0 ? windowWidth : Graphics.boxWidth * 0.9;
         const wh = windowHeight > 0 ? windowHeight : Graphics.boxHeight * 0.9;
         const wx = (Graphics.boxWidth - ww) / 2;
@@ -162,23 +171,22 @@
         if (this.isStateListTriggered()) {
             this.toggleStateListWindow();
         }
-        else if (this._stateListWindow.isOpen()) {
+        else if (this._stateListWindow?.isOpen()) {
             if (Input.isTriggered("cancel")) {
                 this.closeStateListWindow();
             }
-            else if (!this._stateListWindow.active && this._openedStateListFrom) {
+            else if (!this._stateListWindow?.active && this._openedStateListFrom) {
                 this.closeStateListWindow();
             }
         }
     };
-    Scene_Battle.prototype.isStateListTriggered = function () {
-        return Input.isTriggered(stateButton);
-    };
+    Scene_Battle.prototype.isStateListTriggered = () => Input.isTriggered(stateButton);
     Scene_Battle.prototype.toggleStateListWindow = function () {
-        if (this._stateListWindow.isOpen()) {
+        if (this._stateListWindow?.isOpen()) {
             this.closeStateListWindow();
         }
-        else if (this._partyCommandWindow.active || this._actorCommandWindow.active) {
+        else if (this._partyCommandWindow.active ||
+            this._actorCommandWindow.active) {
             this.openStateListWindow();
         }
     };
@@ -192,10 +200,10 @@
             this._openedStateListFrom = "actor";
             this._actorCommandWindow.hide();
         }
-        this._stateListWindow.refresh();
-        if (this._stateListWindow._dataStates.length > 0) {
-            this._stateListWindow.open();
-            this._stateListWindow.activate();
+        this._stateListWindow?.refresh();
+        if (this._stateListWindow?._dataStates.length > 0) {
+            this._stateListWindow?.open();
+            this._stateListWindow?.activate();
         }
         else {
             SoundManager.playBuzzer();
@@ -203,8 +211,8 @@
         }
     };
     Scene_Battle.prototype.closeStateListWindow = function () {
-        this._stateListWindow.close();
-        this._stateListWindow.deactivate();
+        this._stateListWindow?.close();
+        this._stateListWindow?.deactivate();
         if (this._openedStateListFrom === "party") {
             this._partyCommandWindow.show();
         }

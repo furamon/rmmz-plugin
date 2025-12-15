@@ -1,10 +1,4 @@
-//------------------------------------------------------------------------------
-// Furamon_NRP_AdditionalClasses.js
-// This software is released under the MIT License.
-// http://opensource.org/licenses/mit-license.php
-//------------------------------------------------------------------------------
-// 2025/10/17 1.0.0-Beta 非公開作成
-// 2025/10/19 1.1.0-Beta 経験値関連が不具合まつりだったので修正
+"use strict";
 /*:
  * @target MZ
  * @plugindesc NRP様の多重転職プラグインの改造版
@@ -553,11 +547,7 @@
  * スキル習得レベルなども1ずれます(DBでLv2習得→Lv1で習得)
  *
  */
-//-----------------------------------------------------------------------------
-// AdditionalClass
-//
-// 追加職業を保有するクラス
-// ※外部プラグインから参照できるように外側に定義
+var AdditionalClass;
 AdditionalClass = function (actor, classId) {
     this.initialize(actor, classId);
 };
@@ -574,21 +564,21 @@ AdditionalClass.prototype.initialize = function (actor, classId) {
  * ●NeedsExpメタデータを取得、念の為外部参照可能に
  */
 AdditionalClass.prototype.getNeedsExpData = function () {
-    if (this._data && this._data.meta.NeedsExp) {
+    if (this._data?.meta.NeedsExp) {
         const needsExpMeta = this._data.meta.NeedsExp;
-        if (typeof needsExpMeta === 'string') {
+        if (typeof needsExpMeta === "string") {
             try {
                 return JSON.parse(needsExpMeta);
             }
             catch (e) {
-                console.error('Failed to parse NeedsExp tag for class ' + this.id, e);
+                console.error(`Failed to parse NeedsExp tag for class ${this.id}`, e);
                 return null;
             }
         }
         else {
-            console.warn('NeedsExp tag for class ' +
+            console.warn("NeedsExp tag for class " +
                 this.id +
-                ' is not a string. Value: ' +
+                " is not a string. Value: " +
                 needsExpMeta);
             return null;
         }
@@ -599,10 +589,9 @@ AdditionalClass.prototype.getNeedsExpData = function () {
  * ●<NoGrow>タグを持つか
  */
 AdditionalClass.prototype.isNoGrow = function () {
-    return !!(this._data && this._data.meta.NoGrow);
+    return !!this._data?.meta.NoGrow;
 };
-(function () {
-    'use strict';
+(() => {
     // function toBoolean(str, def) {
     //     if (str === true || str === 'true') {
     //         return true;
@@ -623,49 +612,49 @@ AdditionalClass.prototype.isNoGrow = function () {
     //     }
     //     return str;
     // }
-    const PLUGIN_NAME = 'Furamon_NRP_AdditionalClasses';
+    const PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";
     const parameters = PluginManager.parameters(PLUGIN_NAME);
-    const pParamPlusByLevel = parameters['ParamPlusByLevel'] === 'true';
-    const pParamPlusByTag = parameters['ParamPlusByTag'] === 'true';
-    const pKeepSkill = parameters['KeepSkill'] === 'true';
-    const pDefaultMaxLevel = Number(parameters['DefaultMaxLevel'] || 99);
-    const pLvUpMessage = parameters['LvUpMessage'] || '%1は%2レベル %3 に上がった！';
-    const pLvName = parameters['LvName'] || 'Lv';
-    const pExpName = parameters['ExpName'] || 'EXP';
-    const pUseNormalExp = parameters['UseNormalExp'] == 'true';
-    const pDefaultClassExp = parameters['DefaultClassExp'] || '0';
-    const pClassExpMessage = parameters['ClassExpMessage'] || '%1 の%2を獲得！';
-    const pClassLvUpLater = parameters['ClassLvUpLater'] == 'true';
-    const pClassExpSwitch = Number(parameters['ClassExpSwitch'] || 0);
-    const pBenchClassExpRate = parameters['BenchClassExpRate'] || '1.00';
-    const pUnificationExp = parameters['UnificationExp'] == 'true';
-    const pNoDuplicateExp = parameters['NoDuplicateExp'] == 'true';
-    const pOverwriteClassField = parameters['OverwriteClassField'] == 'true';
-    const pShowLevelOnMenu = parameters['ShowLevelOnMenu'] || '';
-    const pShowLevelOnStatus = parameters['ShowLevelOnStatus'] == 'true';
-    const pNormalExpWidth = Number(parameters['NormalExpWidth'] || 110);
-    const pClassExpWidth = Number(parameters['ClassExpWidth'] || 110);
-    const pClassLvMaxExp = parameters['ClassLvMaxExp'] || '-------';
-    const pShowMaxLevelMessage = parameters['ShowMaxLevelMessage'] == 'true';
-    const pMaxLevelMessage = parameters['MaxLevelMessage'] || '%1は%2を極めた！';
-    const pShowBenchMaxLevel = parameters['ShowBenchMaxLevel'] == 'true';
-    const pZeroLevel = parameters['ZeroLevel'] == 'true';
+    const pParamPlusByLevel = parameters.ParamPlusByLevel === "true";
+    const pParamPlusByTag = parameters.ParamPlusByTag === "true";
+    const pKeepSkill = parameters.KeepSkill === "true";
+    const pDefaultMaxLevel = Number(parameters.DefaultMaxLevel || 99);
+    const pLvUpMessage = parameters.LvUpMessage || "%1は%2レベル %3 に上がった！";
+    const pLvName = parameters.LvName || "Lv";
+    const pExpName = parameters.ExpName || "EXP";
+    const pUseNormalExp = parameters.UseNormalExp === "true";
+    const pDefaultClassExp = parameters.DefaultClassExp || "0";
+    const pClassExpMessage = parameters.ClassExpMessage || "%1 の%2を獲得！";
+    const pClassLvUpLater = parameters.ClassLvUpLater === "true";
+    const pClassExpSwitch = Number(parameters.ClassExpSwitch || 0);
+    const pBenchClassExpRate = parameters.BenchClassExpRate || "1.00";
+    const pUnificationExp = parameters.UnificationExp === "true";
+    const pNoDuplicateExp = parameters.NoDuplicateExp === "true";
+    const pOverwriteClassField = parameters.OverwriteClassField === "true";
+    const pShowLevelOnMenu = parameters.ShowLevelOnMenu || "";
+    const pShowLevelOnStatus = parameters.ShowLevelOnStatus === "true";
+    const pNormalExpWidth = Number(parameters.NormalExpWidth || 110);
+    const pClassExpWidth = Number(parameters.ClassExpWidth || 110);
+    const pClassLvMaxExp = parameters.ClassLvMaxExp || "-------";
+    const pShowMaxLevelMessage = parameters.ShowMaxLevelMessage === "true";
+    const pMaxLevelMessage = parameters.MaxLevelMessage || "%1は%2を極めた！";
+    const pShowBenchMaxLevel = parameters.ShowBenchMaxLevel === "true";
+    const pZeroLevel = parameters.ZeroLevel === "true";
     //----------------------------------------
     // ＭＺ用プラグインコマンド
     //----------------------------------------
     // MVには存在しないため、空で定義しておかないとエラーになる。
     if (!PluginManager.registerCommand) {
-        PluginManager.registerCommand = function () { };
+        PluginManager.registerCommand = () => { };
     }
     // 重複チェック用
-    let mTmpAdditionalClassIds = [];
-    let mNoDuplicateExp = false;
+    let _mTmpAdditionalClassIds = [];
+    let _mNoDuplicateExp = false;
     // イベントコマンドから呼び出されたかどうかの判定
     let mCommandFlg = false;
     /**
      * ●職業の追加
      */
-    PluginManager.registerCommand(PLUGIN_NAME, 'AddClass', function (args) {
+    PluginManager.registerCommand(PLUGIN_NAME, "AddClass", function (args) {
         // // インデックス
         // Furamon:単一職業になったのでいらなくなった、以下インデックス関連は全部CO
         // const index = toNumber(args.Index);
@@ -689,7 +678,7 @@ AdditionalClass.prototype.isNoGrow = function () {
     /**
      * ●職業の削除
      */
-    PluginManager.registerCommand(PLUGIN_NAME, 'RemoveClass', function (args) {
+    PluginManager.registerCommand(PLUGIN_NAME, "RemoveClass", function (args) {
         // // インデックス
         // const index = toNumber(args.Index);
         // // 削除する追加職業ＩＤ
@@ -719,7 +708,7 @@ AdditionalClass.prototype.isNoGrow = function () {
     /**
      * ●経験値の増減
      */
-    PluginManager.registerCommand(PLUGIN_NAME, 'ChangeExp', function (args) {
+    PluginManager.registerCommand(PLUGIN_NAME, "ChangeExp", function (args) {
         // イベントコマンドから呼び出されたかどうかの判定
         mCommandFlg = true;
         // // インデックス
@@ -764,7 +753,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         // かつ、メッセージが発生した場合
         if (show && $gameMessage.isBusy()) {
             // ウェイトする。
-            this.setWaitMode('message');
+            this.setWaitMode("message");
         }
     });
     /**
@@ -811,7 +800,7 @@ AdditionalClass.prototype.isNoGrow = function () {
     /**
      * ●レベルの増減
      */
-    PluginManager.registerCommand(PLUGIN_NAME, 'ChangeLevel', function (args) {
+    PluginManager.registerCommand(PLUGIN_NAME, "ChangeLevel", function (args) {
         // イベントコマンドから呼び出されたかどうかの判定
         mCommandFlg = true;
         // // インデックス
@@ -822,7 +811,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         let level = Number(args.Level || 0);
         // レベル（変数）
         const variableLevel = Number(args.VariableLevel || 0);
-        const show = Boolean(args.ShowLvUpMessage == 'true');
+        const show = Boolean(args.ShowLvUpMessage === "true");
         // 変数の指定がある場合は優先
         if (variableLevel) {
             level = $gameVariables.value(variableLevel);
@@ -835,10 +824,10 @@ AdditionalClass.prototype.isNoGrow = function () {
             // アクターの指定がない場合は全体を対象化
         }
         else if (isForParty(args)) {
-            console.log('pass');
+            console.log("pass");
             // 経験値共有型かつ重複加算禁止の場合
             if (pUnificationExp && pNoDuplicateExp) {
-                console.log('share');
+                console.log("share");
                 // 経験値共有用のアクターを対象にする。
                 const expActor = getExpActor();
                 if (expActor) {
@@ -850,7 +839,7 @@ AdditionalClass.prototype.isNoGrow = function () {
                 }
             }
             else {
-                console.log('def');
+                console.log("def");
                 // 通常時
                 for (const actor of $gameParty.members()) {
                     changeLevel(actor, level, show);
@@ -860,7 +849,7 @@ AdditionalClass.prototype.isNoGrow = function () {
             // かつ、メッセージが発生した場合
             if (show && $gameMessage.isBusy()) {
                 // ウェイトする。
-                this.setWaitMode('message');
+                this.setWaitMode("message");
             }
         }
     });
@@ -904,7 +893,7 @@ AdditionalClass.prototype.isNoGrow = function () {
     /**
      * ●追加職業の情報を取得
      */
-    PluginManager.registerCommand(PLUGIN_NAME, 'GetInformation', function (args) {
+    PluginManager.registerCommand(PLUGIN_NAME, "GetInformation", function (args) {
         // アクターを取得
         const actor = getActor(args);
         if (!actor) {
@@ -978,8 +967,8 @@ AdditionalClass.prototype.isNoGrow = function () {
     /**
      * ●現在のパーティが就いている全職業を取得
      */
-    function allPartyAdditionalClasses() {
-        let additionalClasses = [];
+    function _allPartyAdditionalClasses() {
+        const additionalClasses = [];
         for (const actor of $gameParty.allMembers()) {
             const additionalClass = actor.additionalClass();
             if (additionalClass) {
@@ -1164,7 +1153,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         if (needsExp) {
             return needsExp.length + 1;
         }
-        if (this._data && this._data.meta.MaxLevel) {
+        if (this._data?.meta.MaxLevel) {
             return Number(this._data.meta.MaxLevel);
         }
         else if (pDefaultMaxLevel) {
@@ -1200,8 +1189,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         // 変更前のレベル＆スキルを保持
         const lastLevel = this._level;
         const lastSkills = skillActor.skills();
-        while (!this.isMaxLevel() &&
-            this.exp() >= Number(this.nextLevelExp())) {
+        while (!this.isMaxLevel() && this.exp() >= Number(this.nextLevelExp())) {
             this.levelUp();
         }
         while (this.exp() < this.currentLevelExp()) {
@@ -1216,7 +1204,7 @@ AdditionalClass.prototype.isNoGrow = function () {
                 this.displayLevelUp(skillActor.findNewSkills(lastSkills));
             }
             // 最大レベル到達を表示
-            if (this.maxLevel() == this._level) {
+            if (this.maxLevel() === this._level) {
                 this.displayLevelMax(show);
             }
         }
@@ -1275,7 +1263,7 @@ AdditionalClass.prototype.isNoGrow = function () {
                 $gameMessage.add(TextManager.obtainSkill.format(skill.name, skill.iconIndex));
             }
             else {
-                console.warn('Undefined skill found in newSkills array.');
+                console.warn("Undefined skill found in newSkills array.");
             }
         }
         mDisplayLevelUp = true;
@@ -1306,7 +1294,7 @@ AdditionalClass.prototype.isNoGrow = function () {
             $gameMessage.newPage();
         }
         // 改行しながら出力
-        for (const line of text.split('\\n')) {
+        for (const line of text.split("\\n")) {
             $gameMessage.add(line);
         }
     };
@@ -1431,7 +1419,8 @@ AdditionalClass.prototype.isNoGrow = function () {
         const additionalClass = this.additionalClass();
         if (additionalClass) {
             // 習得スキルを削除
-            for (const learning of additionalClass._data.learnings) {
+            // learnings が未設定(undefined)のケースがあるため、空配列として扱う
+            for (const learning of (additionalClass._data?.learnings ?? [])) {
                 // 転職時も維持するスキルなら削除しない。
                 if (isKeepSkill(learning.skillId)) {
                     continue;
@@ -1447,7 +1436,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         const skillData = $dataSkills[skillId];
         // スキル毎の指定がある場合は優先
         const metaKeepSkill = skillData.meta.KeepSkill != null
-            ? String(skillData.meta.KeepSkill) === 'true'
+            ? String(skillData.meta.KeepSkill) === "true"
             : undefined;
         if (metaKeepSkill !== undefined) {
             return metaKeepSkill;
@@ -1463,9 +1452,9 @@ AdditionalClass.prototype.isNoGrow = function () {
         // 'this' の型を明示
         if (mForceClassId) {
             // -1で空白を返す
-            if (mForceClassId == -1) {
+            if (mForceClassId === -1) {
                 const ret = [];
-                ret.name = '';
+                ret.name = "";
                 return ret;
             }
             return $dataClasses[mForceClassId];
@@ -1521,8 +1510,7 @@ AdditionalClass.prototype.isNoGrow = function () {
             return false;
         }
         const currentAdditionalClass = this.additionalClass();
-        if (currentAdditionalClass &&
-            currentAdditionalClass.id === gameClass.id) {
+        if (currentAdditionalClass && currentAdditionalClass.id === gameClass.id) {
             return true;
         }
         return false;
@@ -1549,17 +1537,17 @@ AdditionalClass.prototype.isNoGrow = function () {
             // <Addxxx:n>による能力値上昇
             if (pParamPlusByTag) {
                 const paramShortNames = [
-                    'Mhp',
-                    'Mmp',
-                    'Atk',
-                    'Def',
-                    'Mat',
-                    'Mdf',
-                    'Agi',
-                    'Luk',
+                    "Mhp",
+                    "Mmp",
+                    "Atk",
+                    "Def",
+                    "Mat",
+                    "Mdf",
+                    "Agi",
+                    "Luk",
                 ];
                 const paramName = paramShortNames[paramId];
-                const pattern = new RegExp(`<Add${paramName}:(-?\\d+\\.?\\d*)>`, 'gi'); // 小数点も考慮
+                const pattern = new RegExp(`<Add${paramName}:(-?\\d+\\.?\\d*)>`, "gi"); // 小数点も考慮
                 let maxValue = -Infinity;
                 const objects = this.traitObjects();
                 const noteObjects = [...objects];
@@ -1572,7 +1560,7 @@ AdditionalClass.prototype.isNoGrow = function () {
                     }
                 }
                 // <Inheritance> タグがあるかチェック
-                if (additionalClass?.note?.includes('<Inheritance>')) {
+                if (additionalClass?.note?.includes("<Inheritance>")) {
                     for (const classId of this._masteredClassIds) {
                         const masteredClass = $dataClasses[classId];
                         if (masteredClass) {
@@ -1596,7 +1584,7 @@ AdditionalClass.prototype.isNoGrow = function () {
                 if (maxValue === -Infinity) {
                     maxValue = 0;
                 }
-                if (paramName === 'Mhp' || paramName === 'Mmp') {
+                if (paramName === "Mhp" || paramName === "Mmp") {
                     // アクターの基本能力値を取得
                     const baseValue = this.paramBase(paramId);
                     // 基本能力値に乗算を適用し、元のparamPlusの結果に加算
@@ -1621,11 +1609,11 @@ AdditionalClass.prototype.isNoGrow = function () {
             const _Game_Interpreter_command315 = Game_Interpreter.prototype.command315;
             Game_Interpreter.prototype.command315 = function (params) {
                 // 重複確認用の一時配列をクリア
-                mTmpAdditionalClassIds = [];
+                _mTmpAdditionalClassIds = [];
                 // 経験値の重複加算禁止
-                mNoDuplicateExp = true;
+                _mNoDuplicateExp = true;
                 const ret = _Game_Interpreter_command315.call(this, params);
-                mNoDuplicateExp = false;
+                _mNoDuplicateExp = false;
                 return ret;
             };
             /**
@@ -1634,11 +1622,11 @@ AdditionalClass.prototype.isNoGrow = function () {
             const _BattleManager_gainExp = BattleManager.gainExp;
             BattleManager.gainExp = function () {
                 // 重複確認用の一時配列をクリア
-                mTmpAdditionalClassIds = [];
+                _mTmpAdditionalClassIds = [];
                 // 経験値の重複加算禁止
-                mNoDuplicateExp = true;
+                _mNoDuplicateExp = true;
                 _BattleManager_gainExp.apply(this, []);
-                mNoDuplicateExp = false;
+                _mNoDuplicateExp = false;
             };
         }
         /**
@@ -1682,19 +1670,18 @@ AdditionalClass.prototype.isNoGrow = function () {
      * 【独自】職業経験値の取得
      */
     Game_Enemy.prototype.classExp = function () {
-        const a = this; // eval参照用
         let classExp = 0;
         // 設定値が存在する場合
-        if (this.enemy().meta.ClassExp != undefined) {
+        if (this.enemy().meta.ClassExp !== undefined) {
             classExp = eval(String(this.enemy().meta.ClassExp));
             // 既定値が存在する場合
         }
-        else if (pDefaultClassExp != undefined) {
+        else if (pDefaultClassExp !== undefined) {
             classExp = eval(pDefaultClassExp);
         }
         // rateを乗算する。
         const rate = this.enemy().meta.ClassExpRate;
-        if (rate != undefined) {
+        if (rate !== undefined) {
             classExp = (classExp * Number(rate)) / 100;
         }
         return classExp;
@@ -1708,7 +1695,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         mCommandFlg = false;
         _BattleManager_makeRewards.apply(this, []);
         // 報酬に職業経験値を追加
-        this._rewards['classExp'] = $gameTroop.classExpTotal();
+        this._rewards.classExp = $gameTroop.classExpTotal();
     };
     /**
      * ●報酬の獲得
@@ -1791,7 +1778,6 @@ AdditionalClass.prototype.isNoGrow = function () {
     Game_Actor.prototype.finalClassExpRate = function () {
         // 'this' の型を明示
         let rate = 1;
-        const a = this; // eval計算用
         // 倍率計算
         for (const object of this.traitObjects()) {
             const classExpRate = object.meta.ClassExpRate;
@@ -1799,15 +1785,14 @@ AdditionalClass.prototype.isNoGrow = function () {
                 rate *= eval(classExpRate) / 100;
             }
         }
-        return (rate * (this.isBattleMember() ? 1 : this.benchMembersClassExpRate()));
+        return rate * (this.isBattleMember() ? 1 : this.benchMembersClassExpRate());
     };
     /**
      * 【独自】控えメンバーの職業経験値比率
      */
     Game_Actor.prototype.benchMembersClassExpRate = function () {
         // 'this' の型を明示
-        if (pBenchClassExpRate != undefined) {
-            const a = this; // eval計算用
+        if (pBenchClassExpRate !== undefined) {
             return eval(pBenchClassExpRate);
         }
         return this.benchMembersExpRate();
@@ -1836,7 +1821,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         const classExp = this._rewards.classExp;
         if (classExp > 0 && pClassExpMessage) {
             const text = pClassExpMessage.format(classExp, pExpName);
-            $gameMessage.add('\\.' + text);
+            $gameMessage.add(`\\.${text}`);
         }
     };
     //----------------------------------------
@@ -1865,7 +1850,7 @@ AdditionalClass.prototype.isNoGrow = function () {
             const expActor = getExpActor();
             if (expActor) {
                 // 共有用アクターなら処理しない。
-                if (this == expActor) {
+                if (this === expActor) {
                     return;
                 }
                 this._exp = expActor._exp;
@@ -1901,17 +1886,17 @@ AdditionalClass.prototype.isNoGrow = function () {
                     const classNameWidth = this.textSizeEx(additionalClass.name).width;
                     x += classNameWidth + this.itemPadding();
                     // 数字のみ
-                    if (pShowLevelOnMenu == 'simple') {
-                        this.drawText(String(additionalClass.level), x, y, 30, 'right');
+                    if (pShowLevelOnMenu === "simple") {
+                        this.drawText(String(additionalClass.level), x, y, 30, "right");
                         // 全表示
                     }
-                    else if (pShowLevelOnMenu == 'full') {
+                    else if (pShowLevelOnMenu === "full") {
                         this.changeTextColor(ColorManager.systemColor());
-                        this.drawText(pLvName, x, y, this.innerWidth - x - this.itemPadding() * 2 - 40, 'right');
+                        this.drawText(pLvName, x, y, this.innerWidth - x - this.itemPadding() * 2 - 40, "right");
                         this.resetTextColor();
                         // 追加職業のレベル描画を追加
                         x += 40;
-                        this.drawText(String(additionalClass.level), x, y, this.innerWidth - x - this.itemPadding() * 2, 'right');
+                        this.drawText(String(additionalClass.level), x, y, this.innerWidth - x - this.itemPadding() * 2, "right");
                     }
                 }
             };
@@ -1941,7 +1926,7 @@ AdditionalClass.prototype.isNoGrow = function () {
             this.drawText(TextManager.levelA, x, y, 48);
             this.resetTextColor();
             // 少しＸ座標を詰める
-            this.drawText(String(actor.level), x + 42, y, 36, 'right');
+            this.drawText(String(actor.level), x + 42, y, 36, "right");
             // this.drawText(actor.level, x + 84, y, 36, "right");
         };
         /**
@@ -1950,19 +1935,19 @@ AdditionalClass.prototype.isNoGrow = function () {
         Window_Status.prototype.drawExpInfo = function (x, y) {
             // 'this' の型を明示
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText(TextManager.exp, x - pNormalExpWidth * 2 - 30, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText(TextManager.exp, x - pNormalExpWidth * 2 - 30, y, this.innerWidth - this.itemPadding(), "right");
             this.resetTextColor();
             // 現在の経験値
-            this.drawText(String(this.expTotalValue()), x - pNormalExpWidth - 15, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText(String(this.expTotalValue()), x - pNormalExpWidth - 15, y, this.innerWidth - this.itemPadding(), "right");
             // "/"
-            this.drawText('/', x - pNormalExpWidth, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText("/", x - pNormalExpWidth, y, this.innerWidth - this.itemPadding(), "right");
             // 次にレベルアップする経験値
             let nextExp = Number(this.expTotalValue()) + Number(this.expNextValue());
             // 最大レベルの時は-------表記になるので修正
-            if (this._actor.isMaxLevel()) {
+            if (this._actor?.isMaxLevel()) {
                 nextExp = Number(this.expTotalValue());
             }
-            this.drawText(String(nextExp), x, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText(String(nextExp), x, y, this.innerWidth - this.itemPadding(), "right");
         };
         /**
          * ●ブロック２（２行目）の描画
@@ -1973,7 +1958,7 @@ AdditionalClass.prototype.isNoGrow = function () {
             this.drawBasicInfo(204, y);
             // this.drawExpInfo(456, y);
             // 追加職業の情報
-            this.drawClassInfo(this._actor.additionalClass(), 0, y);
+            this.drawClassInfo(this._actor?.additionalClass(), 0, y);
             // // サブ職の情報
             // this.drawClassInfo(
             //     this._actor.additionalClasses()[1],
@@ -1990,20 +1975,20 @@ AdditionalClass.prototype.isNoGrow = function () {
             if (!additionalClass) {
                 return;
             }
-            this.drawText(additionalClass.name, x, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText(additionalClass.name, x, y, this.innerWidth - this.itemPadding(), "right");
             // 下の段に
             y += this.lineHeight();
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText(pLvName, x - pClassExpWidth * 2 - 70, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText(pLvName, x - pClassExpWidth * 2 - 70, y, this.innerWidth - this.itemPadding(), "right");
             this.resetTextColor();
             // 追加職業のレベル描画を追加
-            this.drawText(String(additionalClass.level), x - pClassExpWidth * 2 - 30, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText(String(additionalClass.level), x - pClassExpWidth * 2 - 30, y, this.innerWidth - this.itemPadding(), "right");
             // 現在の経験値
-            this.drawText(String(additionalClass.currentExp(true)), x - pClassExpWidth - 15, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText(String(additionalClass.currentExp(true)), x - pClassExpWidth - 15, y, this.innerWidth - this.itemPadding(), "right");
             // "/"
-            this.drawText('/', x - pClassExpWidth, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText("/", x - pClassExpWidth, y, this.innerWidth - this.itemPadding(), "right");
             // 次にレベルアップする経験値
-            this.drawText(String(additionalClass.nextLevelExp(true)), x, y, this.innerWidth - this.itemPadding(), 'right');
+            this.drawText(String(additionalClass.nextLevelExp(true)), x, y, this.innerWidth - this.itemPadding(), "right");
         };
         /**
          * ●基本情報の出力
@@ -2018,9 +2003,9 @@ AdditionalClass.prototype.isNoGrow = function () {
          * ●二つ名の描画
          * ※Window_StatusBase.prototype.drawActorNicknameを継承
          */
-        Window_Status.prototype.drawActorNickname = function (
+        Window_Status.prototype.drawActorNickname = (
         // 'this' の型を明示
-        actor, x, y, width) {
+        _actor, _x, _y, _width) => {
             // 描画しない。
         };
     }
@@ -2037,7 +2022,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         this.changeTextColor(ColorManager.systemColor());
         this.drawText(pLvName, x, y, 48);
         this.resetTextColor();
-        this.drawText(String(additionalClass.level), x + 44, y, 36, 'right');
+        this.drawText(String(additionalClass.level), x + 44, y, 36, "right");
     };
     //-----------------------------------------------------------------------------
     // 職業経験値の取得（アイテム）
@@ -2051,7 +2036,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         _Game_Action_apply.call(this, target);
         mDisplayLevelUp = false;
         // 職業経験値を加算
-        const addClassExp = this.item().meta.AddClassExp;
+        const addClassExp = this.item()?.meta.AddClassExp;
         if (addClassExp) {
             const result = target.result();
             if (result.isHit()) {
@@ -2073,7 +2058,7 @@ AdditionalClass.prototype.isNoGrow = function () {
     Game_Action.prototype.hasItemAnyValidEffects = function (target) {
         const ret = _Game_Action_hasItemAnyValidEffects.call(this, target);
         // 効果が存在する場合は判定を有効にする。
-        return ret || Boolean(this.item().meta.AddClassExp);
+        return ret || Boolean(this.item()?.meta.AddClassExp);
     };
     //-----------------------------------------------------------------------------
     // NRP_TraitsPlus.jsとの連携用
@@ -2109,15 +2094,15 @@ AdditionalClass.prototype.isNoGrow = function () {
             includeHasAbilitySkills: true,
         });
         // 前回のスキルと比較して新しく習得したスキルを抽出
-        const _newSkills = currentSkills
+        const learnedSkills = currentSkills
             .filter((skill) => {
             // 前回のスキル一覧に含まれていないスキルを抽出
-            return !_lastSkills.some((lastSkill) => (typeof lastSkill === 'number'
-                ? lastSkill
-                : lastSkill.id) ===
-                (typeof skill === 'number' ? skill : skill.id));
+            return !_lastSkills.some((lastSkill) => (typeof lastSkill === "number" ? lastSkill : lastSkill.id) ===
+                (typeof skill === "number" ? skill : skill.id));
         })
-            .map((skill) => typeof skill === 'number' ? $dataSkills[skill] : skill);
-        _AdditionalClass_displayLevelUp.call(this, _newSkills);
+            .map((skill) => typeof skill === "number" ? $dataSkills[skill] : skill);
+        // 互換のため引数を受け取るが、実際には差分計算した結果を優先して渡す
+        void newSkills;
+        _AdditionalClass_displayLevelUp.call(this, learnedSkills);
     };
 })();

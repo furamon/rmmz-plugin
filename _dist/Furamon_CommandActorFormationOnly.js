@@ -1,3 +1,4 @@
+"use strict";
 /*:
  * @target MZ
  * @plugindesc コマンドアクターのみ入れ替え自由
@@ -36,11 +37,11 @@
         _Window_FormationMember_initialize.call(this, rect, formation);
         this._contentsBackSprite.alpha = 1;
     };
-    Window_StatusBase.prototype.isChangeActorActive = function (actor) {
+    Window_StatusBase.prototype.isChangeActorActive = (actor) => {
         if ($gameParty.inBattle()) {
             // 「アクターのターンが回っている」「アクターが死んでいる」「アクターが前衛にいない」のいずれかか
             if (actor === BattleManager._subject ||
-                (actor && actor.isDead()) ||
+                actor?.isDead() ||
                 !$gameParty.battleMembers().includes(actor) ||
                 actor == null) {
                 return true;

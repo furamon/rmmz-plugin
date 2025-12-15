@@ -1,22 +1,26 @@
 {
-    "compilerOptions": {
-        "target": "es2023",
-        "lib": ["ES2023"],
-        "module": "ESNext",
-        "moduleResolution": "node",
-        "baseUrl": "./",
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        "strictPropertyInitialization": false,
-        "typeRoots": ["./@types/**", "./node_modules/@types"],
-        "skipLibCheck": true
-    },
-    "exclude": [
-        "_dist",
-        "tests",
-        "node_modules",
-        "@types/lib/lib.dom.d.ts",
-        "@types/furamon.ts"
-    ]
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": [
+      "ES2023"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "typeRoots": [
+      "./@types/**",
+      "./node_modules/@types"
+    ],
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "_dist",
+    "tests",
+    "node_modules",
+    "@types/lib/lib.dom.d.ts",
+  ]
 }

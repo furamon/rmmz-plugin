@@ -1,3 +1,4 @@
+"use strict";
 /*:
  * @target MZ
  * @plugindesc Lightning Rubellum MenuCore
@@ -8,34 +9,30 @@
  */
 // ===== コマンドヘルプ設定 =====
 const COMMAND_HELP_DATA = [
-    { name: '腕輪', text: '腕輪の コアを 換装し バトルスタイルを 変えます。' },
-    { name: '装備', text: '装備を 変更します。' },
-    { name: '強さ', text: 'キャラクターの ステータスを 表示します。' },
-    { name: '配置', text: 'キャラクターの 並び替えを 行います。' },
+    { name: "腕輪", text: "腕輪の コアを 換装し バトルスタイルを 変えます。" },
+    { name: "装備", text: "装備を 変更します。" },
+    { name: "強さ", text: "キャラクターの ステータスを 表示します。" },
+    { name: "配置", text: "キャラクターの 並び替えを 行います。" },
 ];
-(function () {
+(() => {
     // getAlphaPixelに整数でない値が渡されることへの対策
     const _Bitmap_getAlphaPixel = Bitmap.prototype.getAlphaPixel;
     Bitmap.prototype.getAlphaPixel = function (x, y) {
         return _Bitmap_getAlphaPixel.call(this, Math.round(x), Math.round(y));
     };
     // ショップ画面のレイアウト調整
-    Scene_Shop.prototype.statusWidth = function () {
-        return Graphics.boxWidth / 2 - 40;
-    };
+    Scene_Shop.prototype.statusWidth = () => Graphics.boxWidth / 2 - 40;
     // Window_ShopBuy.prototype.maxCols = function(){
     //   return 2;
     // };
-    Window_ShopSell.prototype.maxCols = function () {
-        return 3;
-    };
+    Window_ShopSell.prototype.maxCols = () => 3;
     // コマンド背景薄く（Thanks to MNKR!）
     const _Window_Base_initialize = Window_Base.prototype.initialize;
     Window_Base.prototype.initialize = function (rect) {
         _Window_Base_initialize.call(this, rect);
         // Mano_InputConfigなら不透明
         this._contentsBackSprite.alpha =
-            SceneManager._scene?.constructor?.name === 'Scene_KeyConfig_V10'
+            SceneManager._scene?.constructor?.name === "Scene_KeyConfig_V10"
                 ? 1
                 : 0.3;
     };
@@ -57,17 +54,17 @@ const COMMAND_HELP_DATA = [
         this._setRectPartsGeometry(this._cursorSprite, srect, drect, m);
     };
     // WASD移動デフォ
-    Input.keyMapper[87] = 'up'; //Wキー
-    Input.keyMapper[65] = 'left'; //Aキー
-    Input.keyMapper[83] = 'down'; //Sキー
-    Input.keyMapper[68] = 'right'; //Dキー
-    Input.keyMapper[69] = 'pagedown'; //Eキー
+    Input.keyMapper[87] = "up"; //Wキー
+    Input.keyMapper[65] = "left"; //Aキー
+    Input.keyMapper[83] = "down"; //Sキー
+    Input.keyMapper[68] = "right"; //Dキー
+    Input.keyMapper[69] = "pagedown"; //Eキー
     // --- セーブファイルリストの改変 ---
     // セーブシーンではリストの項目数を2(オートとクイック)減らす
     const _Window_SavefileList_maxItems = Window_SavefileList.prototype.maxItems;
     Window_SavefileList.prototype.maxItems = function () {
         const originalMax = _Window_SavefileList_maxItems.call(this);
-        if (this._mode === 'save') {
+        if (this._mode === "save") {
             return originalMax - 2;
         }
         return originalMax;
@@ -75,14 +72,14 @@ const COMMAND_HELP_DATA = [
     // セーブシーンではファイルID:0(オートセーブ)と1をスキップする
     const _Window_SavefileList_indexToSavefileId = Window_SavefileList.prototype.indexToSavefileId;
     Window_SavefileList.prototype.indexToSavefileId = function (index) {
-        if (this._mode === 'save') {
+        if (this._mode === "save") {
             return index + 2;
         }
         return _Window_SavefileList_indexToSavefileId.call(this, index);
     };
     const _Window_SavefileList_savefileIdToIndex = Window_SavefileList.prototype.savefileIdToIndex;
     Window_SavefileList.prototype.savefileIdToIndex = function (savefileId) {
-        if (this._mode === 'save') {
+        if (this._mode === "save") {
             return savefileId - 2;
         }
         return _Window_SavefileList_savefileIdToIndex.call(this, savefileId);
@@ -93,11 +90,11 @@ const COMMAND_HELP_DATA = [
             this.drawText(TextManager.autosave, x, y, 180);
         }
         else if (savefileId === 1) {
-            this.drawText('クイックセーブ', x, y, 240);
+            this.drawText("クイックセーブ", x, y, 240);
         }
         else {
             const fileNo = savefileId - 1;
-            this.drawText(TextManager.file + ' ' + fileNo, x, y, 180);
+            this.drawText(`${TextManager.file} ${fileNo}`, x, y, 180);
         }
     };
     // NUUN_SaveScreen_3.js 競合対策
@@ -105,7 +102,7 @@ const COMMAND_HELP_DATA = [
     Scene_File.prototype.start = function () {
         _Scene_File_start.call(this);
         // セーブモードの場合、初期カーソル位置を調整
-        if (this.mode() === 'save') {
+        if (this.mode() === "save") {
             let savefileId = this.firstSavefileId();
             // オートセーブかクイックセーブが選択されるはずだった場合、
             // 最初の有効なセーブファイル(ID:2)を選択する
@@ -116,7 +113,7 @@ const COMMAND_HELP_DATA = [
         }
         // _listWindowの存在と、NUUN_SaveScreen_3.jsの有効性を確認
         if (this._listWindow &&
-            typeof this._listWindow.isSaveFileShowAutoSave === 'function') {
+            typeof this._listWindow.isSaveFileShowAutoSave === "function") {
             // selectLast() によって設定された index を元にスクロールさせる
             this._listWindow.ensureCursorVisible(true); // NUUN_SaveScreen_3.js v3.1.1以降はtrue推奨
         }
@@ -128,13 +125,13 @@ const COMMAND_HELP_DATA = [
         _Scene_MenuBase_start.call(this);
         // 現在のシーンインスタンス (this) が Scene_AdditionalCC かどうかを判定
         // (constructor.name を使う方法。コード圧縮に注意)
-        if (this.constructor.name === 'Scene_AdditionalCC') {
+        if (this.constructor.name === "Scene_AdditionalCC") {
             // _statusWindow, _slotWindowを無理やり画面外に
-            if (this._statusWindow && this._statusWindow.visible) {
+            if (this._statusWindow?.visible) {
                 const statusWindowX = 9999; // 画面外
                 this._statusWindow.x = statusWindowX;
             }
-            if (this._slotWindow && this._slotWindow.visible) {
+            if (this._slotWindow?.visible) {
                 const slotWindowX = 9999; // 画面外
                 this._slotWindow.x = slotWindowX;
             }
@@ -155,7 +152,7 @@ const COMMAND_HELP_DATA = [
             const rect = this.itemLineRect(index);
             this.resetTextColor();
             this.changePaintOpacity(true);
-            this.drawText('空', rect.x, rect.y, rect.width);
+            this.drawText("空", rect.x, rect.y, rect.width);
         }
         else {
             _Window_EquipItem_drawItem.call(this, index);
@@ -173,18 +170,18 @@ const COMMAND_HELP_DATA = [
     Scene_Menu.prototype.createCommandWindow = function () {
         const rect = this.commandWindowRect();
         const commandWindow = new Window_MenuCommand(rect);
-        commandWindow.setHandler('cancel', this.popScene.bind(this));
+        commandWindow.setHandler("cancel", this.popScene.bind(this));
         this.addWindow(commandWindow);
         this._commandWindow = commandWindow;
         // コマンド選択時の処理
-        commandWindow.setHandler('item', this.commandItem.bind(this));
-        commandWindow.setHandler('ability', this.commandPersonal.bind(this));
-        commandWindow.setHandler('equip', this.commandPersonal.bind(this));
-        commandWindow.setHandler('status', this.commandPersonal.bind(this));
-        commandWindow.setHandler('formation', this.commandFormation.bind(this));
-        commandWindow.setHandler('options', this.commandOptions.bind(this));
-        commandWindow.setHandler('save', this.commandSave.bind(this));
-        commandWindow.setHandler('gameEnd', this.commandGameEnd.bind(this));
+        commandWindow.setHandler("item", this.commandItem.bind(this));
+        commandWindow.setHandler("ability", this.commandPersonal.bind(this));
+        commandWindow.setHandler("equip", this.commandPersonal.bind(this));
+        commandWindow.setHandler("status", this.commandPersonal.bind(this));
+        commandWindow.setHandler("formation", this.commandFormation.bind(this));
+        commandWindow.setHandler("options", this.commandOptions.bind(this));
+        commandWindow.setHandler("save", this.commandSave.bind(this));
+        commandWindow.setHandler("gameEnd", this.commandGameEnd.bind(this));
     };
     // コマンドウィンドウのスタート処理をオーバーライドして初期ヘルプを設定
     const _Scene_Menu_start = Scene_Menu.prototype.start;
@@ -193,7 +190,7 @@ const COMMAND_HELP_DATA = [
         // 初回のコマンドヘルプを設定
         if (this._commandWindow && this._infoWindow) {
             const commandData = this._commandWindow.currentData();
-            this._infoWindow.setCommandName(commandData ? commandData.name : '');
+            this._infoWindow.setCommandName(commandData ? commandData.name : "");
         }
     };
     // アクター選択からのキャンセル処理を追加
@@ -211,7 +208,7 @@ const COMMAND_HELP_DATA = [
             this._commandWindow.activate();
         }
     };
-    Scene_Menu.prototype.commandWindowRect = function () {
+    Scene_Menu.prototype.commandWindowRect = () => {
         const ww = 150;
         const wh = 596;
         const wx = Graphics.boxWidth - ww;
@@ -226,9 +223,9 @@ const COMMAND_HELP_DATA = [
         // インデックスが変わったらヘルプを更新
         if (this.index() !== lastIndex) {
             const scene = SceneManager._scene;
-            if (scene && scene._infoWindow) {
+            if (scene?._infoWindow) {
                 const commandData = this.currentData();
-                scene._infoWindow.setCommandName(commandData ? commandData.name : '');
+                scene._infoWindow.setCommandName(commandData ? commandData.name : "");
             }
         }
     };
@@ -237,7 +234,7 @@ const COMMAND_HELP_DATA = [
         this._infoWindow = new Window_MenuInfo(rect);
         this.addWindow(this._infoWindow);
     };
-    Scene_Menu.prototype.infoWindowRect = function () {
+    Scene_Menu.prototype.infoWindowRect = () => {
         const wx = 0;
         const wy = 0;
         const ww = Graphics.boxWidth;
@@ -249,7 +246,7 @@ const COMMAND_HELP_DATA = [
         this._statusWindow = new Window_MenuStatus_Custom(rect);
         this.addWindow(this._statusWindow);
     };
-    Scene_Menu.prototype.statusWindowRect = function () {
+    Scene_Menu.prototype.statusWindowRect = () => {
         const wx = 0;
         const wy = 116;
         const ww = Graphics.boxWidth - 150; // 右側のコマンドウィンドウ分を除く
@@ -261,7 +258,7 @@ const COMMAND_HELP_DATA = [
         _commandName;
         constructor(rect) {
             super(rect);
-            this._commandName = '';
+            this._commandName = "";
             this.refresh();
         }
         update() {
@@ -280,30 +277,30 @@ const COMMAND_HELP_DATA = [
         refresh() {
             this.contents.clear();
             // 現在地表示
-            const mapName = $gameMap.displayName() || '不明';
-            this.drawText('現在地:', 0, 4, 160);
+            const mapName = $gameMap.displayName() || "不明";
+            this.drawText("現在地:", 0, 4, 160);
             this.drawText(mapName, 116, 4, 500);
             // 陣形表示
             const formationName = $gameParty.currentFormation
                 ? $gameParty.currentFormation()._name
-                : '???';
-            this.drawText('陣形:', 494, 4, 120);
+                : "???";
+            this.drawText("陣形:", 494, 4, 120);
             this.drawText(formationName, 580, 4, 400);
             // プレイ時間表示
             const playTime = $gameSystem.playtimeText();
-            this.drawText('プレイ時間:', Graphics.boxWidth - 360, 4, 180);
-            this.drawText(playTime, Graphics.boxWidth - 180, 4, 220, 'left');
+            this.drawText("プレイ時間:", Graphics.boxWidth - 360, 4, 180);
+            this.drawText(playTime, Graphics.boxWidth - 180, 4, 220, "left");
             // コマンド説明
             const helpData = COMMAND_HELP_DATA.find((h) => h.name === this._commandName);
-            const helpText = helpData ? helpData.text : '';
-            this.drawText(helpText, 0, 48, Graphics.boxWidth - 300, 'left');
+            const helpText = helpData ? helpData.text : "";
+            this.drawText(helpText, 0, 48, Graphics.boxWidth - 300, "left");
             // 所持金
             const currencyUnit = $dataSystem.currencyUnit;
             this.contents.fontSize -= 8;
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText(currencyUnit, Graphics.boxWidth - 68, 50, 64, 'left');
+            this.drawText(currencyUnit, Graphics.boxWidth - 68, 50, 64, "left");
             this.resetFontSettings();
-            this.drawText($gameParty.gold().toString(), Graphics.boxWidth - 520, 48, 448, 'right');
+            this.drawText($gameParty.gold().toString(), Graphics.boxWidth - 520, 48, 448, "right");
         }
     }
     // ===== カスタムステータスウィンドウ =====
@@ -362,7 +359,7 @@ const COMMAND_HELP_DATA = [
         isCurrentItemEnabled() {
             if (this._formationMode) {
                 const actor = $gameParty.members()[this.index()];
-                return actor && actor.isFormationChangeOk();
+                return actor?.isFormationChangeOk();
             }
             else {
                 return true;
@@ -384,10 +381,10 @@ const COMMAND_HELP_DATA = [
                 this.changePaintOpacity(true);
             }
         }
-        drawItemImage(index) {
+        drawItemImage(_index) {
             // 実装不要(drawItemで描画)
         }
-        drawItemStatus(index) {
+        drawItemStatus(_index) {
             // 実装不要(drawItemで描画)
         }
         // 以下、追加の互換メソッド(NUUN_MenuScreenEX等の互換性用)
@@ -400,32 +397,32 @@ const COMMAND_HELP_DATA = [
         getFormationSelectActor() {
             return this.actor(this.index());
         }
-        drawBackGroundActor(index) {
+        drawBackGroundActor(_index) {
             // 背景は既にdrawItemで描画済み
         }
-        drawBackGroundActorContents(index) {
+        drawBackGroundActorContents(_index) {
             // 背景は既にdrawItemで描画済み
         }
-        actorBackGroundImage(index) {
-            return '';
+        actorBackGroundImage(_index) {
+            return "";
         }
-        actorFrontImageDate(index) {
+        actorFrontImageDate(_index) {
             return null;
         }
-        actorFrontImageEX(index) {
+        actorFrontImageEX(_index) {
             return null;
         }
         actorName(n) {
             const actor = this.actor(n);
-            return actor ? actor.name() : '';
+            return actor ? actor.name() : "";
         }
-        drawActorNameEx(actor, x, y, width) {
+        drawActorNameEx(actor, x, y, _width) {
             this.drawTextEx(actor.name(), x, y);
         }
-        drawActorSimpleStatus(actor, x, y) {
+        drawActorSimpleStatus(_actor, _x, _y) {
             // 実装不要(drawItemで描画)
         }
-        drawItemBackground(index) {
+        drawItemBackground(_index) {
             // 実装不要
         }
         lineHeight() {
@@ -437,13 +434,13 @@ const COMMAND_HELP_DATA = [
         itemPadding() {
             return 8;
         }
-        drawContentsBackground(x, y, width, height) {
+        drawContentsBackground(_x, _y, _width, _height) {
             // 実装不要
         }
         contentsBackGroundImage() {
-            return '';
+            return "";
         }
-        drawAdditionalClassLevel(additionalClass, x, y) {
+        drawAdditionalClassLevel(_additionalClass, _x, _y) {
             // 実装不要(drawItemで描画)
         }
         _additionalSprites = {};
@@ -456,50 +453,50 @@ const COMMAND_HELP_DATA = [
         showAdditionalSprites() {
             // 実装不要
         }
-        actorBackImg(actor) {
-            return '';
+        actorBackImg(_actor) {
+            return "";
         }
-        actorFrontImg(actor) {
-            return '';
+        actorFrontImg(_actor) {
+            return "";
         }
-        actorBackGroundImageContents(actor) {
+        actorBackGroundImageContents(_actor) {
             return null;
         }
-        drawActorGraphicImg(index) {
+        drawActorGraphicImg(_index) {
             // 実装不要
         }
-        drawActorFrontImg(index) {
+        drawActorFrontImg(_index) {
             // 実装不要
         }
-        graphicMode(actor) {
-            return 'img';
+        graphicMode(_actor) {
+            return "img";
         }
         placeActorName(actor, x, y) {
             this.drawTextEx(actor.name(), x, y);
         }
-        placeStateIcon(actor, x, y) {
+        placeStateIcon(_actor, _x, _y) {
             // 実装不要
         }
-        placeGauge(actor, type, x, y) {
+        placeGauge(_actor, _type, _x, _y) {
             // 実装不要
         }
-        createInnerSprite(key, spriteClass) {
+        createInnerSprite(_key, _spriteClass) {
             // 実装不要
             return new Sprite();
         }
-        placeTimeGauge(actor, x, y) {
+        placeTimeGauge(_actor, _x, _y) {
             // 実装不要
         }
-        drawIcon(iconIndex, x, y) {
+        drawIcon(_iconIndex, _x, _y) {
             // 実装不要(基本クラスに存在)
         }
-        drawFace(faceName, faceIndex, x, y, width, height) {
+        drawFace(_faceName, _faceIndex, _x, _y, _width, _height) {
             // 実装不要(基本クラスに存在)
         }
-        drawCharacter(characterName, characterIndex, x, y) {
+        drawCharacter(_characterName, _characterIndex, _x, _y) {
             // 実装不要(基本クラスに存在)
         }
-        placeBasicGauges(actor, x, y) {
+        placeBasicGauges(_actor, _x, _y) {
             // 実装不要
         }
         drawActorCharacter(actor, x, y) {
@@ -508,16 +505,16 @@ const COMMAND_HELP_DATA = [
         drawActorFace(actor, x, y, width, height) {
             this.drawFace(actor.faceName(), actor.faceIndex(), x, y, width, height);
         }
-        drawActorName(actor, x, y, width) {
+        drawActorName(actor, x, y, _width) {
             this.drawTextEx(actor.name(), x, y);
         }
         drawActorLevel(actor, x, y) {
             this.changeTextColor(ColorManager.systemColor());
             this.drawText(TextManager.levelA, x, y, 48);
             this.resetTextColor();
-            this.drawText(String(actor.level), x + 48, y, 36, 'right');
+            this.drawText(String(actor.level), x + 48, y, 36, "right");
         }
-        drawActorIcons(actor, x, y, width) {
+        drawActorIcons(_actor, _x, _y, _width) {
             // 実装不要
         }
         drawActorNickname(actor, x, y, width) {
@@ -536,7 +533,7 @@ const COMMAND_HELP_DATA = [
         itemHeight() {
             return 202;
         }
-        setCursorRect(x, y, width, height) {
+        setCursorRect(x, y, _width, height) {
             super.setCursorRect(x, y, 100, height - 12);
         }
         refresh() {
@@ -546,7 +543,7 @@ const COMMAND_HELP_DATA = [
             }
             this._statusBackgrounds = [];
             // 背景スプライトを作成(アクターの右側に配置)
-            const bgBitmap = ImageManager.loadSystem('StatusWindow');
+            const bgBitmap = ImageManager.loadSystem("StatusWindow");
             for (let i = 0; i < this.maxItems(); i++) {
                 const rect = this.itemRect(i);
                 const sprite = new Sprite(bgBitmap);
@@ -571,73 +568,73 @@ const COMMAND_HELP_DATA = [
             // レベル
             this.changeFontSize(-6);
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText(TextManager.levelA, x + 290, y + 4, 76, 'left');
+            this.drawText(TextManager.levelA, x + 290, y + 4, 76, "left");
             this.resetTextColor();
             this.resetFontSettings();
-            this.drawText(actor.level.toString(), x + 306, y + 2, 76, 'right');
+            this.drawText(actor.level.toString(), x + 306, y + 2, 76, "right");
             this.resetFontSettings();
             // 職業(追加クラス)
             const job = actor.additionalClass
                 ? actor.additionalClass()
                 : null;
-            let jobText = '';
-            if (job && job._data && !job._data.meta.NoGrow) {
+            let jobText = "";
+            if (job?._data && !job._data.meta.NoGrow) {
                 const jobName = job.name.substring(0, 7);
                 const levelSuffix = job.level === 6 || (job.id === 24 && job.level === 3)
-                    ? 'M!'
-                    : 'L' + (job.level - 1);
+                    ? "M!"
+                    : `L${job.level - 1}`;
                 jobText = jobName + levelSuffix;
             }
             this.drawText(jobText, x + 108, y + 43, 280);
             // HP最大値
             this.changeFontSize(-6);
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText('HP', x + 392, y + 4, 48);
+            this.drawText("HP", x + 392, y + 4, 48);
             this.resetTextColor();
             this.resetFontSettings();
-            this.drawText(actor.mhp.toString(), x + 400, y + 2, 120, 'right');
+            this.drawText(actor.mhp.toString(), x + 400, y + 2, 120, "right");
             // LP現在値 / LP最大値 (2行目、上に-3px、フォントサイズ-3)
             const lp = actor.lp || 0;
             const mlp = actor.mlp || 99;
             this.changeFontSize(-6);
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText('LP', x + 392, y + 45, 48);
+            this.drawText("LP", x + 392, y + 45, 48);
             this.resetFontSettings();
-            this.drawText(lp.toString(), x + 402, y + 43, 70, 'right');
+            this.drawText(lp.toString(), x + 402, y + 43, 70, "right");
             this.changeFontSize(-12);
-            this.drawText('/', x + 472, y + 46, 20, 'center');
+            this.drawText("/", x + 472, y + 46, 20, "center");
             this.changeFontSize(-6);
-            this.drawText(mlp.toString(), x + 492, y + 47, 30, 'left');
+            this.drawText(mlp.toString(), x + 492, y + 47, 30, "left");
             this.resetFontSettings();
             // ステータス
             const statY = y + 83;
             // ステータス(左列)
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText('攻撃', x + 108, statY, 72);
+            this.drawText("攻撃", x + 108, statY, 72);
             this.resetTextColor();
-            this.drawText(actor.param(2).toString(), x + 160, statY, 80, 'right');
+            this.drawText(actor.param(2).toString(), x + 160, statY, 80, "right");
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText('器用', x + 108, statY + 40, 72);
+            this.drawText("器用", x + 108, statY + 40, 72);
             this.resetTextColor();
-            this.drawText(actor.param(7).toString(), x + 160, statY + 40, 80, 'right');
+            this.drawText(actor.param(7).toString(), x + 160, statY + 40, 80, "right");
             // ステータス(中央列)
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText('防御', x + 248, statY, 72);
+            this.drawText("防御", x + 248, statY, 72);
             this.resetTextColor();
-            this.drawText(actor.param(3).toString(), x + 300, statY, 80, 'right');
+            this.drawText(actor.param(3).toString(), x + 300, statY, 80, "right");
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText('集中', x + 248, statY + 40, 72);
+            this.drawText("集中", x + 248, statY + 40, 72);
             this.resetTextColor();
-            this.drawText(actor.param(5).toString(), x + 300, statY + 40, 80, 'right');
+            this.drawText(actor.param(5).toString(), x + 300, statY + 40, 80, "right");
             // ステータス(右列)
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText('増幅', x + 388, statY, 72);
+            this.drawText("増幅", x + 388, statY, 72);
             this.resetTextColor();
-            this.drawText(actor.param(4).toString(), x + 440, statY, 80, 'right');
+            this.drawText(actor.param(4).toString(), x + 440, statY, 80, "right");
             this.changeTextColor(ColorManager.systemColor());
-            this.drawText('素早', x + 388, statY + 40, 72);
+            this.drawText("素早", x + 388, statY + 40, 72);
             this.resetTextColor();
-            this.drawText(actor.param(6).toString(), x + 440, statY + 40, 80, 'right');
+            this.drawText(actor.param(6).toString(), x + 440, statY + 40, 80, "right");
         }
         drawSvActor(actor, x, y) {
             const name = actor.battlerName();
@@ -645,14 +642,14 @@ const COMMAND_HELP_DATA = [
             if (!bitmap.isReady())
                 return;
             // BattleMotionMZ対応チェック
-            const hasBattleMotion = typeof Sprite_Battler !== 'undefined' &&
+            const hasBattleMotion = typeof Sprite_Battler !== "undefined" &&
                 Sprite_Battler.MOTIONS;
             let motionIndex = 0; // walkモーション
             if (hasBattleMotion) {
                 // BattleMotionMZ使用時
                 const cellSize = bitmap.height / 6; // 正方形セル
                 const motions = Sprite_Battler.MOTIONS;
-                const walkMotion = motions['walk'];
+                const walkMotion = motions.walk;
                 if (walkMotion) {
                     motionIndex = walkMotion.index;
                 }
@@ -671,7 +668,7 @@ const COMMAND_HELP_DATA = [
                     const checkY = row * cellSize + 1;
                     const color = bitmap.getPixel(checkX, checkY);
                     // カラーコマ(赤・黄・緑のいずれか)が見つかったら終了
-                    if (color !== '#000000') {
+                    if (color !== "#000000") {
                         const r = parseInt(color.substring(1, 3), 16);
                         const g = parseInt(color.substring(3, 5), 16);
                         if (r === 255 || g === 255) {
@@ -725,9 +722,7 @@ const COMMAND_HELP_DATA = [
         }
     }
     // トランジションを高速化
-    Scene_Base.prototype.fadeSpeed = function () {
-        return 16;
-    };
+    Scene_Base.prototype.fadeSpeed = () => 16;
     Scene_Base.prototype.slowFadeSpeed = function () {
         return this.fadeSpeed() * 1.5;
     };

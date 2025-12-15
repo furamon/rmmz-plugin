@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_TorigoyaMZ_FrameTween.js
 // This software is released under the MIT License.
@@ -179,36 +180,37 @@
  * @default 0
  */
 (() => {
-    'use strict';
     if (!Torigoya || !Torigoya.FrameTween) {
-        const error = '「[鳥小屋.txt ベースプラグイン] Tweenアニメーション」が見つかりません。';
+        const error = "「[鳥小屋.txt ベースプラグイン] Tweenアニメーション」が見つかりません。";
         console.error(error);
         alert(error);
         return;
     }
-    const PLUGIN_NAME = 'Furamon_TorigoyaMZ_FrameTween';
+    const PLUGIN_NAME = "Furamon_TorigoyaMZ_FrameTween";
     const params = PluginManager.parameters(PLUGIN_NAME);
-    const customTweenParams = JSON.parse(params.CustomTween || '[]');
+    const customTweenParams = JSON.parse(params.CustomTween || "[]");
     const parsedCustomSettings = customTweenParams.map((json) => {
         const obj = JSON.parse(json);
         return {
             windowClass: String(obj.WindowClass),
-            sceneClass: String(obj.SceneClass || ''),
+            sceneClass: String(obj.SceneClass || ""),
             openSetting: {
-                enable: obj.openEnable === 'true',
-                moveX: obj.openMoveX || '0',
-                moveY: obj.openMoveY || '0',
+                enable: obj.openEnable === "true",
+                moveX: obj.openMoveX || "0",
+                moveY: obj.openMoveY || "0",
                 alpha: Number(obj.openAlpha || 0),
-                easing: Torigoya.FrameTween.Easing[obj.openEasing] || Torigoya.FrameTween.Easing.linear,
+                easing: Torigoya.FrameTween.Easing[obj.openEasing] ||
+                    Torigoya.FrameTween.Easing.linear,
                 duration: Number(obj.openDuration || 15),
                 delay: Number(obj.openDelay || 0),
             },
             closeSetting: {
-                enable: obj.closeEnable === 'true',
-                moveX: obj.closeMoveX || '0',
-                moveY: obj.closeMoveY || '0',
+                enable: obj.closeEnable === "true",
+                moveX: obj.closeMoveX || "0",
+                moveY: obj.closeMoveY || "0",
                 alpha: Number(obj.closeAlpha || 0),
-                easing: Torigoya.FrameTween.Easing[obj.closeEasing] || Torigoya.FrameTween.Easing.linear,
+                easing: Torigoya.FrameTween.Easing[obj.closeEasing] ||
+                    Torigoya.FrameTween.Easing.linear,
                 duration: Number(obj.closeDuration || 15),
                 delay: Number(obj.closeDelay || 0),
             },
@@ -218,15 +220,21 @@
         if (!windowObject)
             return null;
         const windowClassName = windowObject.constructor.name;
-        const sceneClassName = SceneManager._scene.constructor.name;
-        const customSetting = parsedCustomSettings.find(s => {
+        const sceneClassName = (SceneManager._scene?.constructor?.name ??
+            "");
+        const customSetting = parsedCustomSettings.find((s) => {
             if (s.windowClass !== windowClassName)
                 return false;
             if (s.sceneClass && s.sceneClass !== sceneClassName)
                 return false;
             return true;
         });
-        return customSetting ? { openSetting: customSetting.openSetting, closeSetting: customSetting.closeSetting } : null;
+        return customSetting
+            ? {
+                openSetting: customSetting.openSetting,
+                closeSetting: customSetting.closeSetting,
+            }
+            : null;
     }
     // -------------------------------------------------------------------------
     // TweenManager
@@ -280,7 +288,7 @@
         parseMoveValue(value, windowObject, baseValue) {
             if (!value)
                 return 0;
-            if (value.includes('%')) {
+            if (value.includes("%")) {
                 const percentage = parseFloat(value) / 100;
                 return baseValue * percentage;
             }
@@ -297,11 +305,11 @@
                 };
                 const func = new Function(...Object.keys(scope), `return (${value})`);
                 const result = func(...Object.values(scope));
-                if (typeof result === 'number' && !isNaN(result)) {
+                if (typeof result === "number" && !Number.isNaN(result)) {
                     return result;
                 }
             }
-            catch (e) {
+            catch (_e) {
                 // Not a valid expression, fall back to simple parsing.
             }
             return parseFloat(value);
@@ -330,8 +338,8 @@
             return;
         if (this._tweenableWindows && this._tweenableWindows.length > 0) {
             const tweens = this._tweenableWindows
-                .filter(w => w && w.window)
-                .map(w => TweenManager.applyClose(w.window, w.setting.closeSetting))
+                .filter((w) => w?.window)
+                .map((w) => TweenManager.applyClose(w.window, w.setting.closeSetting))
                 .filter((tween) => !!tween);
             if (tweens.length > 0) {
                 this._isPoppingWithTween = true;
@@ -341,7 +349,7 @@
                     return durationB - durationA;
                 })[0];
                 lastTween.call(() => _Scene_Base_popScene.call(this)).start();
-                tweens.forEach(tween => {
+                tweens.forEach((tween) => {
                     if (tween !== lastTween)
                         tween.start();
                 });

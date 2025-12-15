@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_MenuHeight.js
 // This software is released under the MIT License.
@@ -27,16 +28,11 @@
  * @default 3
  */
 (() => {
-    'use strict';
-    const pluginName = 'Furamon_MenuHeight';
+    const pluginName = "Furamon_MenuHeight";
     const params = PluginManager.parameters(pluginName);
-    Window_Base.prototype.lineHeight = function () {
-        return ($gameSystem.mainFontSize() + 10 + parseFloat(params.commandSpacing));
-    };
-    Window_Selectable.prototype.lineHeight = function () {
-        return ($gameSystem.mainFontSize() + 10 + parseFloat(params.commandSpacing));
-    };
+    Window_Base.prototype.lineHeight = () => $gameSystem.mainFontSize() + 10 + parseFloat(params.commandSpacing);
+    Window_Selectable.prototype.lineHeight = () => $gameSystem.mainFontSize() + 10 + parseFloat(params.commandSpacing);
     Scene_MenuBase.prototype.helpAreaHeight = function () {
-        return this.calcWindowHeight(parseInt(params.helpAreaRow), false);
+        return this.calcWindowHeight(parseInt(params.helpAreaRow, 10), false);
     };
 })();

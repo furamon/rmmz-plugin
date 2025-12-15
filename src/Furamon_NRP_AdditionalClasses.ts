@@ -561,6 +561,17 @@
 // 追加職業を保有するクラス
 // ※外部プラグインから参照できるように外側に定義
 
+interface AdditionalClass {
+  [key: string]: unknown;
+}
+
+interface AdditionalClassConstructor {
+  new (actor: Game_Actor, classId: number): AdditionalClass;
+  prototype: AdditionalClass;
+}
+
+var AdditionalClass: AdditionalClassConstructor;
+
 AdditionalClass = function (
   this: AdditionalClass,
   actor: Game_Actor,

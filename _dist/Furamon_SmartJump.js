@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_SmartJump.js
 // This software is released under the MIT License.
@@ -154,8 +155,8 @@
  * @type boolean
  * @default true
  */
-(function () {
-    const PLUGIN_NAME = 'Furamon_SmartJump';
+(() => {
+    const PLUGIN_NAME = "Furamon_SmartJump";
     // Game_Playerに最後に移動した方向を記憶するプロパティを追加
     const _Game_Player_initMembers = Game_Player.prototype.initMembers;
     Game_Player.prototype.initMembers = function () {
@@ -171,28 +172,28 @@
         _Game_Player_executeMove.call(this, direction);
     };
     const parameters = PluginManager.parameters(PLUGIN_NAME);
-    const prmNoJumpRegionId = Number(parameters['noJumpRegionId']) || 0;
-    const prmJumpSoundName = parameters['jumpSoundName'] || 'Jump1';
-    const prmJumpSoundVolume = Number(parameters['jumpSoundVolume']) || 90;
-    const prmJumpSoundPitch = Number(parameters['jumpSoundPitch']) || 80;
-    const prmJumpSpeed = Number(parameters['jumpSpeed']) || 50;
-    const prmJumpHeight = Number(parameters['jumpHeight']) || 200;
-    const prmEnableThrough = parameters['enableThrough'] === 'true';
-    const prmJumpKey = parameters['jumpKey'] || 'control';
-    const prmRequireSwitch = Number(parameters['requireSwitch']) || 0;
-    const prmDisableInMenu = parameters['disableInMenu'] === 'true';
+    const prmNoJumpRegionId = Number(parameters.noJumpRegionId) || 0;
+    const prmJumpSoundName = parameters.jumpSoundName || "Jump1";
+    const prmJumpSoundVolume = Number(parameters.jumpSoundVolume) || 90;
+    const prmJumpSoundPitch = Number(parameters.jumpSoundPitch) || 80;
+    const prmJumpSpeed = Number(parameters.jumpSpeed) || 50;
+    const prmJumpHeight = Number(parameters.jumpHeight) || 200;
+    const prmEnableThrough = parameters.enableThrough === "true";
+    const prmJumpKey = parameters.jumpKey || "control";
+    const prmRequireSwitch = Number(parameters.requireSwitch) || 0;
+    const prmDisableInMenu = parameters.disableInMenu === "true";
     /**
      * 8方向移動プラグイン（HalfMove.js or PD_8DirDash.js）が有効か検出
      */
     function is8DirMoveActive() {
-        const halfMoveRegistered = PluginManager._scripts.some(name => name.toLowerCase() === 'halfmove');
-        const pd8DirDashRegistered = PluginManager._scripts.some(name => name.toLowerCase() === 'pd_8dirdash');
+        const halfMoveRegistered = PluginManager._scripts.some((name) => name.toLowerCase() === "halfmove");
+        const pd8DirDashRegistered = PluginManager._scripts.some((name) => name.toLowerCase() === "pd_8dirdash");
         if (pd8DirDashRegistered) {
             return true;
         }
         if (halfMoveRegistered) {
             // isHalfMoveプロパティの存在は、未ロード時のエラーを防ぐためにチェックが必要です。
-            if ($gamePlayer.isHalfMove && $gamePlayer.isHalfMove()) {
+            if ($gamePlayer.isHalfMove?.()) {
                 return true;
             }
         }
@@ -255,10 +256,14 @@
         const isPassableTile = (x, y) => {
             const player = $gamePlayer;
             // HalfMove.jsが有効な場合、isMapPassableを使って判定する
-            if (typeof Game_Map.prototype.tileUnit !== 'undefined' && player.isHalfMove && player.isHalfMove()) {
+            if (typeof Game_Map.prototype.tileUnit !== "undefined" &&
+                player.isHalfMove &&
+                player.isHalfMove()) {
                 // ジャンプ先からいずれかの方向に移動できれば、そこは通行可能とみなす
-                return player.isMapPassable(x, y, 2) || player.isMapPassable(x, y, 4) ||
-                    player.isMapPassable(x, y, 6) || player.isMapPassable(x, y, 8);
+                return (player.isMapPassable(x, y, 2) ||
+                    player.isMapPassable(x, y, 4) ||
+                    player.isMapPassable(x, y, 6) ||
+                    player.isMapPassable(x, y, 8));
             }
             // 通常のタイル通行判定
             return $gameMap.checkPassage(Math.floor(x), Math.floor(y), 0x0f);
@@ -267,8 +272,10 @@
             return false;
         }
         // 3. HalfMove.js の特殊な通行不可設定（リージョン/地形タグ）をチェック
-        if (typeof Game_Map.prototype.tileUnit !== 'undefined' && $gamePlayer.isHalfMove && $gamePlayer.isHalfMove()) {
-            // @ts-ignore
+        if (typeof Game_Map.prototype.tileUnit !== "undefined" &&
+            $gamePlayer.isHalfMove &&
+            $gamePlayer.isHalfMove()) {
+            // @ts-expect-error
             if (!$gameMap.isPassableByHalfRegionAndTag(targetX, targetY)) {
                 return false;
             }
@@ -319,7 +326,6 @@
         const player = $gamePlayer;
         let direction = Input.dir8;
         if (direction === 0) {
-            // @ts-ignore
             direction = player._lastMoveDirection || player.direction();
         }
         const [px, py] = [player.x, player.y];
@@ -387,7 +393,8 @@
         if (!canExecuteSmartJump())
             return false;
         if (prmDisableInMenu) {
-            if (SceneManager._scene.constructor !== Scene_Map)
+            const scene = SceneManager._scene;
+            if (!scene || scene.constructor !== Scene_Map)
                 return false;
             if ($gameMessage.isBusy())
                 return false;
@@ -404,26 +411,26 @@
      * 指定されたキーが押されたかチェック
      */
     function isJumpKeyPressed() {
-        if (prmJumpKey === 'none')
+        if (prmJumpKey === "none")
             return false;
         const keyMap = {
-            control: 'control',
-            shift: 'shift',
-            alt: 'alt',
-            space: 'ok',
-            ok: 'ok',
-            escape: 'escape',
-            tab: 'tab',
-            z: 'ok',
-            x: 'escape',
-            c: 'pageup',
-            v: 'pagedown',
-            a: 'shift',
-            s: 'control',
-            d: 'tab',
-            q: 'pageup',
-            w: 'up',
-            e: 'pagedown',
+            control: "control",
+            shift: "shift",
+            alt: "alt",
+            space: "ok",
+            ok: "ok",
+            escape: "escape",
+            tab: "tab",
+            z: "ok",
+            x: "escape",
+            c: "pageup",
+            v: "pagedown",
+            a: "shift",
+            s: "control",
+            d: "tab",
+            q: "pageup",
+            w: "up",
+            e: "pagedown",
         };
         const mappedKey = keyMap[prmJumpKey];
         if (!mappedKey)
@@ -466,10 +473,10 @@
     /**
      * プラグインコマンド登録
      */
-    PluginManager.registerCommand(PLUGIN_NAME, 'execute', (args) => {
+    PluginManager.registerCommand(PLUGIN_NAME, "execute", (_args) => {
         safeExecuteSmartJump();
     });
-    PluginManager.registerCommand(PLUGIN_NAME, 'executeWithSwitch', (args) => {
+    PluginManager.registerCommand(PLUGIN_NAME, "executeWithSwitch", (args) => {
         safeExecuteSmartJumpWithSwitch(Number(args.switchId));
     });
     /**

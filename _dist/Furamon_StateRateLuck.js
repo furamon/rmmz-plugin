@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_StateRateLuck.js
 // This software is released under the MIT License.
@@ -72,20 +73,21 @@
  * @off 失敗扱いしない
  * @default false
  */
-(function () {
-    ('use strict');
-    const PLUGIN_NAME = 'Furamon_StateRateLuck';
+(() => {
+    ("use strict");
+    const PLUGIN_NAME = "Furamon_StateRateLuck";
     const parameters = PluginManager.parameters(PLUGIN_NAME);
-    const prmEvalStateRate = parameters['EvalStateRate'] || 'stateRate';
-    const prmEvalStateRateMethod = parameters['EvalStateRateMethod'] || "add";
-    const prmResistState = parseInt(parameters['ResistState'], 10);
-    const prmFailureState = parseInt(parameters['FailureState'], 10);
-    const prmStateResistToFailure = parameters['StateResistToFailure'] === 'true';
+    const prmEvalStateRate = parameters.EvalStateRate || "stateRate";
+    const prmEvalStateRateMethod = parameters.EvalStateRateMethod || "add";
+    const prmResistState = parseInt(parameters.ResistState, 10);
+    const prmFailureState = parseInt(parameters.FailureState, 10);
+    const prmStateResistToFailure = parameters.StateResistToFailure === "true";
     // 計算式評価用のヘルパー関数
     function evaluateStateRate(subject, target) {
-        const a = subject; // 行動者
-        const b = target; // 対象
+        const _a = subject; // 行動者
+        const _b = target; // 対象
         try {
+            // biome-ignore lint/security/noGlobalEval: プラグインパラメータの計算式を評価するため（ローカル実行前提）
             return eval(prmEvalStateRate) / 100;
         }
         catch (e) {
@@ -95,9 +97,7 @@
     }
     // デフォの運の影響廃止
     // そもそもlukEffectRateがある場所を潰したが他プラグインのことも考えて念の為
-    Game_Action.prototype.lukEffectRate = function (target) {
-        return 1;
-    };
+    Game_Action.prototype.lukEffectRate = (_target) => 1;
     Game_Action.prototype.itemEffectAddAttackState = function (target, effect) {
         // NRP_CalcResultFirst の事前計算中かどうかの推測
         // target._reservedResults が配列として存在し、かつ target.result() が存在するかで判断
@@ -146,7 +146,7 @@
             for (const stateId of this.subject().attackStates()) {
                 let chance = effect.value1;
                 chance *= this.subject().attackStatesRate(stateId);
-                if (prmEvalStateRateMethod === 'add') {
+                if (prmEvalStateRateMethod === "add") {
                     // 指定計算式をchanceに加える
                     chance += evaluateStateRate(this.subject(), target);
                 }
@@ -176,7 +176,7 @@
             const initialSuccess = result.success; // StateResistToFailure 用
             let chance = effect.value1;
             chance *= this.subject().stateRate(effect.dataId);
-            if (prmEvalStateRateMethod === 'add') {
+            if (prmEvalStateRateMethod === "add") {
                 // 指定計算式をchanceに加える
                 chance += evaluateStateRate(this.subject(), target);
             }
@@ -223,7 +223,7 @@
             let chance = effect.value1;
             if (!this.isCertainHit()) {
                 chance *= this.subject().attackStatesRate(effect.dataId);
-                if (prmEvalStateRateMethod === 'add') {
+                if (prmEvalStateRateMethod === "add") {
                     // 指定計算式をchanceに加える
                     chance += evaluateStateRate(this.subject(), target);
                 }

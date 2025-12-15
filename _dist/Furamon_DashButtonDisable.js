@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_DashButtonDisable.js
 // This software is released under the MIT License.
@@ -25,21 +26,19 @@
  * -----------------------------------------------------------------------------
  * Claude 4 sonnetの力を借りました。
  */
-(function () {
-    const pluginName = 'Furamon_DashButtonDisable';
+(() => {
+    const pluginName = "Furamon_DashButtonDisable";
     const parameters = PluginManager.parameters(pluginName);
-    const alwaysDash = parameters['alwaysDash'] === 'true';
+    const alwaysDash = parameters.alwaysDash === "true";
     // Game_Player のダッシュ機能を制御
-    Game_Player.prototype.isDashButtonPressed = function () {
-        return alwaysDash;
-    };
+    Game_Player.prototype.isDashButtonPressed = () => alwaysDash;
     // Window_Options からalwaysDashオプションを除外
     const _Window_Options_makeCommandList = Window_Options.prototype.makeCommandList;
     Window_Options.prototype.makeCommandList = function () {
         _Window_Options_makeCommandList.call(this);
         // alwaysDashコマンドを削除
         for (let i = this._list.length - 1; i >= 0; i--) {
-            if (this._list[i].symbol === 'alwaysDash') {
+            if (this._list[i].symbol === "alwaysDash") {
                 this._list.splice(i, 1);
             }
         }

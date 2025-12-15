@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_LP.js
 // This software is released under the MIT License.
@@ -162,18 +163,18 @@
  * @desc 全滅時は勝利モーションではなく戦闘不能モーションを表示します。
  *
  */
-(function () {
-    const PLUGIN_NAME = 'Furamon_LP';
+(() => {
+    const PLUGIN_NAME = "Furamon_LP";
     const parameters = PluginManager.parameters(PLUGIN_NAME);
-    const prmMaxLP = parameters['MaxLP'];
-    const prmLPBreakMessage = parameters['LPBreakMessage'];
-    const prmLPGainMessage = parameters['LPGainMessage'];
-    const prmBattleEndRecover = parameters['BattleEndRecover'] === 'true';
-    const prmLPZeroStateId = Number(parameters['LPZeroStateId'] || 0);
-    const prmPreferVictoryOnDeadIfLP = parameters['PreferVictoryOnDeadIfLP'] === 'true';
-    const prmForceCollapseOnWipe = parameters['ForceCollapseOnWipe'] === 'true';
+    const prmMaxLP = parameters.MaxLP;
+    const prmLPBreakMessage = parameters.LPBreakMessage;
+    const prmLPGainMessage = parameters.LPGainMessage;
+    const prmBattleEndRecover = parameters.BattleEndRecover === "true";
+    const prmLPZeroStateId = Number(parameters.LPZeroStateId || 0);
+    const prmPreferVictoryOnDeadIfLP = parameters.PreferVictoryOnDeadIfLP === "true";
+    const prmForceCollapseOnWipe = parameters.ForceCollapseOnWipe === "true";
     // プラグインコマンド
-    PluginManager.registerCommand(PLUGIN_NAME, 'growLP', function (args) {
+    PluginManager.registerCommand(PLUGIN_NAME, "growLP", (args) => {
         const actorId = Number(args.actor);
         const value = Number(args.value);
         const actor = $gameActors.actor(actorId);
@@ -200,18 +201,12 @@
     });
     // バトルメッセージ初期化
     function LPBreakMessage(actor, point) {
-        const message = prmLPBreakMessage || '%1は%2のLPを失った！！';
-        return message
-            .toString()
-            .replace('%1', actor.name())
-            .replace('%2', point);
+        const message = prmLPBreakMessage || "%1は%2のLPを失った！！";
+        return message.toString().replace("%1", actor.name()).replace("%2", point);
     }
     function LPGainMessage(actor, point) {
-        const message = prmLPGainMessage || '%1は%2LP回復した！';
-        return message
-            .toString()
-            .replace('%1', actor.name())
-            .replace('%2', point);
+        const message = prmLPGainMessage || "%1は%2LP回復した！";
+        return message.toString().replace("%1", actor.name()).replace("%2", point);
     }
     // LPを増減させるメソッド
     function gainLP(actor, value) {
@@ -251,7 +246,6 @@
     // 最大LPを設定するメソッド
     // <LP_Bonus>を持ったオブジェクトを持ったアクターはMaxLP増やす
     Game_Actor.prototype.maxLPSet = function () {
-        const a = this; // 参照用
         // 特徴を持つオブジェクトのmetaデータを抽出
         const objects = this.skills()
             .map((skill) => ({
@@ -260,14 +254,16 @@
             .concat(this.traitObjects().map((obj) => ({ meta: obj.meta })));
         let bonusLP = 0;
         for (const obj of objects) {
-            if (obj.meta['LP_Bonus']) {
-                bonusLP += Number(obj.meta['LP_Bonus']);
+            if (obj.meta.LP_Bonus) {
+                bonusLP += Number(obj.meta.LP_Bonus);
             }
         }
-        if (bonusLP != 0) {
+        if (bonusLP !== 0) {
+            // biome-ignore lint/security/noGlobalEval: プラグインパラメータの式を評価（ローカル実行前提）
             this.mlp = Math.max(Math.floor(eval(prmMaxLP)) + bonusLP, 0);
         }
         else {
+            // biome-ignore lint/security/noGlobalEval: プラグインパラメータの式を評価（ローカル実行前提）
             this.mlp = Math.floor(eval(prmMaxLP));
         }
         if (this.lp != null)
@@ -304,7 +300,7 @@
     Game_Action.prototype.makeTargets = function () {
         let targets = _Game_Action_makeTargets.call(this);
         // NRP_SkillRangeEX.js考慮処理
-        if (PluginManager._scripts.includes('NRP_SkillRangeEX') &&
+        if (PluginManager._scripts.includes("NRP_SkillRangeEX") &&
             this.item()?.meta.RangeEx) {
             targets = BattleManager.rangeEx(this, targets); // スキル範囲を拡張したターゲットの配列を取得
         }
@@ -320,7 +316,7 @@
     // LP回復アイテムの使用判定もここで行う
     const Game_Action_testApply = Game_Action.prototype.testApply;
     Game_Action.prototype.testApply = function (target) {
-        const lpRecover = Number(this.item()?.meta['LP_Recover']);
+        const lpRecover = Number(this.item()?.meta.LP_Recover);
         if (target.isActor() &&
             target.lp > 0 &&
             target.isDead() &&
@@ -365,8 +361,9 @@
                 }
             }
             // <LP_Recover>指定があるなら増減
-            const lpRecover = String(this.item()?.meta['LP_Recover'] || null);
+            const lpRecover = String(this.item()?.meta.LP_Recover || null);
             if (lpRecover != null) {
+                // biome-ignore lint/security/noGlobalEval: メモ欄の式を評価（ローカル実行前提）
                 const recoverValue = Math.floor(eval(lpRecover));
                 gainLP(target, recoverValue);
                 target._result.lpDamage -= recoverValue;
@@ -379,7 +376,7 @@
     Game_Actor.prototype.addNewState = function (stateId) {
         _Game_Actor_addNewState.call(this, stateId);
         const state = $dataStates[stateId];
-        const lpGain = state.meta['LP_Gain'];
+        const lpGain = state.meta.LP_Gain;
         if (lpGain) {
             gainLP(this, Number(lpGain));
         }
@@ -392,8 +389,8 @@
             gainLP(this, -1);
             this._result.lpDamage = 1;
             // NRP_DynamicReturningAction.jsの再生待ち組み込み
-            const _parameters = PluginManager.parameters('NRP_DynamicReturningAction');
-            if (_parameters['WaitRegeneration'] === 'true' || true) {
+            const _parameters = PluginManager.parameters("NRP_DynamicReturningAction");
+            if (_parameters.WaitRegeneration === "true") {
                 this._regeneDeath = true;
             }
         }
@@ -404,10 +401,9 @@
     Game_Actor.prototype.canPaySkillCost = function (skill) {
         // アクターのみ対象
         if (this.isActor()) {
-            const LPCost = Number(skill.meta['LP_Cost']);
+            const LPCost = Number(skill.meta.LP_Cost);
             if (LPCost) {
-                return (_Game_Actor_canPaySkillCost.call(this, skill) &&
-                    this.lp > LPCost);
+                return (_Game_Actor_canPaySkillCost.call(this, skill) && this.lp > LPCost);
             }
         }
         return _Game_Actor_canPaySkillCost.call(this, skill);
@@ -418,7 +414,7 @@
         _Game_Actor_paySkillCost.call(this, skill);
         // アクターのみ対象
         if (this.isActor()) {
-            const LPCost = Number(skill.meta['LP_Cost']);
+            const LPCost = Number(skill.meta.LP_Cost);
             if (LPCost) {
                 gainLP(this, -LPCost);
             }
@@ -485,7 +481,7 @@
     Sprite_Battler.prototype.createDamageSprite = function () {
         _Sprite_Battler_createDamageSprite.call(this);
         const battler = this._battler;
-        if (battler?._result.lpDamage != 0 && battler?.isActor()) {
+        if (battler?._result.lpDamage !== 0 && battler?.isActor()) {
             // 負の再生ダメージで死んだ、かつ
             // NRP_DynamicReturningAction.jsの再生待ちがONの場合の処理。
             // 苦肉の策として処理を移植。
@@ -523,7 +519,7 @@
             return _Sprite_Damage_damageColor.call(this);
         }
         else {
-            const color = this._lpDamage > 0 ? '#ff2020' : '#2020ff';
+            const color = this._lpDamage > 0 ? "#ff2020" : "#2020ff";
             return color;
         }
     };
@@ -532,7 +528,7 @@
         // NRP_DynamicReturningAction.jsとの競合処理。
         // 帰還後にthis.visibleがtrueになってしまうため、
         // こちら側で上書きしておく。
-        if (PluginManager.parameters('NRP_DynamicReturningAction')) {
+        if (PluginManager.parameters("NRP_DynamicReturningAction")) {
             this.visible = false;
         }
         if (this._delay > 0) {
@@ -549,31 +545,34 @@
         if (!prmPreferVictoryOnDeadIfLP)
             return;
         this.members()
-            .filter((m) => m && m.isActor())
+            .filter((m) => m?.isActor())
             .forEach((actor) => {
             if (actor.isDead() && actor.lp > 0) {
-                if (actor.requestMotion) {
-                    actor.requestMotion('victory');
+                const actorMotion = actor;
+                if (typeof actorMotion.requestMotion === "function") {
+                    actorMotion.requestMotion("victory");
                 }
-                else if (actor.performVictory) {
-                    actor.performVictory();
+                else if (typeof actorMotion.performVictory === "function") {
+                    actorMotion.performVictory();
                 }
             }
         });
     };
     // 全滅時は戦闘不能モーションを強制
-    const _BattleManager_processDefeat = BattleManager.processDefeat;
-    BattleManager.processDefeat = function () {
+    const battleManager = BattleManager;
+    const _BattleManager_processDefeat = battleManager.processDefeat;
+    battleManager.processDefeat = function () {
         if (prmForceCollapseOnWipe) {
             $gameParty
                 .members()
-                .filter((m) => m && m.isActor())
+                .filter((m) => m?.isActor())
                 .forEach((actor) => {
-                if (actor.requestMotion) {
-                    actor.requestMotion('dead');
+                const actorMotion = actor;
+                if (typeof actorMotion.requestMotion === "function") {
+                    actorMotion.requestMotion("dead");
                 }
-                else if (actor.performCollapse) {
-                    actor.performCollapse();
+                else if (typeof actorMotion.performCollapse === "function") {
+                    actorMotion.performCollapse();
                 }
             });
         }
@@ -587,16 +586,16 @@
                 return;
             }
             else if (target._result.lpDamage > 0) {
-                this.push('addText', LPBreakMessage(target, String(target._result.lpDamage)));
+                this.push("addText", LPBreakMessage(target, String(target._result.lpDamage)));
             }
             else if (target._result.lpDamage < 0) {
-                this.push('addText', LPGainMessage(target, String(-target._result.lpDamage)));
+                this.push("addText", LPGainMessage(target, String(-target._result.lpDamage)));
             }
         }
     };
     // LPをウィンドウに描画
     // LPゲージタイプの定義
-    const GAUGE_TYPE_LP = 'lp';
+    const GAUGE_TYPE_LP = "lp";
     // Sprite_Gaugeの拡張
     const _Sprite_Gauge_initMembers = Sprite_Gauge.prototype.initMembers;
     Sprite_Gauge.prototype.initMembers = function () {
@@ -647,7 +646,7 @@
     const _Sprite_Gauge_label = Sprite_Gauge.prototype.label;
     Sprite_Gauge.prototype.label = function () {
         if (this._statusType === GAUGE_TYPE_LP) {
-            return 'LP';
+            return "LP";
         }
         return _Sprite_Gauge_label.call(this);
     };
@@ -671,7 +670,7 @@
     Window_StatusBase.prototype.placeGauge = function (actor, type, x, y) {
         _Window_StatusBase_placeGauge.call(this, actor, type, x, y);
         if (type === GAUGE_TYPE_LP) {
-            const key = 'actor%1-gauge-%2'.format(actor.actorId(), type);
+            const key = "actor%1-gauge-%2".format(actor.actorId(), type);
             const sprite = this.createInnerSprite(key, Sprite_Gauge);
             sprite.setup(actor, type);
             sprite.move(x, y);
@@ -692,7 +691,7 @@
     Window_StatusBase.prototype.placeBasicGauges = function (actor, x, y) {
         _Window_StatusBase_placeBasicGauges.call(this, actor, x, y);
         // LP描画を追加
-        this.placeGauge(actor, 'lp', x, y + this.gaugeLineHeight() * 2);
+        this.placeGauge(actor, "lp", x, y + this.gaugeLineHeight() * 2);
     };
     // 戦闘ステータスの座標上げ
     const _Window_BattleStatus_basicGaugesY = Window_BattleStatus.prototype.basicGaugesY;

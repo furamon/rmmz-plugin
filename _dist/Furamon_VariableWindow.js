@@ -1,3 +1,4 @@
+"use strict";
 //------------------------------------------------------------------------------
 // Furamon_VariableWindow.js
 // This software is released under the MIT License.
@@ -103,13 +104,13 @@
  * @text 完了までウェイト
  * @desc このウィンドウが表示されている間、イベントの進行を待つかどうか。
  */
-(function () {
-    const PLUGIN_NAME = 'Furamon_VariableWindow';
-    const parameters = PluginManager.parameters(PLUGIN_NAME);
+(() => {
+    const PLUGIN_NAME = "Furamon_VariableWindow";
+    const _parameters = PluginManager.parameters(PLUGIN_NAME);
     // NRP_MessageSpeed連携
-    const nrpParams = PluginManager.parameters('NRP_MessageSpeed');
-    const nrpDefaultSpeed = Number(nrpParams['DefaultSpeed'] || 100);
-    const nrpSpeedVariable = Number(nrpParams['SpeedVariable'] || 0);
+    const nrpParams = PluginManager.parameters("NRP_MessageSpeed");
+    const nrpDefaultSpeed = Number(nrpParams.DefaultSpeed || 100);
+    const nrpSpeedVariable = Number(nrpParams.SpeedVariable || 0);
     // --- Window_TemporaryText ---
     // 一時的なテキスト表示用ウィンドウ
     class Window_TemporaryText extends Window_Base {
@@ -136,11 +137,11 @@
             this.contentsOpacity = 255; // 文字透明度
             this._showedTextLength = enableTextScroll ? 0 : text.length; // 文字送り用
             this._textSpeed = nrpParams
-                ? (100 / nrpSpeedVariable
+                ? 100 / nrpSpeedVariable
                     ? $gameVariables.value(nrpSpeedVariable)
                     : ConfigManager.messageSpeed
                         ? ConfigManager.messageSpeed
-                        : nrpDefaultSpeed)
+                        : nrpDefaultSpeed
                 : 1;
             this._textWaitCount = 0;
             this._isAllShown = !enableTextScroll; // 送り無効なら最初から全文表示
@@ -184,8 +185,7 @@
             this.x = this._fullWidth ? 0 : (Graphics.boxWidth - this.width) / 2;
             // 'カスタム' 以外の場合、コアスクリプトの計算式でY座標を設定
             if (this._position !== -1) {
-                this.y =
-                    (this._position * (Graphics.boxHeight - this.height)) / 2;
+                this.y = (this._position * (Graphics.boxHeight - this.height)) / 2;
             }
             // 'カスタム' の場合は、コンストラクタで渡された初期座標(rect.x, rect.y)がそのまま使われる (何もしない)
         }
@@ -209,7 +209,7 @@
                         this.refresh();
                     }
                     // 決定キーで全文表示
-                    if (Input.isTriggered('ok') || TouchInput.isTriggered()) {
+                    if (Input.isTriggered("ok") || TouchInput.isTriggered()) {
                         this._showedTextLength = this._text.length;
                         this._isAllShown = true;
                         this.refresh();
@@ -231,19 +231,18 @@
         }
     }
     // --- プラグインコマンドの登録 ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'showTextTemporarily', function (args) {
-        const text = String(args.text || '');
+    PluginManager.registerCommand(PLUGIN_NAME, "showTextTemporarily", function (args) {
+        const text = String(args.text || "");
         const duration = Number(args.duration || 90);
         const position = Number(args.position || 0);
         const fontSize = Number(args.fontSize || $gameSystem.mainFontSize());
-        const fullWidth = args.fullWidth === 'true'; // boolean引数は文字列で渡される
-        const textAlign = String(args.textAlign || 'center');
+        const fullWidth = args.fullWidth === "true"; // boolean引数は文字列で渡される
+        const textAlign = String(args.textAlign || "center");
         // 新規: 文字送り有無・速度
         const enableTextScroll = args.enableTextScroll === undefined
             ? true
-            : args.enableTextScroll === true ||
-                args.enableTextScroll === 'true';
-        const wait = args.wait !== 'false'; // デフォルトtrue。"false"が指定された時だけfalseに
+            : args.enableTextScroll === true || args.enableTextScroll === "true";
+        const wait = args.wait !== "false"; // デフォルトtrue。"false"が指定された時だけfalseに
         let x = 0;
         let y = 0;
         // positionが'カスタム' かつ fullWidthがfalse の場合のみx, y引数を読み込む
@@ -263,20 +262,20 @@
         // ウェイトが有効な場合、Interpreterにウィンドウを記憶させ、待機モードを設定
         if (wait) {
             this._temporaryWindow = tempWindow;
-            this.setWaitMode('temporaryText');
+            this.setWaitMode("temporaryText");
         }
     });
     // --- Game_Interpreter の拡張 ---
     // updateWaitMode を拡張して、temporaryText モードの待機処理を追加
     const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
     Game_Interpreter.prototype.updateWaitMode = function () {
-        if (this._waitMode === 'temporaryText') {
+        if (this._waitMode === "temporaryText") {
             // _temporaryWindow が存在し、かつ閉じ始めていない（開いている途中か表示中）かチェック
             if (this._temporaryWindow && !this._temporaryWindow.isClosing()) {
                 return true; // まだ待機
             }
             else {
-                this._waitMode = ''; // 待機モード解除
+                this._waitMode = ""; // 待機モード解除
                 this._temporaryWindow = null; // 参照をクリア
             }
         }
