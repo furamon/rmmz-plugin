@@ -199,6 +199,22 @@
   }
 
   // ウィンドウにカーソル画像スプライトを作成
+  // NOTE: 型定義(@types)は編集しない方針のため、このプラグイン側で unknown 経由の補助型を用意する
+  type CursorEnhanceSprite = Sprite & {
+    _targetX?: number;
+    _targetY?: number;
+    _tweenCount?: number;
+    _initialized?: boolean;
+  };
+
+  type CursorEnhanceWindow = Window_Selectable & {
+    _cursorEnhanceSprite?: CursorEnhanceSprite;
+    // 既存/外部プラグインで生えている可能性があるメソッド/プロパティ（存在する場合のみ利用）
+    cursorRectForItem?: (index: number) => Rectangle;
+    origin?: { y: number };
+    itemPadding?: () => number;
+  };
+
   function createCursorEnhanceSprite(win: Window_Selectable) {
     if (!prmImageName) return;
     // ウィンドウクラスのチェック
@@ -213,18 +229,15 @@
     sprite.y = 0;
     sprite.scale.set(prmScale, prmScale);
     sprite.visible = false;
-    // ウィンドウにスプライトを保存（型チェック回避のためany使用）
-    (win as any)._cursorEnhanceSprite = sprite;
+    // ウィンドウにスプライトを保存
+    const enhanceWin = win as unknown as CursorEnhanceWindow;
+    enhanceWin._cursorEnhanceSprite = sprite as CursorEnhanceSprite;
     win.addChild(sprite);
   }
 
   function updateCursorEnhanceForWindow(win: Window_Selectable) {
-    const sprite = (win as any)._cursorEnhanceSprite as Sprite & {
-      _targetX?: number;
-      _targetY?: number;
-      _tweenCount?: number;
-      _initialized?: boolean;
-    };
+    const enhanceWin = win as unknown as CursorEnhanceWindow;
+    const sprite = enhanceWin._cursorEnhanceSprite;
     if (!sprite) return;
     const idx = win.index();
     if (idx < 0 || (!win.active && !prmShowWhenInactive)) {
@@ -235,11 +248,11 @@
     // itemRect はウィンドウコンテンツ相対の矩形を返す（スクロール前の位置）
     let rect: Rectangle;
     try {
-      rect = (win as any).itemRect(idx) as Rectangle;
+      rect = win.itemRect(idx);
     } catch (_e) {
       // フォールバック: cursorRect を試す
-      rect = (win as any).cursorRectForItem
-        ? (win as any).cursorRectForItem(idx)
+      rect = enhanceWin.cursorRectForItem
+        ? enhanceWin.cursorRectForItem(idx)
         : new Rectangle(0, 0, 0, 0);
     }
 
@@ -248,12 +261,10 @@
     updateSpriteFrame(sprite);
 
     // ウィンドウの origin からスクロールオフセットを取得（途中のスクロール量にも対応）
-    const originY = (win as any).origin ? (win as any).origin.y : 0;
+    const originY = enhanceWin.origin?.y ?? 0;
 
     // ウィンドウの itemPadding を取得（通常は 8 または 12px）
-    const itemPadding = (win as any).itemPadding()
-      ? (win as any).itemPadding()
-      : 8;
+    const itemPadding = enhanceWin.itemPadding?.() ?? 8;
 
     // 目標位置を計算（rect はコンテンツ座標系、origin.y でスクロール調整）
     // itemPadding 分を加算して正確な中心位置を計算
@@ -304,9 +315,9 @@
   const _Window_Selectable_initialize = Window_Selectable.prototype.initialize;
   Window_Selectable.prototype.initialize = function (
     this: Window_Selectable,
-    ...args: any[]
+    ...args: unknown[]
   ) {
-    _Window_Selectable_initialize.apply(this, args as any);
+    _Window_Selectable_initialize.call(this, ...(args as never[]));
     try {
       createCursorEnhanceSprite(this);
     } catch (_e) {
@@ -318,9 +329,9 @@
   const _Window_Selectable_update = Window_Selectable.prototype.update;
   Window_Selectable.prototype.update = function (
     this: Window_Selectable,
-    ...args: any[]
+    ...args: unknown[]
   ) {
-    _Window_Selectable_update.apply(this, args as any);
+    _Window_Selectable_update.call(this, ...(args as never[]));
     try {
       updateCursorEnhanceForWindow(this);
     } catch (_e) {
@@ -329,7 +340,11 @@
   };
 
   // ウィンドウが initialize フックを経由せずに作成された場合のヘルパー（エッジケース対応）
-  (Window_Selectable.prototype as any).createCursorEnhanceSprite = function () {
-    createCursorEnhanceSprite(this as Window_Selectable);
+  (
+    Window_Selectable.prototype as unknown as {
+      createCursorEnhanceSprite?: () => void;
+    }
+  ).createCursorEnhanceSprite = function (this: Window_Selectable) {
+    createCursorEnhanceSprite(this);
   };
 })();
