@@ -317,7 +317,12 @@
     this: Window_Selectable,
     ...args: unknown[]
   ) {
-    _Window_Selectable_initialize.call(this, ...(args as never[]));
+    (
+      _Window_Selectable_initialize as unknown as (
+        this: Window_Selectable,
+        ...args: unknown[]
+      ) => void
+    ).apply(this, args);
     try {
       createCursorEnhanceSprite(this);
     } catch (_e) {
@@ -331,7 +336,12 @@
     this: Window_Selectable,
     ...args: unknown[]
   ) {
-    _Window_Selectable_update.call(this, ...(args as never[]));
+    (
+      _Window_Selectable_update as unknown as (
+        this: Window_Selectable,
+        ...args: unknown[]
+      ) => void
+    ).apply(this, args);
     try {
       updateCursorEnhanceForWindow(this);
     } catch (_e) {
