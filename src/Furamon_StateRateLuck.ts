@@ -93,6 +93,7 @@
     const _a = subject; // 行動者
     const _b = target; // 対象
     try {
+      // biome-ignore lint/security/noGlobalEval: プラグインパラメータの計算式を評価するため（ローカル実行前提）
       return eval(prmEvalStateRate) / 100;
     } catch (e) {
       console.warn(`StateRateLuck: 計算式エラー - ${prmEvalStateRate}`, e);
