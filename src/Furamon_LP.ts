@@ -174,6 +174,16 @@
   const prmPreferVictoryOnDeadIfLP =
     parameters.PreferVictoryOnDeadIfLP === "true";
   const prmForceCollapseOnWipe = parameters.ForceCollapseOnWipe === "true";
+
+  type ActorMotionMethods = {
+    requestMotion?: (motion: string) => void;
+    performVictory?: () => void;
+    performCollapse?: () => void;
+  };
+
+  type BattleManagerProcessDefeat = {
+    processDefeat: () => void;
+  };
   // プラグインコマンド
   PluginManager.registerCommand(
     PLUGIN_NAME,
@@ -276,8 +286,10 @@
       }
     }
     if (bonusLP !== 0) {
+      // biome-ignore lint/security/noGlobalEval: プラグインパラメータの式を評価（ローカル実行前提）
       this.mlp = Math.max(Math.floor(eval(prmMaxLP)) + bonusLP, 0);
     } else {
+      // biome-ignore lint/security/noGlobalEval: プラグインパラメータの式を評価（ローカル実行前提）
       this.mlp = Math.floor(eval(prmMaxLP));
     }
     if (this.lp != null) this._lp = Math.min(this.lp, this.mlp);
@@ -395,6 +407,7 @@
       // <LP_Recover>指定があるなら増減
       const lpRecover = String(this.item()?.meta.LP_Recover || null);
       if (lpRecover != null) {
+        // biome-ignore lint/security/noGlobalEval: メモ欄の式を評価（ローカル実行前提）
         const recoverValue = Math.floor(eval(lpRecover));
         gainLP(target, recoverValue);
         target._result.lpDamage -= recoverValue;
@@ -426,7 +439,7 @@
       const _parameters = PluginManager.parameters(
         "NRP_DynamicReturningAction",
       );
-      if (_parameters.WaitRegeneration === "true" || true) {
+      if (_parameters.WaitRegeneration === "true") {
         this._regeneDeath = true;
       }
     }
@@ -607,28 +620,33 @@
     this.members()
       .filter((m): m is Game_Actor => m?.isActor())
       .forEach((actor) => {
-        if (actor.isDead() && (actor as any).lp > 0) {
-          if ((actor as any).requestMotion) {
-            (actor as any).requestMotion("victory");
-          } else if ((actor as any).performVictory) {
-            (actor as any).performVictory();
+        if (actor.isDead() && actor.lp > 0) {
+          const actorMotion = actor as unknown as ActorMotionMethods;
+
+          if (typeof actorMotion.requestMotion === "function") {
+            actorMotion.requestMotion("victory");
+          } else if (typeof actorMotion.performVictory === "function") {
+            actorMotion.performVictory();
           }
         }
       });
   };
 
   // 全滅時は戦闘不能モーションを強制
-  const _BattleManager_processDefeat = (BattleManager as any).processDefeat;
-  (BattleManager as any).processDefeat = function () {
+  const battleManager = BattleManager as unknown as BattleManagerProcessDefeat;
+  const _BattleManager_processDefeat = battleManager.processDefeat;
+  battleManager.processDefeat = function () {
     if (prmForceCollapseOnWipe) {
       $gameParty
         .members()
         .filter((m): m is Game_Actor => m?.isActor())
         .forEach((actor) => {
-          if ((actor as any).requestMotion) {
-            (actor as any).requestMotion("dead");
-          } else if ((actor as any).performCollapse) {
-            (actor as any).performCollapse();
+          const actorMotion = actor as unknown as ActorMotionMethods;
+
+          if (typeof actorMotion.requestMotion === "function") {
+            actorMotion.requestMotion("dead");
+          } else if (typeof actorMotion.performCollapse === "function") {
+            actorMotion.performCollapse();
           }
         });
     }
