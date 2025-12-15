@@ -40,6 +40,30 @@
 (() => {
   const PLUGIN_NAME = "Furamon_EnemyActorDynamicMotion";
 
+  // NOTE: 型定義(@types)は編集しない方針のため、このプラグイン側で unknown 経由の補助型を用意する
+  type DynamicMotionLike = {
+    motion?: unknown;
+    motionDuration?: unknown;
+    motionPattern?: unknown;
+    motionStartPattern?: unknown;
+  };
+
+  type CollapseDataLike = {
+    Duration?: unknown;
+    ShakeStrength?: unknown;
+    BlendMode?: unknown;
+    BlendColor?: unknown;
+    CollapseType?: unknown;
+    Sound2?: unknown;
+    Sound2Interval?: unknown;
+  };
+
+  function asObject(value: unknown): Record<string, unknown> | null {
+    return value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : null;
+  }
+
   // 必須プラグインの存在確認
   if (!PluginManager._scripts.includes("NRP_DynamicMotionMZ")) {
     console.warn(`[${PLUGIN_NAME}] NRP_DynamicMotionMZ is not found.`);
@@ -66,39 +90,56 @@
    */
   const _Sprite_Enemy_startDynamicMotion =
     Sprite_Enemy.prototype.startDynamicMotion;
-  Sprite_Enemy.prototype.startDynamicMotion = function (dynamicMotion: any) {
+  Sprite_Enemy.prototype.startDynamicMotion = function (...args: unknown[]) {
+    const dynamicMotion = args[0];
     if (isSvActorEnemy(this._battler) && this._svActorSprite) {
       this.startDynamicSvMotion(dynamicMotion);
-      Sprite_Battler.prototype.startDynamicMotion.call(this, dynamicMotion);
+      Sprite_Battler.prototype.startDynamicMotion.call(
+        this,
+        dynamicMotion as never,
+      );
       return;
     }
-    _Sprite_Enemy_startDynamicMotion.apply(this, arguments);
+    (
+      _Sprite_Enemy_startDynamicMotion as unknown as (
+        this: Sprite_Enemy,
+        ...args: unknown[]
+      ) => void
+    ).apply(this, args);
   };
 
   /**
    * ● SVキャラクターモーションの実行（敵版）
    */
-  Sprite_Enemy.prototype.startDynamicSvMotion = function (dynamicMotion: any) {
+  Sprite_Enemy.prototype.startDynamicSvMotion = function (
+    dynamicMotion: unknown,
+  ) {
+    const dm = asObject(dynamicMotion) as DynamicMotionLike | null;
     if (
       !isSvActorEnemy(this._battler) ||
       !this._svActorSprite ||
-      !dynamicMotion.motion
+      !dm ||
+      typeof dm.motion !== "string"
     ) {
       return;
     }
     const svSprite = this._svActorSprite;
     svSprite._motionCount = 0;
     svSprite._pattern = 0;
-    svSprite._motionDuration = dynamicMotion.motionDuration;
-    svSprite._motionPattern = dynamicMotion.motionPattern;
-    if (dynamicMotion.motionStartPattern !== undefined) {
-      svSprite._motionStartPattern = dynamicMotion.motionStartPattern;
+    if (typeof dm.motionDuration === "number") {
+      svSprite._motionDuration = dm.motionDuration;
     }
-    if (dynamicMotion.motion) {
-      if (dynamicMotion.motion === "attack") {
+    if (typeof dm.motionPattern === "number") {
+      svSprite._motionPattern = dm.motionPattern;
+    }
+    if (typeof dm.motionStartPattern === "number") {
+      svSprite._motionStartPattern = dm.motionStartPattern;
+    }
+    if (dm.motion) {
+      if (dm.motion === "attack") {
         svSprite.startMotion("thrust");
       } else {
-        svSprite.startMotion(dynamicMotion.motion);
+        svSprite.startMotion(dm.motion);
       }
     }
   };
@@ -175,10 +216,13 @@
   };
 
   Sprite_Enemy.prototype.applySvActorCollapseEffect = function (
-    collapseData: any,
+    collapseData: unknown,
   ) {
     const svSprite = this._svActorSprite;
     if (!svSprite) return;
+
+    const cd = asObject(collapseData) as CollapseDataLike | null;
+    if (!cd) return;
 
     // 敵本体のスプライト（静止画）は描画しないようにフレームを空にする
     this.setFrame(0, 0, 0, 0);
@@ -186,7 +230,8 @@
     const _a = this._battler;
     let duration = 32;
     try {
-      duration = Number(eval(collapseData.Duration) || 32);
+      // biome-ignore lint/security/noGlobalEval: NRP_EnemyCollapse互換のため、数式文字列を評価する（ローカル実行前提）
+      duration = Number(eval(String(cd.Duration)) || 32);
     } catch (_e) {
       /* ignore */
     }
@@ -194,24 +239,27 @@
 
     let shake = 0;
     try {
-      shake = Number(eval(collapseData.ShakeStrength) || 0);
+      // biome-ignore lint/security/noGlobalEval: NRP_EnemyCollapse互換のため、数式文字列を評価する（ローカル実行前提）
+      shake = Number(eval(String(cd.ShakeStrength)) || 0);
     } catch (_e) {
       /* ignore */
     }
     svSprite.x += Math.round(Math.random() * shake * 2) - shake;
 
     try {
-      svSprite.blendMode = Number(eval(collapseData.BlendMode) || 1);
+      // biome-ignore lint/security/noGlobalEval: NRP_EnemyCollapse互換のため、数式文字列を評価する（ローカル実行前提）
+      svSprite.blendMode = Number(eval(String(cd.BlendMode)) || 1);
     } catch (_e) {
       svSprite.blendMode = 1;
     }
 
-    const colorText = collapseData.BlendColor || "[255, 255, 255, 128]";
+    const colorText = String(cd.BlendColor ?? "[255, 255, 255, 128]");
     try {
       const color = JSON.parse(colorText);
       svSprite.setBlendColor(color);
     } catch (_e) {
       try {
+        // biome-ignore lint/security/noGlobalEval: 旧書式互換のため、配列式の文字列を評価する（ローカル実行前提）
         const color = eval(colorText);
         svSprite.setBlendColor(color);
       } catch (_e2) {
@@ -221,7 +269,7 @@
 
     svSprite.opacity = 255 * (1 - progress);
 
-    if (collapseData.CollapseType === "Sink") {
+    if (cd.CollapseType === "Sink") {
       // マスクがなければ作成
       if (!svSprite._collapseMask) {
         svSprite._collapseMask = new PIXI.Graphics();
@@ -255,12 +303,13 @@
       svSprite._collapseMask.endFill();
     }
 
-    if (collapseData.Sound2 && collapseData.Sound2Interval) {
+    if (cd.Sound2 && cd.Sound2Interval) {
       try {
-        const interval = Number(eval(collapseData.Sound2Interval));
+        // biome-ignore lint/security/noGlobalEval: NRP_EnemyCollapse互換のため、数式文字列を評価する（ローカル実行前提）
+        const interval = Number(eval(String(cd.Sound2Interval)));
         if (interval > 0 && this._effectDuration % interval === 0) {
           AudioManager.playSe({
-            name: collapseData.Sound2,
+            name: String(cd.Sound2),
             volume: 90,
             pitch: 100,
             pan: 0,
