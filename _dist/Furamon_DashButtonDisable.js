@@ -29,7 +29,7 @@
 (() => {
     const pluginName = "Furamon_DashButtonDisable";
     const parameters = PluginManager.parameters(pluginName);
-    const alwaysDash = parameters.alwaysDash === "true";
+    const alwaysDash = parameters["alwaysDash"] === "true";
     // Game_Player のダッシュ機能を制御
     Game_Player.prototype.isDashButtonPressed = () => alwaysDash;
     // Window_Options からalwaysDashオプションを除外
@@ -38,7 +38,7 @@
         _Window_Options_makeCommandList.call(this);
         // alwaysDashコマンドを削除
         for (let i = this._list.length - 1; i >= 0; i--) {
-            if (this._list[i].symbol === "alwaysDash") {
+            if (this._list[i]?.symbol === "alwaysDash") {
                 this._list.splice(i, 1);
             }
         }

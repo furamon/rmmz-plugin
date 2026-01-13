@@ -106,11 +106,11 @@
  */
 (() => {
     const PLUGIN_NAME = "Furamon_VariableWindow";
-    const _parameters = PluginManager.parameters(PLUGIN_NAME);
+    // const _parameters = PluginManager.parameters(PLUGIN_NAME);
     // NRP_MessageSpeed連携
     const nrpParams = PluginManager.parameters("NRP_MessageSpeed");
-    const nrpDefaultSpeed = Number(nrpParams.DefaultSpeed || 100);
-    const nrpSpeedVariable = Number(nrpParams.SpeedVariable || 0);
+    const nrpDefaultSpeed = Number(nrpParams["DefaultSpeed"] || 100);
+    const nrpSpeedVariable = Number(nrpParams["SpeedVariable"] || 0);
     // --- Window_TemporaryText ---
     // 一時的なテキスト表示用ウィンドウ
     class Window_TemporaryText extends Window_Base {
@@ -232,27 +232,28 @@
     }
     // --- プラグインコマンドの登録 ---
     PluginManager.registerCommand(PLUGIN_NAME, "showTextTemporarily", function (args) {
-        const text = String(args.text || "");
-        const duration = Number(args.duration || 90);
-        const position = Number(args.position || 0);
-        const fontSize = Number(args.fontSize || $gameSystem.mainFontSize());
-        const fullWidth = args.fullWidth === "true"; // boolean引数は文字列で渡される
-        const textAlign = String(args.textAlign || "center");
+        const text = String(args["text"] || "");
+        const duration = Number(args["duration"] || 90);
+        const position = Number(args["position"] || 0);
+        const fontSize = Number(args["fontSize"] || $gameSystem.mainFontSize());
+        const fullWidth = args["fullWidth"] === "true"; // boolean引数は文字列で渡される
+        const textAlign = String(args["textAlign"] || "center");
         // 新規: 文字送り有無・速度
-        const enableTextScroll = args.enableTextScroll === undefined
+        const enableTextScroll = args["enableTextScroll"] === undefined
             ? true
-            : args.enableTextScroll === true || args.enableTextScroll === "true";
-        const wait = args.wait !== "false"; // デフォルトtrue。"false"が指定された時だけfalseに
+            : args["enableTextScroll"] === true ||
+                args["enableTextScroll"] === "true";
+        const wait = args["wait"] !== "false"; // デフォルトtrue。"false"が指定された時だけfalseに
         let x = 0;
         let y = 0;
         // positionが'カスタム' かつ fullWidthがfalse の場合のみx, y引数を読み込む
         // (fullWidth=true の場合はx=0で固定されるため)
         if (position === -1 && !fullWidth) {
-            x = Number(args.x || 0);
+            x = Number(args["x"] || 0);
         }
         if (position === -1) {
             // Y座標はpositionがカスタムなら常に読み込む
-            y = Number(args.y || 0);
+            y = Number(args["y"] || 0);
         }
         // 初期位置(カスタム時)と仮サイズでウィンドウ生成（サイズと最終位置はrefreshで調整される）
         const rect = new Rectangle(x, y, 1, 1);

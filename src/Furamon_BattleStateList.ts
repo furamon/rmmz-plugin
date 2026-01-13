@@ -71,9 +71,9 @@
   const pluginName = "Furamon_BattleStateList";
   const params = PluginManager.parameters(pluginName);
 
-  const stateButton = String(params.StateButton || "tab");
+  const stateButton = String(params["StateButton"] || "tab");
   const stateDescriptionsRaw: string[] = JSON.parse(
-    params.StateDescriptions || "[]",
+    params["StateDescriptions"] || "[]",
   );
   const stateDescriptions = stateDescriptionsRaw.map((item: string) => {
     const parsed = JSON.parse(item);
@@ -86,9 +86,9 @@
     stateDescriptions.map((d) => [d.stateId, d.description]),
   );
 
-  const windowWidth = Number(params.WindowWidth || 0);
-  const windowHeight = Number(params.WindowHeight || 0);
-  const itemSpacing = Number(params.ItemSpacing || 12);
+  const windowWidth = Number(params["WindowWidth"] || 0);
+  const windowHeight = Number(params["WindowHeight"] || 0);
+  const itemSpacing = Number(params["ItemSpacing"] || 12);
 
   //-----------------------------------------------------------------------------
   // Window_BattleStateList
@@ -104,11 +104,11 @@
       this._dataStates = [];
     }
 
-    public isOpen(): boolean {
+    public override isOpen(): boolean {
       return super.isOpen();
     }
 
-    public isClosed(): boolean {
+    public override isClosed(): boolean {
       return super.isClosed();
     }
 
@@ -136,7 +136,7 @@
         .filter((state): state is MZ.State => !!state);
     }
 
-    refresh() {
+    override refresh() {
       this.contents.clear();
       this.makeItemList();
 

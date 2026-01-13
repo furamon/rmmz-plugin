@@ -183,7 +183,7 @@ const COMMAND_HELP_DATA = [
   // ===== メニュー画面のカスタマイズ =====
 
   // Scene_Menuの改変
-  const _Scene_Menu_create = Scene_Menu.prototype.create;
+  // const _Scene_Menu_create = Scene_Menu.prototype.create;
   Scene_Menu.prototype.create = function () {
     Scene_MenuBase.prototype.create.call(this);
     this.createCommandWindow();
@@ -298,7 +298,7 @@ const COMMAND_HELP_DATA = [
       this.refresh();
     }
 
-    update() {
+    override update() {
       super.update();
       // プレイ時間を毎フレーム更新
       if (Graphics.frameCount % 60 === 0) {
@@ -374,7 +374,7 @@ const COMMAND_HELP_DATA = [
       this.refresh();
     }
 
-    update() {
+    override update() {
       super.update();
       // 6フレームごとにアニメーション更新(SVアクターのデフォルト速度)
       if (Graphics.frameCount - this._lastFrameCount >= 6) {
@@ -391,7 +391,8 @@ const COMMAND_HELP_DATA = [
     }
 
     actor(index: number): Game_Actor {
-      return $gameParty.members()[index];
+      const member = $gameParty.members()[index];
+      return member!;
     }
 
     drawActorClass(actor: Game_Actor, x: number, y: number, width: number) {
@@ -418,18 +419,19 @@ const COMMAND_HELP_DATA = [
       }
     }
 
-    isCurrentItemEnabled(): boolean {
+    override isCurrentItemEnabled(): boolean {
       if (this._formationMode) {
         const actor = $gameParty.members()[this.index()];
-        return actor?.isFormationChangeOk();
+        return actor?.isFormationChangeOk() ?? false;
       } else {
         return true;
       }
     }
 
-    processOk() {
+    override processOk() {
       super.processOk();
-      $gameParty.setMenuActor($gameParty.members()[this.index()]);
+      const actor = $gameParty.members()[this.index()];
+      if (actor) $gameParty.setMenuActor(actor);
     }
 
     selectLast() {
@@ -487,7 +489,7 @@ const COMMAND_HELP_DATA = [
       return null;
     }
 
-    actorName(n: number): string {
+    override actorName(n: number): string {
       const actor = this.actor(n);
       return actor ? actor.name() : "";
     }
@@ -500,11 +502,11 @@ const COMMAND_HELP_DATA = [
       // 実装不要(drawItemで描画)
     }
 
-    drawItemBackground(_index: number) {
+    override drawItemBackground(_index: number) {
       // 実装不要
     }
 
-    lineHeight(): number {
+    override lineHeight(): number {
       return 36;
     }
 
@@ -512,7 +514,7 @@ const COMMAND_HELP_DATA = [
       return 24;
     }
 
-    itemPadding(): number {
+    override itemPadding(): number {
       return 8;
     }
 
@@ -592,11 +594,11 @@ const COMMAND_HELP_DATA = [
       // 実装不要
     }
 
-    drawIcon(_iconIndex: number, _x: number, _y: number) {
+    override drawIcon(_iconIndex: number, _x: number, _y: number) {
       // 実装不要(基本クラスに存在)
     }
 
-    drawFace(
+    override drawFace(
       _faceName: string,
       _faceIndex: number,
       _x: number,
@@ -607,7 +609,7 @@ const COMMAND_HELP_DATA = [
       // 実装不要(基本クラスに存在)
     }
 
-    drawCharacter(
+    override drawCharacter(
       _characterName: string,
       _characterIndex: number,
       _x: number,
@@ -660,26 +662,27 @@ const COMMAND_HELP_DATA = [
 
     actorSlotName(actor: Game_Actor, index: number): string {
       const slots = actor.equipSlots();
-      return $dataSystem.equipTypes[slots[index]];
+      const slotIndex = slots[index];
+      return $dataSystem.equipTypes[slotIndex ?? 0] ?? "";
     }
 
-    maxCols() {
+    override maxCols() {
       return 2;
     }
 
-    maxItems() {
+    override maxItems() {
       return $gameParty.size(); // 全メンバーを表示
     }
 
-    itemHeight() {
+    override itemHeight() {
       return 202;
     }
 
-    setCursorRect(x: number, y: number, _width: number, height: number) {
+    override setCursorRect(x: number, y: number, _width: number, height: number) {
       super.setCursorRect(x, y, 100, height - 12);
     }
 
-    refresh() {
+    override refresh() {
       // 既存の背景スプライトをクリア
       for (const sprite of this._statusBackgrounds) {
         this.removeChild(sprite);
@@ -700,7 +703,7 @@ const COMMAND_HELP_DATA = [
       super.refresh();
     }
 
-    drawItem(index: number) {
+    override drawItem(index: number) {
       const actor = $gameParty.members()[index];
       if (!actor) return;
 

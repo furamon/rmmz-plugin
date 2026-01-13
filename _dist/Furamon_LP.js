@@ -166,17 +166,17 @@
 (() => {
     const PLUGIN_NAME = "Furamon_LP";
     const parameters = PluginManager.parameters(PLUGIN_NAME);
-    const prmMaxLP = parameters.MaxLP;
-    const prmLPBreakMessage = parameters.LPBreakMessage;
-    const prmLPGainMessage = parameters.LPGainMessage;
-    const prmBattleEndRecover = parameters.BattleEndRecover === "true";
-    const prmLPZeroStateId = Number(parameters.LPZeroStateId || 0);
-    const prmPreferVictoryOnDeadIfLP = parameters.PreferVictoryOnDeadIfLP === "true";
-    const prmForceCollapseOnWipe = parameters.ForceCollapseOnWipe === "true";
+    const prmMaxLP = parameters["MaxLP"];
+    const prmLPBreakMessage = parameters["LPBreakMessage"];
+    const prmLPGainMessage = parameters["LPGainMessage"];
+    const prmBattleEndRecover = parameters["BattleEndRecover"] === "true";
+    const prmLPZeroStateId = Number(parameters["LPZeroStateId"] || 0);
+    const prmPreferVictoryOnDeadIfLP = parameters["PreferVictoryOnDeadIfLP"] === "true";
+    const prmForceCollapseOnWipe = parameters["ForceCollapseOnWipe"] === "true";
     // プラグインコマンド
     PluginManager.registerCommand(PLUGIN_NAME, "growLP", (args) => {
-        const actorId = Number(args.actor);
-        const value = Number(args.value);
+        const actorId = Number(args["actor"]);
+        const value = Number(args["value"]);
         const actor = $gameActors.actor(actorId);
         if (!value)
             return;
@@ -254,17 +254,17 @@
             .concat(this.traitObjects().map((obj) => ({ meta: obj.meta })));
         let bonusLP = 0;
         for (const obj of objects) {
-            if (obj.meta.LP_Bonus) {
-                bonusLP += Number(obj.meta.LP_Bonus);
+            if (obj.meta["LP_Bonus"]) {
+                bonusLP += Number(obj.meta["LP_Bonus"]);
             }
         }
         if (bonusLP !== 0) {
             // biome-ignore lint/security/noGlobalEval: プラグインパラメータの式を評価（ローカル実行前提）
-            this.mlp = Math.max(Math.floor(eval(prmMaxLP)) + bonusLP, 0);
+            this.mlp = Math.max(Math.floor(eval(prmMaxLP ?? "0")) + bonusLP, 0);
         }
         else {
             // biome-ignore lint/security/noGlobalEval: プラグインパラメータの式を評価（ローカル実行前提）
-            this.mlp = Math.floor(eval(prmMaxLP));
+            this.mlp = Math.floor(eval(prmMaxLP ?? "0"));
         }
         if (this.lp != null)
             this._lp = Math.min(this.lp, this.mlp);
@@ -291,9 +291,11 @@
     // ターゲット選択にLPを組み込む
     Game_Unit.prototype.smoothTarget = function (index) {
         const member = this.members()[Math.max(0, index)];
-        return (member.isActor() && member.lp > 0) || member.isAlive()
-            ? member
-            : this.aliveMembers()[0];
+        if (member && ((member.isActor() && member.lp > 0) || member.isAlive())) {
+            return member;
+        }
+        const aliveTarget = this.aliveMembers()[0];
+        return aliveTarget;
     };
     // 攻撃対象選択にLPを組み込む
     const _Game_Action_makeTargets = Game_Action.prototype.makeTargets;
@@ -301,7 +303,7 @@
         let targets = _Game_Action_makeTargets.call(this);
         // NRP_SkillRangeEX.js考慮処理
         if (PluginManager._scripts.includes("NRP_SkillRangeEX") &&
-            this.item()?.meta.RangeEx) {
+            this.item()?.meta["RangeEx"]) {
             targets = BattleManager.rangeEx(this, targets); // スキル範囲を拡張したターゲットの配列を取得
         }
         // 敵側の全体攻撃の場合、戦闘不能アクターも強制的に追加
@@ -316,7 +318,7 @@
     // LP回復アイテムの使用判定もここで行う
     const Game_Action_testApply = Game_Action.prototype.testApply;
     Game_Action.prototype.testApply = function (target) {
-        const lpRecover = Number(this.item()?.meta.LP_Recover);
+        const lpRecover = Number(this.item()?.meta["LP_Recover"]);
         if (target.isActor() &&
             target.lp > 0 &&
             target.isDead() &&
@@ -361,7 +363,7 @@
                 }
             }
             // <LP_Recover>指定があるなら増減
-            const lpRecover = String(this.item()?.meta.LP_Recover || null);
+            const lpRecover = String(this.item()?.meta["LP_Recover"] || null);
             if (lpRecover != null) {
                 // biome-ignore lint/security/noGlobalEval: メモ欄の式を評価（ローカル実行前提）
                 const recoverValue = Math.floor(eval(lpRecover));
@@ -376,7 +378,7 @@
     Game_Actor.prototype.addNewState = function (stateId) {
         _Game_Actor_addNewState.call(this, stateId);
         const state = $dataStates[stateId];
-        const lpGain = state.meta.LP_Gain;
+        const lpGain = state?.meta["LP_Gain"];
         if (lpGain) {
             gainLP(this, Number(lpGain));
         }
@@ -390,7 +392,7 @@
             this._result.lpDamage = 1;
             // NRP_DynamicReturningAction.jsの再生待ち組み込み
             const _parameters = PluginManager.parameters("NRP_DynamicReturningAction");
-            if (_parameters.WaitRegeneration === "true") {
+            if (_parameters["WaitRegeneration"] === "true") {
                 this._regeneDeath = true;
             }
         }
@@ -401,7 +403,7 @@
     Game_Actor.prototype.canPaySkillCost = function (skill) {
         // アクターのみ対象
         if (this.isActor()) {
-            const LPCost = Number(skill.meta.LP_Cost);
+            const LPCost = Number(skill.meta["LP_Cost"]);
             if (LPCost) {
                 return (_Game_Actor_canPaySkillCost.call(this, skill) && this.lp > LPCost);
             }
@@ -414,7 +416,7 @@
         _Game_Actor_paySkillCost.call(this, skill);
         // アクターのみ対象
         if (this.isActor()) {
-            const LPCost = Number(skill.meta.LP_Cost);
+            const LPCost = Number(skill.meta["LP_Cost"]);
             if (LPCost) {
                 gainLP(this, -LPCost);
             }
@@ -477,31 +479,31 @@
         _Scene_Map_start.call(this);
     };
     // ポップアップ処理の調整
-    const _Sprite_Battler_createDamageSprite = Sprite_Battler.prototype.createDamageSprite;
-    Sprite_Battler.prototype.createDamageSprite = function () {
+    const _Sprite_Battler_createDamageSprite = Sprite_Battler.prototype["createDamageSprite"];
+    Sprite_Battler.prototype["createDamageSprite"] = function () {
         _Sprite_Battler_createDamageSprite.call(this);
-        const battler = this._battler;
+        const battler = this["_battler"];
         if (battler?._result.lpDamage !== 0 && battler?.isActor()) {
             // 負の再生ダメージで死んだ、かつ
             // NRP_DynamicReturningAction.jsの再生待ちがONの場合の処理。
             // 苦肉の策として処理を移植。
             if (battler._regeneDeath) {
-                const hpDamage = this._damages[this._damages.length - 1];
+                const hpDamage = this["_damages"][this["_damages"].length - 1];
                 hpDamage._isRegenerationWait = true;
                 hpDamage._spriteBattler = this;
                 hpDamage.visible = false;
-                const firstSprite = this._damages[0];
+                const firstSprite = this["_damages"][0];
                 hpDamage._diffX = hpDamage.x - firstSprite.x;
                 hpDamage._diffY = hpDamage.y - firstSprite.y;
             }
-            const last = this._damages[this._damages.length - 1];
+            const last = this["_damages"][this["_damages"].length - 1];
             const lpDamage = new Sprite_Damage();
             lpDamage.setupLpBreak(battler);
             lpDamage.x = last.x;
             lpDamage.y = last.y;
             lpDamage._spriteBattler = this;
-            this._damages.push(lpDamage);
-            this.parent.addChild(lpDamage);
+            this["_damages"].push(lpDamage);
+            this["parent"].addChild(lpDamage);
         }
     };
     // LP減少の表示

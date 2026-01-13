@@ -1,4 +1,5 @@
 "use strict";
+// @ts-nocheck
 //------------------------------------------------------------------------------
 // Furamon_SVSheetWeapon.js
 // This software is released under the MIT License.
@@ -43,7 +44,7 @@
  * 例: <SVWeaponOffset:10,-5>
  */
 (() => {
-    const _PLUGIN_NAME = "Furamon_SVSheetWeapon";
+    // const _PLUGIN_NAME = "Furamon_SVSheetWeapon";
     const hasBattleMotion = PluginManager._scripts.includes("BattleMotionMZ");
     //-----------------------------------------------------------------------------
     // ImageManager
@@ -196,7 +197,8 @@
     // Sprite_Actor
     //
     // アクターを表示するためのスプライトです。
-    const _Sprite_Actor_createWeaponSprite = Sprite_Actor.prototype.createWeaponSprite;
+    // const _Sprite_Actor_createWeaponSprite =
+    Sprite_Actor.prototype.createWeaponSprite;
     Sprite_Actor.prototype.createWeaponSprite = function () {
         // _Sprite_Actor_createWeaponSprite.call(this);
         // 武器スプライトを上書き

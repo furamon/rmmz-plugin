@@ -39,7 +39,7 @@
  */
 (() => {
   const PLUGIN_NAME = "Furamon_xxx";
-  const _parameters = PluginManager.parameters(PLUGIN_NAME);
+  // const _parameters = PluginManager.parameters(PLUGIN_NAME);
 
   console.log(`[Furamon] ${PLUGIN_NAME} is loaded.`);
 })();

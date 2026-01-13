@@ -76,14 +76,15 @@
 (() => {
   const pluginName = "Furamon_EnemyActorAnimation";
   const parameters = PluginManager.parameters(pluginName);
-  const prmAutoMirror = parameters.autoMirror === "true";
+  const prmAutoMirror = parameters["autoMirror"] === "true";
 
   const hasBattleMotion = PluginManager._scripts.includes("BattleMotionMZ");
   const prmBattleMotion =
     PluginManager._scripts.includes("BattleMotionMZ") &&
     PluginManager.parameters("BattleMotionMZ");
-  const prmMotionCol = prmBattleMotion && prmBattleMotion.motionCol === "true";
-  const prmBlueFps = prmBattleMotion && prmBattleMotion.blueFps === "true";
+  const prmMotionCol =
+    prmBattleMotion && prmBattleMotion["motionCol"] === "true";
+  const prmBlueFps = prmBattleMotion && prmBattleMotion["blueFps"] === "true";
 
   // NUUN_ButlerHPGaugeのパラメータを取得
   let nuunHpGaugeParams: {
@@ -122,7 +123,7 @@
       return undefined;
     }
     const meta = enemy.meta;
-    const value = meta.SVActor || meta.SVアクター;
+    const value = meta["SVActor"] || meta["SVアクター"];
     if (typeof value === "string" && value.length > 0) {
       return value.split(",").map((s) => s.trim());
     }
@@ -134,7 +135,7 @@
       return 0; // 0 means no wrapping, i.e. infinite columns
     }
     const meta = enemy.meta;
-    const value = meta.SVActorCols || meta.SVアクター列数;
+    const value = meta["SVActorCols"] || meta["SVアクター列数"];
     if (value) {
       const cols = parseInt(String(value), 10);
       return Number.isNaN(cols) ? 0 : cols;
@@ -199,10 +200,10 @@
   };
 
   const _Game_Enemy_battlerName = Game_Enemy.prototype.battlerName;
-  Game_Enemy.prototype.battlerName = function () {
+  Game_Enemy.prototype.battlerName = function (): string {
     const svActorFiles = getSvActorFileNames(this.enemy());
     if (svActorFiles && svActorFiles.length > 0) {
-      return svActorFiles[0];
+      return svActorFiles[0] ?? "";
     }
     return _Game_Enemy_battlerName.call(this);
   };
@@ -282,46 +283,47 @@
   // 直接表示はしない、位置だけ渡す
 
   Sprite_Enemy.prototype.loadBitmap = function (name: string) {
-    if (this._isSvActorEnemy) {
+    if (this["_isSvActorEnemy"]) {
       // SVアクター用の場合は1x1の透明ビットマップを設定
-      this.bitmap = new Bitmap(1, 1);
-      this.bitmap.clear();
-      this.visible = false;
+      // SVアクター用の場合は1x1の透明ビットマップを設定
+      this["bitmap"] = new Bitmap(1, 1);
+      this["bitmap"].clear();
+      this["visible"] = false;
       return;
     }
 
     // 通常の敵の処理
     if ($gameSystem.isSideView()) {
-      this.bitmap = ImageManager.loadSvEnemy(name);
+      this["bitmap"] = ImageManager.loadSvEnemy(name);
     } else {
-      this.bitmap = ImageManager.loadEnemy(name);
+      this["bitmap"] = ImageManager.loadEnemy(name);
     }
   };
 
   const _Sprite_Enemy_initMembers = Sprite_Enemy.prototype.initMembers;
   Sprite_Enemy.prototype.initMembers = function () {
     _Sprite_Enemy_initMembers.call(this);
-    this._isSvActorEnemy = false;
-    this._svActorSprite = null;
+    this["_isSvActorEnemy"] = false;
+    this["_svActorSprite"] = null;
   };
 
   const _Sprite_Enemy_setBattler = Sprite_Enemy.prototype.setBattler;
   Sprite_Enemy.prototype.setBattler = function (battler: Game_Enemy | null) {
     _Sprite_Enemy_setBattler.call(this, battler);
 
-    this._isSvActorEnemy = battler ? isSvActorEnemy(battler) : false;
+    this["_isSvActorEnemy"] = battler ? isSvActorEnemy(battler) : false;
 
     // SVアクター用の場合の処理
-    if (this._isSvActorEnemy && this._battler) {
-      this.hideOriginalSprite();
-      this.createSvActorSprite();
+    if (this["_isSvActorEnemy"] && this._battler) {
+      this["hideOriginalSprite"]();
+      this["createSvActorSprite"]();
     }
   };
 
-  Sprite_Enemy.prototype.getSvActorSpriteSize = function () {
-    if (this._isSvActorEnemy && this._svActorSprite) {
-      const actualSize = this._svActorSprite.getActualSize();
-      const frameSize = this._svActorSprite.getFrameSize();
+  Sprite_Enemy.prototype["getSvActorSpriteSize"] = function () {
+    if (this["_isSvActorEnemy"] && this["_svActorSprite"]) {
+      const actualSize = this["_svActorSprite"].getActualSize();
+      const frameSize = this["_svActorSprite"].getFrameSize();
 
       if (actualSize && frameSize) {
         return {
@@ -336,59 +338,64 @@
   };
 
   // 元の敵スプライトを非表示にする
-  Sprite_Enemy.prototype.hideOriginalSprite = function () {
-    this.visible = false;
-    this.bitmap = null;
+  // 元の敵スプライトを非表示にする
+  Sprite_Enemy.prototype["hideOriginalSprite"] = function () {
+    this["visible"] = false;
+    this["bitmap"] = null;
   };
 
   // SVアクタースプライトを作成
-  Sprite_Enemy.prototype.createSvActorSprite = function () {
+  // SVアクタースプライトを作成
+  Sprite_Enemy.prototype["createSvActorSprite"] = function () {
     // 既に作成済みの場合はスキップ
-    if (this._svActorSprite) {
+    if (this["_svActorSprite"]) {
       console.log("SV Actor sprite already exists, skipping creation");
       return;
     }
 
-    this.visible = false;
+    this["visible"] = false;
 
     // _motionがundefinedの場合はnullに変換
     if (this._battler && this._battler._motion === undefined) {
       this._battler._motion = null;
     }
 
-    this._svActorSprite = new Sprite_SvActor();
-    this._svActorSprite.setup(this._battler);
+    this["_svActorSprite"] = new Sprite_SvActor();
+    this["_svActorSprite"].setup(this._battler);
 
     if (prmAutoMirror) {
-      this._svActorSprite.scale.x = -1;
+      this["_svActorSprite"].scale.x = -1;
     }
 
     // 親の親（戦闘フィールド）にSVアクタースプライトを直接追加
-    if (this.parent) {
-      this.parent.addChild(this._svActorSprite);
+    if (this["parent"]) {
+      this["parent"].addChild(this["_svActorSprite"]);
 
       // 初期位置を設定
-      this._svActorSprite.x = this.x;
-      this._svActorSprite.y = this.y;
+      // 初期位置を設定
+      this["_svActorSprite"].x = this["x"];
+      this["_svActorSprite"].y = this["y"];
 
       // 敵の初期位置情報を保持
-      this._originalX = this.x;
-      this._originalY = this.y;
+      // 敵の初期位置情報を保持
+      this["_originalX"] = this["x"];
+      this["_originalY"] = this["y"];
 
       // 位置同期処理フラグ
-      this._positionSyncEnabled = true;
+      // 位置同期処理フラグ
+      this["_positionSyncEnabled"] = true;
     } else {
-      this.addChild(this._svActorSprite);
-      this.visible = true;
+      this["addChild"](this["_svActorSprite"]);
+      this["visible"] = true;
     }
   };
 
   const _Sprite_Enemy_updateBitmap = Sprite_Enemy.prototype.updateBitmap;
   Sprite_Enemy.prototype.updateBitmap = function () {
-    if (this._isSvActorEnemy) {
+    if (this["_isSvActorEnemy"]) {
       // SVアクター用のビットマップ更新
-      if (this._svActorSprite) {
-        this._svActorSprite.refreshBitmap();
+      if (this["_svActorSprite"]) {
+        this["_svActorSprite"].refreshBitmap();
       }
       return;
     }
@@ -397,12 +404,12 @@
 
   const _Sprite_Enemy_updateFrame = Sprite_Enemy.prototype.updateFrame;
   Sprite_Enemy.prototype.updateFrame = function () {
-    if (this._isSvActorEnemy) {
+    if (this["_isSvActorEnemy"]) {
       // SVアクター用は子スプライトで処理するため、フレーム更新をスキップ
       // ただし、bitmapがnullの場合は1x1ビットマップを設定
-      if (!this.bitmap) {
-        this.bitmap = new Bitmap(1, 1);
-        this.bitmap.clear();
+      if (!this["bitmap"]) {
+        this["bitmap"] = new Bitmap(1, 1);
+        this["bitmap"].clear();
       }
       return;
     }
@@ -413,17 +420,17 @@
   const _Sprite_Enemy_updateStateSprite =
     Sprite_Enemy.prototype.updateStateSprite;
   Sprite_Enemy.prototype.updateStateSprite = function () {
-    if (this._isSvActorEnemy && this._svActorSprite) {
+    if (this["_isSvActorEnemy"] && this["_svActorSprite"]) {
       if (this._stateIconSprite) {
-        const size = this.getSvActorSpriteSize();
+        const size = this["getSvActorSpriteSize"]();
         if (size) {
           // 実際のスプライトサイズに基づく位置調整
-          this._stateIconSprite.x = this._svActorSprite.x;
-          this._stateIconSprite.y = this._svActorSprite.y - size.height - 10;
+          this._stateIconSprite.x = this["_svActorSprite"].x;
+          this._stateIconSprite.y = this["_svActorSprite"].y - size.height - 10;
         } else {
           // フォールバック位置
-          this._stateIconSprite.x = this._svActorSprite.x;
-          this._stateIconSprite.y = this._svActorSprite.y - 80;
+          this._stateIconSprite.x = this["_svActorSprite"].x;
+          this._stateIconSprite.y = this["_svActorSprite"].y - 80;
         }
       }
       return;
@@ -432,39 +439,45 @@
     _Sprite_Enemy_updateStateSprite.call(this);
   };
 
-  const _Sprite_Enemy_destroy = Sprite_Enemy.prototype.destroy;
-  Sprite_Enemy.prototype.destroy = function () {
+  const _Sprite_Enemy_destroy = Sprite_Enemy.prototype["destroy"];
+  Sprite_Enemy.prototype["destroy"] = function () {
     // 位置同期を停止
-    this._positionSyncEnabled = false;
+    // 位置同期を停止
+    this["_positionSyncEnabled"] = false;
 
     // 位置同期インターバルをクリア
-    if (this._positionUpdateInterval) {
-      clearInterval(this._positionUpdateInterval);
-      this._positionUpdateInterval = null;
+    if (this["_positionUpdateInterval"]) {
+      clearInterval(this["_positionUpdateInterval"]);
+      this["_positionUpdateInterval"] = null;
     }
 
     // SVアクタースプライトも削除
-    if (this._svActorSprite?.parent) {
-      this._svActorSprite.parent.removeChild(this._svActorSprite);
-      this._svActorSprite.destroy();
-      this._svActorSprite = null;
+    if (this["_svActorSprite"]?.parent) {
+      this["_svActorSprite"].parent.removeChild(this["_svActorSprite"]);
+      this["_svActorSprite"].destroy();
+      this["_svActorSprite"] = null;
     }
 
     _Sprite_Enemy_destroy.call(this);
   };
 
-  Sprite_Enemy.prototype.updateStateIconPosition = function () {
-    if (this._isSvActorEnemy && this._svActorSprite && this._stateIconSprite) {
-      const position = this.getStateIconPosition();
+  Sprite_Enemy.prototype["updateStateIconPosition"] = function () {
+    if (
+      this["_isSvActorEnemy"] &&
+      this["_svActorSprite"] &&
+      this._stateIconSprite
+    ) {
+      const position = this["getStateIconPosition"]();
       this._stateIconSprite.x = position.x;
       this._stateIconSprite.y = position.y;
     }
   };
 
   // ステートアイコンの位置を取得するメソッドを追加
-  Sprite_Enemy.prototype.getStateIconPosition = function () {
-    if (this._isSvActorEnemy && this._svActorSprite) {
-      const svSprite = this._svActorSprite;
+  // ステートアイコンの位置を取得するメソッドを追加
+  Sprite_Enemy.prototype["getStateIconPosition"] = function () {
+    if (this["_isSvActorEnemy"] && this["_svActorSprite"]) {
+      const svSprite = this["_svActorSprite"];
       const mainSprite = svSprite._mainSprite;
 
       if (mainSprite?.bitmap?.isReady()) {
@@ -481,39 +494,40 @@
       }
     } else {
       return {
-        x: this.x,
-        y: this.y - this.height * 0.8,
+        x: this["x"],
+        y: this["y"] - this["height"] * 0.8,
       };
     }
   };
 
-  Sprite_Enemy.prototype.getBattlerOverlayHeight = function () {
-    if (this._isSvActorEnemy && this._svActorSprite) {
+  Sprite_Enemy.prototype["getBattlerOverlayHeight"] = function () {
+    if (this["_isSvActorEnemy"] && this["_svActorSprite"]) {
       // SVアクタースプライトの高さを返す
-      return this._svActorSprite.height * 0.8;
+      return this["_svActorSprite"].height * 0.8;
     } else {
-      return this.bitmap ? Math.floor(this.bitmap.height * 0.9) : 0;
+      return this["bitmap"] ? Math.floor(this["bitmap"].height * 0.9) : 0;
     }
   };
 
-  Sprite_Enemy.prototype.setPosition = function (x: number, y: number) {
-    this.x = x;
-    this.y = y;
+  Sprite_Enemy.prototype["setPosition"] = function (x: number, y: number) {
+    this["x"] = x;
+    this["y"] = y;
 
-    if (this._isSvActorEnemy && this._svActorSprite) {
-      this._svActorSprite.x = x;
-      this._svActorSprite.y = y;
+    if (this["_isSvActorEnemy"] && this["_svActorSprite"]) {
+      this["_svActorSprite"].x = x;
+      this["_svActorSprite"].y = y;
     }
   };
 
-  Sprite_Enemy.prototype.move = function (x: number, y: number) {
-    this.setPosition(this.x + x, this.y + y);
+  Sprite_Enemy.prototype["move"] = function (x: number, y: number) {
+    this["setPosition"](this["x"] + x, this["y"] + y);
   };
 
-  Sprite_Enemy.prototype.getMotionDefinition = (motionType: string) => {
+  Sprite_Enemy.prototype.getMotionDefinition = (motionType: string): StandardMotion => {
     // BattleMotionMZのモーション定義を優先
     if (typeof Sprite_Battler !== "undefined" && Sprite_Battler.MOTIONS) {
-      return Sprite_Battler.MOTIONS[motionType];
+      const motion = Sprite_Battler.MOTIONS[motionType];
+      if (motion) return motion;
     }
 
     // 標準のSVアクターモーション定義
@@ -792,7 +806,7 @@
       this.startMotion(motionType);
     }
 
-    update() {
+    override update() {
       if (!this._battler) return;
 
       this.updateFrame();
@@ -1147,7 +1161,7 @@
         return;
       }
 
-      this._mainSprite.bitmap = ImageManager.loadSvActor(fileNames[0]);
+      this._mainSprite.bitmap = ImageManager.loadSvActor(fileNames[0] ?? "");
 
       for (let i = 1; i < fileNames.length; i++) {
         const sprite = new Sprite();
@@ -1155,7 +1169,7 @@
         sprite.anchor.y = 1;
         this._additionalSprites.push(sprite);
         this.addChild(sprite);
-        sprite.bitmap = ImageManager.loadSvActor(fileNames[i]);
+        sprite.bitmap = ImageManager.loadSvActor(fileNames[i] ?? "");
       }
 
       this.updateLayoutWhenLoaded();
@@ -1206,6 +1220,7 @@
         const startX = -totalWidth / 2;
         for (let i = 0; i < sprites.length; i++) {
           const sprite = sprites[i];
+          if (!sprite) continue;
           sprite.x = startX + i * frameWidth + frameWidth / 2;
           sprite.y = 0;
         }
@@ -1217,6 +1232,7 @@
 
         for (let i = 0; i < sprites.length; i++) {
           const sprite = sprites[i];
+          if (!sprite) continue;
           const row = Math.floor(i / cols);
           const col = i % cols;
 
@@ -1275,7 +1291,7 @@
         for (let i = 0; i < states.length; i++) {
           const state = states[i];
           if (state?.meta) {
-            const enemyMotion = state.meta.EnemyMotion;
+            const enemyMotion = state.meta["EnemyMotion"];
             if (
               typeof enemyMotion === "string" &&
               enemyMotion.trim().length > 0
@@ -1327,12 +1343,14 @@
   }
 
   // getBattlerOverlayHeightをSVアクター敵用に拡張（元の処理は保持）
-  if (typeof Sprite_Enemy.prototype.getBattlerOverlayHeight !== "undefined") {
+  if (
+    typeof Sprite_Enemy.prototype["getBattlerOverlayHeight"] !== "undefined"
+  ) {
     const _Sprite_Enemy_getBattlerOverlayHeight =
-      Sprite_Enemy.prototype.getBattlerOverlayHeight;
-    Sprite_Enemy.prototype.getBattlerOverlayHeight = function () {
-      if (this._isSvActorEnemy && this._svActorSprite) {
-        const svSprite = this._svActorSprite;
+      Sprite_Enemy.prototype["getBattlerOverlayHeight"];
+    Sprite_Enemy.prototype["getBattlerOverlayHeight"] = function () {
+      if (this["_isSvActorEnemy"] && this["_svActorSprite"]) {
+        const svSprite = this["_svActorSprite"];
         const mainSprite = svSprite._mainSprite;
 
         if (mainSprite?.bitmap?.isReady()) {
@@ -1350,12 +1368,14 @@
     };
   }
 
-  if (typeof Sprite_Enemy.prototype.getBattlerStatePosition !== "undefined") {
+  if (
+    typeof Sprite_Enemy.prototype["getBattlerStatePosition"] !== "undefined"
+  ) {
     const _Sprite_Enemy_getBattlerStatePosition =
-      Sprite_Enemy.prototype.getBattlerStatePosition;
-    Sprite_Enemy.prototype.getBattlerStatePosition = function () {
-      if (this._isSvActorEnemy && this._svActorSprite) {
-        const size = this.getSvActorSpriteSize();
+      Sprite_Enemy.prototype["getBattlerStatePosition"];
+    Sprite_Enemy.prototype["getBattlerStatePosition"] = function () {
+      if (this["_isSvActorEnemy"] && this["_svActorSprite"]) {
+        const size = this["getSvActorSpriteSize"]();
         if (size) {
           const enemyStatePosition =
             typeof EnemyStatePosition !== "undefined" ? EnemyStatePosition : 0;

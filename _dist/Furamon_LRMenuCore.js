@@ -160,7 +160,7 @@ const COMMAND_HELP_DATA = [
     };
     // ===== メニュー画面のカスタマイズ =====
     // Scene_Menuの改変
-    const _Scene_Menu_create = Scene_Menu.prototype.create;
+    // const _Scene_Menu_create = Scene_Menu.prototype.create;
     Scene_Menu.prototype.create = function () {
         Scene_MenuBase.prototype.create.call(this);
         this.createCommandWindow();
@@ -334,7 +334,8 @@ const COMMAND_HELP_DATA = [
             return 3;
         }
         actor(index) {
-            return $gameParty.members()[index];
+            const member = $gameParty.members()[index];
+            return member;
         }
         drawActorClass(actor, x, y, width) {
             this.resetTextColor();
@@ -359,7 +360,7 @@ const COMMAND_HELP_DATA = [
         isCurrentItemEnabled() {
             if (this._formationMode) {
                 const actor = $gameParty.members()[this.index()];
-                return actor?.isFormationChangeOk();
+                return actor?.isFormationChangeOk() ?? false;
             }
             else {
                 return true;
@@ -367,7 +368,9 @@ const COMMAND_HELP_DATA = [
         }
         processOk() {
             super.processOk();
-            $gameParty.setMenuActor($gameParty.members()[this.index()]);
+            const actor = $gameParty.members()[this.index()];
+            if (actor)
+                $gameParty.setMenuActor(actor);
         }
         selectLast() {
             this.smoothSelect($gameParty.menuActor().index() || 0);
@@ -522,7 +525,8 @@ const COMMAND_HELP_DATA = [
         }
         actorSlotName(actor, index) {
             const slots = actor.equipSlots();
-            return $dataSystem.equipTypes[slots[index]];
+            const slotIndex = slots[index];
+            return $dataSystem.equipTypes[slotIndex ?? 0] ?? "";
         }
         maxCols() {
             return 2;

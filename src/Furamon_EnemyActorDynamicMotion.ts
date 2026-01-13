@@ -82,19 +82,19 @@
       return false;
     }
     const enemy = battler.enemy();
-    return !!(enemy?.meta?.SVActor || enemy?.meta?.SVアクター);
+    return !!(enemy?.meta?.["SVActor"] || enemy?.meta?.["SVアクター"]);
   }
 
   /**
    * ● 動的モーションの実行
    */
   const _Sprite_Enemy_startDynamicMotion =
-    Sprite_Enemy.prototype.startDynamicMotion;
-  Sprite_Enemy.prototype.startDynamicMotion = function (...args: unknown[]) {
+    Sprite_Enemy.prototype["startDynamicMotion"];
+  Sprite_Enemy.prototype["startDynamicMotion"] = function (...args: unknown[]) {
     const dynamicMotion = args[0];
-    if (isSvActorEnemy(this._battler) && this._svActorSprite) {
-      this.startDynamicSvMotion(dynamicMotion);
-      Sprite_Battler.prototype.startDynamicMotion.call(
+    if (isSvActorEnemy(this._battler) && this["_svActorSprite"]) {
+      this["startDynamicSvMotion"](dynamicMotion);
+      Sprite_Battler.prototype["startDynamicMotion"].call(
         this,
         dynamicMotion as never,
       );
@@ -111,19 +111,22 @@
   /**
    * ● SVキャラクターモーションの実行（敵版）
    */
-  Sprite_Enemy.prototype.startDynamicSvMotion = function (
+  /**
+   * ● SVキャラクターモーションの実行（敵版）
+   */
+  Sprite_Enemy.prototype["startDynamicSvMotion"] = function (
     dynamicMotion: unknown,
   ) {
     const dm = asObject(dynamicMotion) as DynamicMotionLike | null;
     if (
       !isSvActorEnemy(this._battler) ||
-      !this._svActorSprite ||
+      !this["_svActorSprite"] ||
       !dm ||
       typeof dm.motion !== "string"
     ) {
       return;
     }
-    const svSprite = this._svActorSprite;
+    const svSprite = this["_svActorSprite"];
     svSprite._motionCount = 0;
     svSprite._pattern = 0;
     if (typeof dm.motionDuration === "number") {
@@ -151,33 +154,33 @@
       if (
         this._effectType === "originalCollapse" &&
         isSvActorEnemy(this._battler) &&
-        this._svActorSprite
+        this["_svActorSprite"]
       ) {
         // NRP_EnemyCollapse.jsのupdateEffectを呼び出さずに、
         // 独自の更新処理に切り替える
         this.setupEffect();
         if (
-          this._svActorSprite &&
-          this._svActorSprite._collapseStartY == null
+          this["_svActorSprite"] &&
+          this["_svActorSprite"]._collapseStartY == null
         ) {
-          this._svActorSprite._collapseStartY = this._svActorSprite.y;
+          this["_svActorSprite"]._collapseStartY = this["_svActorSprite"].y;
         }
         if (this._effectDuration > 0) {
           this._effectDuration--;
-          this.updateSvActorCollapse();
+          this["updateSvActorCollapse"]();
           if (this._effectDuration <= 0) {
-            this.opacity = 0;
-            if (this._svActorSprite) {
-              this._svActorSprite.opacity = 0;
-              this._svActorSprite._collapseStartY = null;
+            this["opacity"] = 0;
+            if (this["_svActorSprite"]) {
+              this["_svActorSprite"].opacity = 0;
+              this["_svActorSprite"]._collapseStartY = null;
             }
-            if (this._svActorSprite?._collapseMask) {
-              this._svActorSprite.mask = null;
-              this._svActorSprite.removeChild(
-                this._svActorSprite._collapseMask,
+            if (this["_svActorSprite"]?._collapseMask) {
+              this["_svActorSprite"].mask = null;
+              this["_svActorSprite"].removeChild(
+                this["_svActorSprite"]._collapseMask,
               );
-              this._svActorSprite._collapseMask.destroy();
-              this._svActorSprite._collapseMask = null;
+              this["_svActorSprite"]._collapseMask.destroy();
+              this["_svActorSprite"]._collapseMask = null;
             }
             this._effectType = null;
           }
@@ -191,43 +194,44 @@
     const _Sprite_Enemy_startCollapse = Sprite_Enemy.prototype.startCollapse;
     Sprite_Enemy.prototype.startCollapse = function () {
       _Sprite_Enemy_startCollapse.call(this);
-      if (isSvActorEnemy(this._battler) && this._svActorSprite) {
+      if (isSvActorEnemy(this._battler) && this["_svActorSprite"]) {
         // 本体スプライトと同じエフェクトを再生
         if (this._effectType) {
-          this._svActorSprite.startEffect(this._effectType);
+          this["_svActorSprite"].startEffect(this._effectType);
         }
       }
     };
   }
 
-  Sprite_Enemy.prototype.updateSvActorCollapse = function () {
+  Sprite_Enemy.prototype["updateSvActorCollapse"] = function () {
     if (!this._battler) return;
     const collapseData = this._battler.originalCollapseData();
     if (collapseData) {
-      this.applySvActorCollapseEffect(collapseData);
+      this["applySvActorCollapseEffect"](collapseData);
     } else {
       // データがなければ即時終了
       this._effectDuration = 0;
-      this.opacity = 0;
-      if (this._svActorSprite) {
-        this._svActorSprite.opacity = 0;
+      this["opacity"] = 0;
+      if (this["_svActorSprite"]) {
+        this["_svActorSprite"].opacity = 0;
       }
     }
   };
 
-  Sprite_Enemy.prototype.applySvActorCollapseEffect = function (
+  Sprite_Enemy.prototype["applySvActorCollapseEffect"] = function (
     collapseData: unknown,
   ) {
-    const svSprite = this._svActorSprite;
+    const svSprite = this["_svActorSprite"];
     if (!svSprite) return;
 
     const cd = asObject(collapseData) as CollapseDataLike | null;
     if (!cd) return;
 
     // 敵本体のスプライト（静止画）は描画しないようにフレームを空にする
-    this.setFrame(0, 0, 0, 0);
+    // 敵本体のスプライト（静止画）は描画しないようにフレームを空にする
+    this["setFrame"](0, 0, 0, 0);
 
-    const _a = this._battler;
+    // const _a = this._battler;
     let duration = 32;
     try {
       // biome-ignore lint/security/noGlobalEval: NRP_EnemyCollapse互換のため、数式文字列を評価する（ローカル実行前提）
@@ -277,10 +281,10 @@
         svSprite.mask = svSprite._collapseMask;
       }
 
-      const totalHeight = this.height; // Sprite_Enemyのheight getter
-      const totalWidth = this.width; // Sprite_Enemyのwidth getter
+      const totalHeight = this["height"]; // Sprite_Enemyのheight getter
+      const totalWidth = this["width"]; // Sprite_Enemyのwidth getter
 
-      const startY = svSprite._collapseStartY ?? this.y;
+      const startY = svSprite._collapseStartY ?? this["y"];
       const sinkAmount = totalHeight * progress;
       svSprite.y = startY + sinkAmount; // スプライト全体を下に移動させる
 

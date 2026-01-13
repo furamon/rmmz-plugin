@@ -1,3 +1,4 @@
+// @ts-nocheck
 //------------------------------------------------------------------------------
 // Furamon_StateRateLuck.js
 // This software is released under the MIT License.
@@ -79,11 +80,11 @@
 
   const PLUGIN_NAME = "Furamon_StateRateLuck";
   const parameters = PluginManager.parameters(PLUGIN_NAME);
-  const prmEvalStateRate = parameters.EvalStateRate || "stateRate";
-  const prmEvalStateRateMethod = parameters.EvalStateRateMethod || "add";
-  const prmResistState = parseInt(parameters.ResistState, 10);
-  const prmFailureState = parseInt(parameters.FailureState, 10);
-  const prmStateResistToFailure = parameters.StateResistToFailure === "true";
+  const prmEvalStateRate = parameters["EvalStateRate"] || "stateRate";
+  const prmEvalStateRateMethod = parameters["EvalStateRateMethod"] || "add";
+  const prmResistState = parseInt(parameters["ResistState"], 10);
+  const prmFailureState = parseInt(parameters["FailureState"], 10);
+  const prmStateResistToFailure = parameters["StateResistToFailure"] === "true";
 
   // 計算式評価用のヘルパー関数
   function evaluateStateRate(

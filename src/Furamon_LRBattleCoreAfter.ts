@@ -11,8 +11,8 @@
  *
  */
 (() => {
-  const PLUGIN_NAME = "Furamon_LRBattleCoreAfter";
-  const _parameters = PluginManager.parameters(PLUGIN_NAME);
+  // const PLUGIN_NAME = "Furamon_LRBattleCoreAfter";
+  // const _parameters = PluginManager.parameters(PLUGIN_NAME);
 
   // 速度補正が負の行動なら魔法防御で割合相殺
   const _Game_Action_speed = Game_Action.prototype.speed;

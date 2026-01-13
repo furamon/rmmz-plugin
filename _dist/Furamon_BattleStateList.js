@@ -69,8 +69,8 @@
 (() => {
     const pluginName = "Furamon_BattleStateList";
     const params = PluginManager.parameters(pluginName);
-    const stateButton = String(params.StateButton || "tab");
-    const stateDescriptionsRaw = JSON.parse(params.StateDescriptions || "[]");
+    const stateButton = String(params["StateButton"] || "tab");
+    const stateDescriptionsRaw = JSON.parse(params["StateDescriptions"] || "[]");
     const stateDescriptions = stateDescriptionsRaw.map((item) => {
         const parsed = JSON.parse(item);
         return {
@@ -79,9 +79,9 @@
         };
     });
     const stateDescMap = new Map(stateDescriptions.map((d) => [d.stateId, d.description]));
-    const windowWidth = Number(params.WindowWidth || 0);
-    const windowHeight = Number(params.WindowHeight || 0);
-    const itemSpacing = Number(params.ItemSpacing || 12);
+    const windowWidth = Number(params["WindowWidth"] || 0);
+    const windowHeight = Number(params["WindowHeight"] || 0);
+    const itemSpacing = Number(params["ItemSpacing"] || 12);
     //-----------------------------------------------------------------------------
     // Window_BattleStateList
     //

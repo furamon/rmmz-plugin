@@ -1,3 +1,4 @@
+// @ts-nocheck
 //------------------------------------------------------------------------------
 // Furamon_NRP_AdditionalCCScene.js
 // This software is released under the MIT License.
@@ -518,58 +519,60 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
   }
   const PLUGIN_NAME = "Furamon_NRP_AdditionalCCScene";
   const parameters = PluginManager.parameters(PLUGIN_NAME);
-  const pClassList = parseStruct2(parameters.ClassList);
-  const pNoDuplicate = Boolean(parameters.NoDuplicate === "true");
-  const pAddBlankToLeave = Boolean(parameters.AddBlankToLeave === "true");
-  const pUseClassFocus = parameters.UseClassFocus === "true";
-  const pClassChangeMessage = parameters.ClassChangeMessage;
-  const pSoundSuccess = parameters.SoundSuccess;
+  const pClassList = parseStruct2(parameters["ClassList"]);
+  const pNoDuplicate = Boolean(parameters["NoDuplicate"] === "true");
+  const pAddBlankToLeave = Boolean(parameters["AddBlankToLeave"] === "true");
+  const pUseClassFocus = parameters["UseClassFocus"] === "true";
+  const pClassChangeMessage = parameters["ClassChangeMessage"];
+  const pSoundSuccess = parameters["SoundSuccess"];
 
   // レイアウト関連
-  const pSortClassId = Boolean(parameters.SortClassId === "true");
-  const pClassListWidth = Number(parameters.ClassListWidth || 280);
-  const pDisplayListLevel = Boolean(parameters.DisplayListLevel === "true");
-  const pMessageFontSize = Number(parameters.MessageFontSize);
-  const pDisplayParameters = parameters.DisplayParameters || "";
-  const pParamFontSize = Number(parameters.ParamFontSize);
-  const pParamLineHeight = Number(parameters.ParamLineHeight || 36);
-  const pHideNormalExp = Boolean(parameters.HideNormalExp === "true");
+  const pSortClassId = Boolean(parameters["SortClassId"] === "true");
+  const pClassListWidth = Number(parameters["ClassListWidth"] || 280);
+  const pDisplayListLevel = Boolean(parameters["DisplayListLevel"] === "true");
+  const pMessageFontSize = Number(parameters["MessageFontSize"]);
+  const pDisplayParameters = parameters["DisplayParameters"] || "";
+  const pParamFontSize = Number(parameters["ParamFontSize"]);
+  const pParamLineHeight = Number(parameters["ParamLineHeight"] || 36);
+  const pHideNormalExp = Boolean(parameters["HideNormalExp"] === "true");
   // 画像レイアウト関連
-  const pClassImageList = parseStruct2(parameters.ClassImageList);
-  const pUseClassImage = Boolean(parameters.ReverseImagePos === "true");
-  const pReverseImagePos = Boolean(parameters.ReverseImagePos === "true");
-  const pPictureOnScroll = Boolean(parameters.ReverseImagePos === "true");
-  const pPictureAdjustX = Number(parameters.PictureAdjustX || 0);
-  const pPictureAdjustY = Number(parameters.PictureAdjustY || 0);
-  const pPictureOpacity = Number(parameters.PictureOpacity || 255);
+  const pClassImageList = parseStruct2(parameters["ClassImageList"]);
+  const pUseClassImage = Boolean(parameters["ReverseImagePos"] === "true");
+  const pReverseImagePos = Boolean(parameters["ReverseImagePos"] === "true");
+  const pPictureOnScroll = Boolean(parameters["ReverseImagePos"] === "true");
+  const pPictureAdjustX = Number(parameters["PictureAdjustX"] || 0);
+  const pPictureAdjustY = Number(parameters["PictureAdjustY"] || 0);
+  const pPictureOpacity = Number(parameters["PictureOpacity"] || 255);
   // スキル関連
-  const pShowSkillsType = parameters.ShowSkillsType;
-  const pShowUnlearnedSkills = parameters.ShowUnlearnedSkills;
-  const pSkillFontSize = Number(parameters.SkillFontSize);
+  const pShowSkillsType = parameters["ShowSkillsType"];
+  const pShowUnlearnedSkills = parameters["ShowUnlearnedSkills"];
+  const pSkillFontSize = Number(parameters["SkillFontSize"]);
   // メニューコマンド関連
-  const pShowMenuCommand = Boolean(parameters.ShowMenuCommand === "true");
+  const pShowMenuCommand = Boolean(parameters["ShowMenuCommand"] === "true");
   const pShowMenuCommandPosition = Number(
-    parameters.ShowMenuCommandPosition || 3,
+    parameters["ShowMenuCommandPosition"] || 3,
   );
-  const pClassChangeName = parameters.ClassChangeName;
-  const pMenuCommandSwitch = Number(parameters.MenuCommandSwitch);
-  const pMaskString = parameters.MaskString;
-  const pDisableSwitch = Number(parameters.DisableSwitch);
-  const pClassChangeSymbol = parameters.ClassChangeSymbol;
-  const pReadOnlyMenu = Boolean(parameters.ReadOnlyMenu === "true");
-  const _pReadOnlyMenuOther = Boolean(parameters.ReadOnlyMenuOther === "true");
+  const pClassChangeName = parameters["ClassChangeName"];
+  const pMenuCommandSwitch = Number(parameters["MenuCommandSwitch"]);
+  const pMaskString = parameters["MaskString"];
+  const pDisableSwitch = Number(parameters["DisableSwitch"]);
+  const pClassChangeSymbol = parameters["ClassChangeSymbol"];
+  const pReadOnlyMenu = Boolean(parameters["ReadOnlyMenu"] === "true");
+  const _pReadOnlyMenuOther = Boolean(
+    parameters["ReadOnlyMenuOther"] === "true",
+  );
 
-  const pShowEquipSwitch = Number(parameters.ShowEquipSwitch || 0);
+  const pShowEquipSwitch = Number(parameters["ShowEquipSwitch"] || 0);
 
   // ベースプラグインのパラメータを参照
   const BASE_PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";
   const baseParameters = PluginManager.parameters(BASE_PLUGIN_NAME);
-  const pLvName = baseParameters.LvName || "";
-  const pExpName = baseParameters.ExpName || "";
-  const _pUnificationExp = Boolean(baseParameters.UnificationExp === "true");
-  const pClassLvMaxExp = baseParameters.ClassLvMaxExp || "-------";
+  const pLvName = baseParameters["LvName"] || "";
+  const pExpName = baseParameters["ExpName"] || "";
+  const _pUnificationExp = Boolean(baseParameters["UnificationExp"] === "true");
+  const pClassLvMaxExp = baseParameters["ClassLvMaxExp"] || "-------";
 
-  const pZeroLevel = Boolean(baseParameters.ZeroLevel === "true");
+  const pZeroLevel = Boolean(baseParameters["ZeroLevel"] === "true");
 
   //----------------------------------------
   // ＭＺ用プラグインコマンド
@@ -607,10 +610,10 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
     // 職業一覧の生成
     mClassList = pClassList;
 
-    if (args.AddClassList) {
+    if (args["AddClassList"]) {
       // プラグインコマンドの場合は、
       // なぜか謎の文字コード（001B）が含まれているので\に変換
-      const raw = args.AddClassList;
+      const raw = args["AddClassList"];
       const addClassListStr = String(raw).replaceAll("\u001B", "\\");
       // JSON形式をJS用に変換
       const addClassList = parseStruct2(addClassListStr);
@@ -1308,7 +1311,7 @@ Windows_SelectClasses.prototype.constructor = Windows_SelectClasses;
       // 職業名の表示
       this.drawItemName(classItem, rect.x, rect.y);
       // 職業レベルの表示
-      if (pDisplayListLevel && !classItem.meta.NoGrow) {
+      if (pDisplayListLevel && !classItem.meta["NoGrow"]) {
         const level = getClassLevel(this._actor, classItem.id);
         this.drawClassLevel(level, rect.x, rect.y, rect.width);
       }

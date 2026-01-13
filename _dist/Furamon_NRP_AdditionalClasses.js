@@ -1,552 +1,12 @@
 "use strict";
-/*:
- * @target MZ
- * @plugindesc NRP様の多重転職プラグインの改造版
- * @author 砂川赳(改変:Furamon)
- * @orderAfter NRP_TraitsPlus
- * @help NRP様の多重転職プラグインをふらもんが改造したものです。
- * FFVのジョブチェンジシステムを目標に手を加えています。
- * 削られたものも多い……というかよっぽどFFVを再現したいんじゃな方以外は
- * もとのプラグインを使ったほうが良いと思われますのでご承知ください。
- * (https://newrpg.seesaa.net/article/483582956.html)
- *
- * # 主な変更点
- * - 転職可能な追加職業を1つに限定。サブ職業の概念をなくした。
- * - 職業やスキルメモ欄に<Addxxx:n>で能力を加算(MHP/MMPのみ
- *   ベース職業の数値への乗算(<AddMhp:30>でMHP+30%))できるようにした。
- *   - これは最高値だけが反映される(ex.<AddMat:25>職が<AddMat:15>
- *   スキル習得時はMat+25だけが反映される)
- * - かつ、職業メモ欄に<Inheritance>でマスター職業の<Addxxx:n>を引き継げる。
- * - 職業メモ欄に<NeedsExp:[n,m,...]>で必要経験値を直指定できるようにした。
- * (ex.[10,40,...]なら最初のLvUPは必要Exp10、次は40(累計50)、……)
- * - スイッチ指定で転職後勝手に最強装備をしたり、即座に装備画面を
- * 出したりできるようにした。
- * - 追加職業のレベルを0始まりにできるようにした。
- * (例えばLv1でデータベースでLv2習得のスキルを覚える)
- * - AbilitySkillと併用時、アビリティスキルを追加職業で習得時
- * その表示がされない競合の修正
- *
- * NRP_LevelUpDirection併用時は、あちらの472行目らへんを
- * ```
- * const AC_PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";
- * const acParameters = PluginManager.parameters(AC_PLUGIN_NAME);
- * const pLvUpMessage = setDefault(acParameters["LvUpMessage"]);
- * const pZeroLevel = Boolean(acParameters["ZeroLevel"] == "true");
- * ```に、
- * 495行目らへんを
- * ```
- * pZeroLevel && this._level > 0 ? this._level - 1 : this._level
- * ```に書き換えてください。
- *
- * --- 以下元プラグイン解説（改変内容に合わせて原文から変更） ---
- *
- * アクターに対して、複数の職業を同時に設定することにより、
- * 自由度の高い成長システムを実現します。
- *
- * ＲＰＧツクールＭＺの職業はかなりクセのある仕様になっています。
- * 職業とそのレベルによって、アクターの能力がほぼ確定するため、
- * アクター自身の個性を設定することが困難です。
- *
- * もし、この仕様に基づいて転職を行うと、
- * 全く別の能力を持ったキャラクターになってしまいます。
- * ※いわゆるＤＱ３型およびＦＦ３型
- *
- * 実際のところ、ほとんどの作品ではアクターと職業を
- * 一対一に対応させることで、アクターの個性を表現しています。
- * 事実上、職業という仕組みが機能していない有様です。
- *
- * そこでこのプラグインでは、
- * アクターの能力値のベースとなる職業（ベース職業）を残したまま、
- * さらに追加の職業（追加職業）を付与することで、
- * 自由度の高い転職システムを実現します。
- *
- * ■使用方法
- * 追加用の職業を作成し、
- * プラグインコマンドでアクターに追加すればＯＫです。
- * ベース職業と追加職業の２つの特徴を併せ持ったアクターが誕生します。
- *
- * さらに転職によって自由なアクターのカスタマイズが可能です。
- * 付属の『Furamon_NRP_AdditionalCCScene.js』を利用すれば、
- * 簡単に転職システムを作成できます。
- *
- * その他にも当プラグインは非常にカスタマイズ性が高くなっています。
- * プラグインコマンドやパラメータの解説をお読みください。
- *
- * ■プラグインコマンド
- * ◆職業の追加
- * 追加職業をアクターに設定します。
- *
- * ◆職業の削除
- * 追加職業を削除します。
- *
- * ◆経験値の増減
- * 追加職業に対して経験値を増減させます。
- * イベントコマンドの『経験値の増減』とは異なり、
- * 追加職業に対してのみ増減を行います。
- *
- * ◆レベルの増減
- * 追加職業に対してレベルを増減させます。
- * イベントコマンドの『レベルの増減』とは異なり、
- * 追加職業に対してのみ増減を行います。
- *
- * ◆追加職業の情報を取得
- * アクターが就いている追加職業に関する情報を変数に格納します。
- * 職業ＩＤ、レベル、経験値を取得可能です。
- *
- * 追加職業は通常のイベントコマンドでは判別できないため、
- * このコマンドを使用してください。
- *
- * ■主なプラグインパラメータ
- * ◆パラメータを加算
- * 職業の能力値曲線に設定されている値を、アクターに加算します。
- * レベル成長する職業などに活用できます。
- * 初期値はオフです。
- *
- * ◆スキルを維持する
- * 転職時、習得した追加職業のスキルを維持します。
- * 初期値はオフです。
- *
- * なお、スキル単位での設定も可能です。
- * ※以下の『スキルのメモ欄』を参照
- *
- * ◆通常の経験値を使用
- * 追加職業に対しても、通常の経験値処理を使用します。
- * 戦闘勝利時やイベントコマンドによる
- * 経験値処理の影響を受けるようにします。
- *
- * 初期値はオンです。
- * 熟練度のような独自の経験値処理を行う場合は、オフにしてください。
- *
- * オフの場合もプラグインコマンドで経験値やレベルを操作可能です。
- * また、敵キャラ毎に職業専用の経験値を設定することも可能です。
- * ※以下の『敵キャラのメモ欄』を参照
- *
- * ◆経験値の共有化
- * 職業の経験値をパーティで共有します。
- * つまり、誰が転職しても同じ職業は同じレベルになります。
- * 初期値はオフです。
- *
- * ＦＦ８のＧＦやペルソナ１～２、軌跡シリーズのマスタークオーツのように、
- * アクターとは独立した成長システムを想定しています。
- *
- * ◆職業欄を上書表示、ステータスにレベル表示
- * 追加職業を職業欄やステータス画面に表示します。
- * その代わり、アクターのベース職業や二つ名は非表示になります。
- * 初期値はオンです。
- *
- * ■職業のメモ欄
- * <MaxLevel:?>
- * 追加職業毎に最大レベルを指定します。
- * プラグインパラメータの既定値よりも優先されます。
- *
- * ■スキルのメモ欄
- * <KeepSkill>
- * スキルを維持しない設定でも、転職時にスキルを維持するようにします。
- *
- * <KeepSkill:false>
- * 逆にスキルを維持する設定でも、維持しないようにします。
- *
- * ■敵キャラのメモ欄
- * <ClassExp:?>
- * 追加職業にのみ加算する経験値を指定します。
- *
- * 『通常の経験値を使用』をオフにすることによって、
- * 独自の熟練度のようなものを実装できます。
- *
- * 戦闘終了時の表示には『EXPの表示名』が使用されます。
- *
- * <ClassExpRate:?>
- * 獲得できる追加職業の経験値を指定した%に変更します。
- * 例えば、200ならば200%（２倍）になります。
- * 既定値とのセットで使うことを想定しています。
- *
- * ■アイテムのメモ欄
- * <AddClassExp:?>
- * 職業経験値を増加させます。
- * レベルアップ時はアイテムメニューを閉じてから、メッセージを表示します。
- *
- * ■アクター、職業、装備、ステートのメモ欄
- * <ClassExpRate:?>
- * 職業経験値の獲得量を指定した%に変更します。
- * 200ならば200%（２倍）になります。
- * もし、戦闘不能時に職業経験値を獲得させたくない場合は、
- * 戦闘不能ステートに<ClassExpRate:0>を指定してください。
- *
- * ■スクリプト
- * ◆actor.additionalClass;
- * アクターの追加職業情報を取得します。
- * 例えば、以下で先頭のアクターの職業名や職業レベルを取得できます。
- *
- * $gameParty.members()[0].additionalClass.name;
- * $gameParty.members()[0].additionalClass.level;
- *
- * ※actorはGame_Actorクラスのオブジェクトです。
- * ※追加職業に就いてない場合はエラーになります。
- *
- * ◆actor.isAdditionalClassId(1);
- * アクターが追加職業に就いているかを判定します。
- * 数値は職業ＩＤです。
- *
- * ■注意点
- * 標準では転職すると、その職業で覚えたスキルを忘れる仕様になっています。
- * その際、該当のスキルは他の方法で覚えたスキルであっても、
- * 区別なく忘れてしまいます。
- * （仕様上、区別が大変なので、修正の予定もありません。）
- *
- * 追加職業で習得するスキルと、その他の手段で習得するスキルは、
- * 区別して登録するようにお願いします。
- *
- * -----------------------------------------------------------------------------
- * # 謝辞 #
- * -----------------------------------------------------------------------------
- * 改変元:NRP_AdditionalClasses(https://newrpg.seesaa.net/article/483582956.html)
- *
- * GeminiCLIの力を盛大に借りました。
- *
- * @-----------------------------------------------------------
- * @ プラグインコマンド
- * @-----------------------------------------------------------
- *
- *
- * @command AddClass
- * @text 職業の追加
- * @desc 追加職業をアクターに設定します。
- *
- * @arg Actor
- * @text アクター
- * @type actor
- * @desc 対象とするアクターです。
- * 未指定ならパーティ全体を対象とします。
- *
- * @arg VariableActor
- * @text アクター（変数指定）
- * @type variable
- * @desc 対象とするアクターを変数で指定します。
- * こちらのほうが優先されます。
- *
- * @arg AdditionalClass
- * @text 追加職業
- * @type class
- * @desc 追加する職業です。
- *
- * @------------------------------------------------------------------
- *
- * @command RemoveClass
- * @text 職業の削除
- * @desc 追加職業をアクターから削除します。
- *
- * @arg Actor
- * @text アクター
- * @type actor
- * @desc 対象とするアクターです。
- * 未指定ならパーティ全体を対象とします。
- *
- * @arg VariableActor
- * @text アクター（変数指定）
- * @type variable
- * @desc 対象とするアクターを変数で指定します。
- * こちらのほうが優先されます。
- *
- * @------------------------------------------------------------------
- *
- * @command ChangeExp
- * @text 経験値の増減
- * @desc 追加職業の経験値を変更します。
- *
- * @arg Exp
- * @text 経験値
- * @type number @min -9999999 @max 9999999
- * @desc 増減する経験値の量です。マイナス指定可。
- *
- * @arg VariableExp
- * @text 経験値（変数）
- * @type variable
- * @desc 増減する経験値の量を変数で指定します。
- * こちらのほうが優先されます。
- *
- * @arg ShowLvUpMessage
- * @text レベルアップを表示
- * @type boolean
- * @default false
- * @desc レベルアップ時にメッセージを表示します。
- *
- * @arg <Condition>
- * @text ＜対象条件＞
- *
- * @arg Actor
- * @parent <Condition>
- * @text アクター
- * @type actor
- * @desc 対象とするアクターです。
- * 未指定ならパーティ全体を対象とします。
- *
- * @arg VariableActor
- * @parent <Condition>
- * @text アクター（変数指定）
- * @type variable
- * @desc 対象とするアクターを変数で指定します。
- * こちらのほうが優先されます。
- *
- * @------------------------------------------------------------------
- *
- * @command ChangeLevel
- * @text レベルの増減
- * @desc 追加職業のレベルを変更します。
- *
- * @arg Level
- * @text レベル
- * @type number @min -99 @max 99
- * @desc 増減するレベルの量です。マイナス指定可。
- *
- * @arg VariableLevel
- * @text レベル（変数）
- * @type variable
- * @desc 増減するレベルの量を変数で指定します。
- * こちらのほうが優先されます。
- *
- * @arg ShowLvUpMessage
- * @text レベルアップを表示
- * @type boolean
- * @default false
- * @desc レベルアップ時にメッセージを表示します。
- *
- * @arg <Condition>
- * @text ＜対象条件＞
- *
- * @arg Actor
- * @parent <Condition>
- * @text アクター
- * @type actor
- * @desc 対象とするアクターです。
- * 未指定ならパーティ全体を対象とします。
- *
- * @arg VariableActor
- * @parent <Condition>
- * @text アクター（変数指定）
- * @type variable
- * @desc 対象とするアクターを変数で指定します。
- * こちらのほうが優先されます。
- *
- * @------------------------------------------------------------------
- *
- * @command GetInformation
- * @text 追加職業の情報を取得
- * @desc アクターが就いている追加職業に関する情報を取得します。
- *
- * @arg VariableAtClass
- * @text 変数（追加職業）
- * @type variable
- * @desc アクターが就いている追加職業のＩＤを格納する変数です。
- *
- * @arg VariableAtLv
- * @text 変数（レベル）
- * @type variable
- * @desc アクターが就いている追加職業のレベルを格納する変数です。
- *
- * @arg VariableAtExp
- * @text 変数（経験値）
- * @type variable
- * @desc アクターが就いている追加職業の経験値を格納する変数です。
- *
- * @arg <Condition>
- * @text ＜取得条件＞
- *
- * @arg Actor
- * @parent <Condition>
- * @text アクター
- * @type actor
- * @desc 対象とするアクターです。
- *
- * @arg VariableActor
- * @parent <Condition>
- * @text アクター（変数指定）
- * @type variable
- * @desc 対象とするアクターを変数で指定します。
- * こちらのほうが優先されます。
- *
- * @-----------------------------------------------------------
- * @ プラグインパラメータ
- * @-----------------------------------------------------------
- *
- * @param ParamPlusByLevel
- * @text レベルで能力値加算
- * @type boolean
- * @default false
- * @desc 職業のレベルに応じて、能力値曲線の値をアクターに加算します。
- *
- * @param ParamPlusByTag
- * @text タグで能力値加算
- * @type boolean
- * @default true
- * @desc 職業やスキル等のメモ欄の<Addxxx:n>タグに応じて、アクターに能力値を加算します。
- *
- * @param KeepSkill
- * @text スキルを維持する
- * @type boolean
- * @default false
- * @desc 転職時、スキルを維持するようにします。
- *
- * @param DefaultMaxLevel
- * @text 最大レベル既定値
- * @type number @max 99
- * @desc 追加職業の最大レベルの既定値です。
- * 特に指定がなければ、この値が使用されます。
- *
- * @param LvUpMessage
- * @text Lvアップメッセージ
- * @type string
- * @default %1は%2レベル %3 に上がった！
- * @desc 職業のレベルアップメッセージを表示します。
- * %1=アクター, %2=職業名, %3=Lvとなります。
- *
- * @param LvName
- * @text Lvの表示名
- * @type string
- * @default Lv
- * @desc 職業のレベルを表す表示名です。
- *
- * @param ExpName
- * @text EXPの表示名
- * @type string
- * @default EXP
- * @desc 職業の経験値を表す表示名です。
- *
- * @param <ClassExp>
- * @text ＜職業経験値関連＞
- *
- * @param UseNormalExp
- * @parent <ClassExp>
- * @text 通常の経験値を使用
- * @type boolean
- * @default true
- * @desc 通常の経験値取得時に、追加職業へも経験値を反映させます。
- * 独自ポイントを使う場合はオフにしてください。
- *
- * @param DefaultClassExp
- * @parent <ClassExp>
- * @text 職業経験値の既定値
- * @type string
- * @desc 職業経験値の既定値を設定します。
- * 数式可（例：1 + Math.floor(a.exp() / 100)）
- *
- * @param ClassExpMessage
- * @parent <ClassExp>
- * @text EXP獲得メッセージ
- * @type string
- * @default %1 の%2を獲得！
- * @desc 職業経験値の獲得メッセージを表示します。
- * %1=数値, %2=EXPの表示名となります。
- *
- * @param ClassLvUpLater
- * @parent <ClassExp>
- * @text 職業Lvアップを後回し
- * @type boolean
- * @default false
- * @desc 職業レベルアップの表示を、アクター全員のレベルアップより後で表示します。
- *
- * @param ClassExpSwitch
- * @parent <ClassExp>
- * @text 職業経験値の有効化ｽｲｯﾁ
- * @type switch
- * @desc 指定のスイッチがオンの際、追加職業への経験値の増減を有効化します。空白なら常に有効。
- *
- * @param BenchClassExpRate
- * @parent <ClassExp>
- * @text 控えの獲得率
- * @type string
- * @default 1.00
- * @desc 控えメンバーの職業経験値の獲得率です。数式可
- * 空白の場合は通常経験値と同率を使用。
- *
- * @param UnificationExp
- * @parent <ClassExp>
- * @text 経験値の共有化
- * @type boolean
- * @default false
- * @desc 職業の経験値をパーティで共有します。
- * 成長する魔石のようなシステムに使えます。
- *
- * @param NoDuplicateExp
- * @parent UnificationExp
- * @text 経験値の重複禁止
- * @type boolean
- * @default false
- * @desc 経験値の共有化を行う場合、かつ複数人が同一の職業に就いている場合、経験値の重複加算を禁止します。
- *
- * @param OverwriteClassField
- * @text 職業欄を上書表示
- * @type boolean
- * @default true
- * @desc 追加職業を職業欄に表示します。（通常の職業は非表示）
- *
- * @param ShowLevelOnMenu
- * @parent OverwriteClassField
- * @text メニューにレベル表示
- * @type select
- * @option 非表示 @value
- * @option 数字のみ @value simple
- * @option 全表示 @value full
- * @desc 追加職業のレベルをメニュー画面に表示します。
- * ただし、全表示にはある程度の画面幅が必要です。
- *
- * @param ShowLevelOnStatus
- * @text ステータスにレベル表示
- * @type boolean
- * @default true
- * @desc 追加職業のレベルをステータス画面に表示します。
- * なお、調整のために二つ名を削除します。
- *
- * @param NormalExpWidth
- * @parent ShowLevelOnStatus
- * @text 通常経験値の横幅
- * @type number
- * @default 110
- * @desc 通常経験値をステータス画面に表示する横幅です。
- *
- * @param ClassExpWidth
- * @parent ShowLevelOnStatus
- * @text 職業経験値の横幅
- * @type number
- * @default 110
- * @desc 職業経験値をステータス画面に表示する横幅です。
- *
- * @param ClassLvMaxExp
- * @parent ShowLevelOnStatus
- * @text 職業レベル最大経験値表記
- * @type string
- * @default -------
- * @desc 職業レベルが最大になった際の経験値欄の表記です。
- *
- * @param ShowMaxLevelMessage
- * @text 最大レベルでメッセージ表示
- * @type boolean
- * @default false
- * @desc 追加職業が最大レベルに到達した際にメッセージを表示します。
- *
- * @param MaxLevelMessage
- * @parent ShowMaxLevelMessage
- * @text 最大レベル時の文章
- * @type string
- * @default %1は%2を極めた！
- * @desc 最大レベル到達時のメッセージです。
- * %1=アクター名, %2=職業名, %3=レベルです。
- *
- * @param ShowBenchMaxLevel
- * @parent ShowMaxLevelMessage
- * @text 控えも強制表示
- * @type boolean
- * @default false
- * @desc 控えメンバーもメッセージを強制表示します。
- * NRP_BenchMembersExp.js併用時のみ機能。
- *
- * @param ZeroLevel
- * @text レベルを0始まりにする
- * @type boolean
- * @default false
- * @desc trueの場合、追加職業のレベルが0から始まります。
- * スキル習得レベルなども1ずれます(DBでLv2習得→Lv1で習得)
- *
- */
+// @ts-nocheck
+//------------------------------------------------------------------------------
+// Furamon_NRP_AdditionalClasses.js
+// This software is released under the MIT License.
+// http://opensource.org/licenses/mit-license.php
+//------------------------------------------------------------------------------
+// 2025/10/17 1.0.0-Beta 非公開作成
+// 2025/10/19 1.1.0-Beta 経験値関連が不具合まつりだったので修正
 var AdditionalClass;
 AdditionalClass = function (actor, classId) {
     this.initialize(actor, classId);
@@ -564,8 +24,8 @@ AdditionalClass.prototype.initialize = function (actor, classId) {
  * ●NeedsExpメタデータを取得、念の為外部参照可能に
  */
 AdditionalClass.prototype.getNeedsExpData = function () {
-    if (this._data?.meta.NeedsExp) {
-        const needsExpMeta = this._data.meta.NeedsExp;
+    if (this._data?.meta["NeedsExp"]) {
+        const needsExpMeta = this._data.meta["NeedsExp"];
         if (typeof needsExpMeta === "string") {
             try {
                 return JSON.parse(needsExpMeta);
@@ -589,7 +49,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
  * ●<NoGrow>タグを持つか
  */
 AdditionalClass.prototype.isNoGrow = function () {
-    return !!this._data?.meta.NoGrow;
+    return !!this._data?.meta["NoGrow"];
 };
 (() => {
     // function toBoolean(str, def) {
@@ -614,31 +74,31 @@ AdditionalClass.prototype.isNoGrow = function () {
     // }
     const PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";
     const parameters = PluginManager.parameters(PLUGIN_NAME);
-    const pParamPlusByLevel = parameters.ParamPlusByLevel === "true";
-    const pParamPlusByTag = parameters.ParamPlusByTag === "true";
-    const pKeepSkill = parameters.KeepSkill === "true";
-    const pDefaultMaxLevel = Number(parameters.DefaultMaxLevel || 99);
-    const pLvUpMessage = parameters.LvUpMessage || "%1は%2レベル %3 に上がった！";
-    const pLvName = parameters.LvName || "Lv";
-    const pExpName = parameters.ExpName || "EXP";
-    const pUseNormalExp = parameters.UseNormalExp === "true";
-    const pDefaultClassExp = parameters.DefaultClassExp || "0";
-    const pClassExpMessage = parameters.ClassExpMessage || "%1 の%2を獲得！";
-    const pClassLvUpLater = parameters.ClassLvUpLater === "true";
-    const pClassExpSwitch = Number(parameters.ClassExpSwitch || 0);
-    const pBenchClassExpRate = parameters.BenchClassExpRate || "1.00";
-    const pUnificationExp = parameters.UnificationExp === "true";
-    const pNoDuplicateExp = parameters.NoDuplicateExp === "true";
-    const pOverwriteClassField = parameters.OverwriteClassField === "true";
-    const pShowLevelOnMenu = parameters.ShowLevelOnMenu || "";
-    const pShowLevelOnStatus = parameters.ShowLevelOnStatus === "true";
-    const pNormalExpWidth = Number(parameters.NormalExpWidth || 110);
-    const pClassExpWidth = Number(parameters.ClassExpWidth || 110);
-    const pClassLvMaxExp = parameters.ClassLvMaxExp || "-------";
-    const pShowMaxLevelMessage = parameters.ShowMaxLevelMessage === "true";
-    const pMaxLevelMessage = parameters.MaxLevelMessage || "%1は%2を極めた！";
-    const pShowBenchMaxLevel = parameters.ShowBenchMaxLevel === "true";
-    const pZeroLevel = parameters.ZeroLevel === "true";
+    const pParamPlusByLevel = parameters["ParamPlusByLevel"] === "true";
+    const pParamPlusByTag = parameters["ParamPlusByTag"] === "true";
+    const pKeepSkill = parameters["KeepSkill"] === "true";
+    const pDefaultMaxLevel = Number(parameters["DefaultMaxLevel"] || 99);
+    const pLvUpMessage = parameters["LvUpMessage"] || "%1は%2レベル %3 に上がった！";
+    const pLvName = parameters["LvName"] || "Lv";
+    const pExpName = parameters["ExpName"] || "EXP";
+    const pUseNormalExp = parameters["UseNormalExp"] === "true";
+    const pDefaultClassExp = parameters["DefaultClassExp"] || "0";
+    const pClassExpMessage = parameters["ClassExpMessage"] || "%1 の%2を獲得！";
+    const pClassLvUpLater = parameters["ClassLvUpLater"] === "true";
+    const pClassExpSwitch = Number(parameters["ClassExpSwitch"] || 0);
+    const pBenchClassExpRate = parameters["BenchClassExpRate"] || "1.00";
+    const pUnificationExp = parameters["UnificationExp"] === "true";
+    const pNoDuplicateExp = parameters["NoDuplicateExp"] === "true";
+    const pOverwriteClassField = parameters["OverwriteClassField"] === "true";
+    const pShowLevelOnMenu = parameters["ShowLevelOnMenu"] || "";
+    const pShowLevelOnStatus = parameters["ShowLevelOnStatus"] === "true";
+    const pNormalExpWidth = Number(parameters["NormalExpWidth"] || 110);
+    const pClassExpWidth = Number(parameters["ClassExpWidth"] || 110);
+    const pClassLvMaxExp = parameters["ClassLvMaxExp"] || "-------";
+    const pShowMaxLevelMessage = parameters["ShowMaxLevelMessage"] === "true";
+    const pMaxLevelMessage = parameters["MaxLevelMessage"] || "%1は%2を極めた！";
+    const pShowBenchMaxLevel = parameters["ShowBenchMaxLevel"] === "true";
+    const pZeroLevel = parameters["ZeroLevel"] === "true";
     //----------------------------------------
     // ＭＺ用プラグインコマンド
     //----------------------------------------
@@ -1153,8 +613,8 @@ AdditionalClass.prototype.isNoGrow = function () {
         if (needsExp) {
             return needsExp.length + 1;
         }
-        if (this._data?.meta.MaxLevel) {
-            return Number(this._data.meta.MaxLevel);
+        if (this._data?.meta["MaxLevel"]) {
+            return Number(this._data.meta["MaxLevel"]);
         }
         else if (pDefaultMaxLevel) {
             return pDefaultMaxLevel;
@@ -1420,7 +880,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         if (additionalClass) {
             // 習得スキルを削除
             // learnings が未設定(undefined)のケースがあるため、空配列として扱う
-            for (const learning of (additionalClass._data?.learnings ?? [])) {
+            for (const learning of additionalClass._data?.learnings ?? []) {
                 // 転職時も維持するスキルなら削除しない。
                 if (isKeepSkill(learning.skillId)) {
                     continue;
@@ -1435,8 +895,8 @@ AdditionalClass.prototype.isNoGrow = function () {
     function isKeepSkill(skillId) {
         const skillData = $dataSkills[skillId];
         // スキル毎の指定がある場合は優先
-        const metaKeepSkill = skillData.meta.KeepSkill != null
-            ? String(skillData.meta.KeepSkill) === "true"
+        const metaKeepSkill = skillData.meta["KeepSkill"] != null
+            ? String(skillData.meta["KeepSkill"]) === "true"
             : undefined;
         if (metaKeepSkill !== undefined) {
             return metaKeepSkill;
@@ -1672,15 +1132,15 @@ AdditionalClass.prototype.isNoGrow = function () {
     Game_Enemy.prototype.classExp = function () {
         let classExp = 0;
         // 設定値が存在する場合
-        if (this.enemy().meta.ClassExp !== undefined) {
-            classExp = eval(String(this.enemy().meta.ClassExp));
+        if (this.enemy().meta["ClassExp"] !== undefined) {
+            classExp = eval(String(this.enemy().meta["ClassExp"]));
             // 既定値が存在する場合
         }
         else if (pDefaultClassExp !== undefined) {
             classExp = eval(pDefaultClassExp);
         }
         // rateを乗算する。
-        const rate = this.enemy().meta.ClassExpRate;
+        const rate = this.enemy().meta["ClassExpRate"];
         if (rate !== undefined) {
             classExp = (classExp * Number(rate)) / 100;
         }
@@ -2036,7 +1496,7 @@ AdditionalClass.prototype.isNoGrow = function () {
         _Game_Action_apply.call(this, target);
         mDisplayLevelUp = false;
         // 職業経験値を加算
-        const addClassExp = this.item()?.meta.AddClassExp;
+        const addClassExp = this.item()?.meta["AddClassExp"];
         if (addClassExp) {
             const result = target.result();
             if (result.isHit()) {
@@ -2058,7 +1518,7 @@ AdditionalClass.prototype.isNoGrow = function () {
     Game_Action.prototype.hasItemAnyValidEffects = function (target) {
         const ret = _Game_Action_hasItemAnyValidEffects.call(this, target);
         // 効果が存在する場合は判定を有効にする。
-        return ret || Boolean(this.item()?.meta.AddClassExp);
+        return ret || Boolean(this.item()?.meta["AddClassExp"]);
     };
     //-----------------------------------------------------------------------------
     // NRP_TraitsPlus.jsとの連携用

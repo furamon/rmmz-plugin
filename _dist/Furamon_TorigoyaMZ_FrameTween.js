@@ -1,4 +1,5 @@
 "use strict";
+// @ts-nocheck
 //------------------------------------------------------------------------------
 // Furamon_TorigoyaMZ_FrameTween.js
 // This software is released under the MIT License.

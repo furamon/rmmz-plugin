@@ -24,11 +24,11 @@
 - `@types/` 配下のうち **`@types/rmmz*.d.ts` と `@types/data.d.ts` 、 `@types/lib/**` は編集しない**でください（外部由来/基盤のため）。
 	- 型の衝突や不足が疑われる場合は、まずプラグイン側で `unknown` + `instanceof` などで吸収する方針です（例: `src/Furamon_EnemyActorAnimation.ts`）。
 
-## よく使うコマンド（Bun）
-- 依存導入: `bun install`
-- フォーマット/リント: `bun run format` / `bun run check`（Biomeは `src/**/*` を対象）
-- ビルド: `bun run build`（`_dist/` と `../src/js/plugins/Furamon/` を更新）
+## よく使うコマンド（pnpm）
+- 依存導入: `pnpm install`
+- フォーマット/リント: `pnpm run format` / `pnpm run check`（Biomeは `src/**/*` を対象）
+- ビルド: `pnpm run build`（`_dist/` と `../src/js/plugins/Furamon/` を更新）
 
 ## 変更の確認
-- 最低限 `bun run build` が通ること。
+- 最低限 `pnpm run build` が通ること。
 - 実機確認はゲーム側の `src/js/plugins/Furamon/` に出力されたJSを読み込む想定です（プラグイン管理画面で順番も要確認）。

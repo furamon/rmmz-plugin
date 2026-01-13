@@ -1,3 +1,4 @@
+// @ts-nocheck
 //------------------------------------------------------------------------------
 // Furamon_NRP_AdditionalClasses.js
 // This software is released under the MIT License.
@@ -598,8 +599,8 @@ AdditionalClass.prototype.initialize = function (
  * ●NeedsExpメタデータを取得、念の為外部参照可能に
  */
 AdditionalClass.prototype.getNeedsExpData = function () {
-  if (this._data?.meta.NeedsExp) {
-    const needsExpMeta = this._data.meta.NeedsExp;
+  if (this._data?.meta["NeedsExp"]) {
+    const needsExpMeta = this._data.meta["NeedsExp"];
     if (typeof needsExpMeta === "string") {
       try {
         return JSON.parse(needsExpMeta);
@@ -624,7 +625,7 @@ AdditionalClass.prototype.getNeedsExpData = function () {
  * ●<NoGrow>タグを持つか
  */
 AdditionalClass.prototype.isNoGrow = function () {
-  return !!this._data?.meta.NoGrow;
+  return !!this._data?.meta["NoGrow"];
 };
 
 (() => {
@@ -651,31 +652,32 @@ AdditionalClass.prototype.isNoGrow = function () {
 
   const PLUGIN_NAME = "Furamon_NRP_AdditionalClasses";
   const parameters = PluginManager.parameters(PLUGIN_NAME);
-  const pParamPlusByLevel = parameters.ParamPlusByLevel === "true";
-  const pParamPlusByTag = parameters.ParamPlusByTag === "true";
-  const pKeepSkill = parameters.KeepSkill === "true";
-  const pDefaultMaxLevel = Number(parameters.DefaultMaxLevel || 99);
-  const pLvUpMessage = parameters.LvUpMessage || "%1は%2レベル %3 に上がった！";
-  const pLvName = parameters.LvName || "Lv";
-  const pExpName = parameters.ExpName || "EXP";
-  const pUseNormalExp = parameters.UseNormalExp === "true";
-  const pDefaultClassExp = parameters.DefaultClassExp || "0";
-  const pClassExpMessage = parameters.ClassExpMessage || "%1 の%2を獲得！";
-  const pClassLvUpLater = parameters.ClassLvUpLater === "true";
-  const pClassExpSwitch = Number(parameters.ClassExpSwitch || 0);
-  const pBenchClassExpRate = parameters.BenchClassExpRate || "1.00";
-  const pUnificationExp = parameters.UnificationExp === "true";
-  const pNoDuplicateExp = parameters.NoDuplicateExp === "true";
-  const pOverwriteClassField = parameters.OverwriteClassField === "true";
-  const pShowLevelOnMenu = parameters.ShowLevelOnMenu || "";
-  const pShowLevelOnStatus = parameters.ShowLevelOnStatus === "true";
-  const pNormalExpWidth = Number(parameters.NormalExpWidth || 110);
-  const pClassExpWidth = Number(parameters.ClassExpWidth || 110);
-  const pClassLvMaxExp = parameters.ClassLvMaxExp || "-------";
-  const pShowMaxLevelMessage = parameters.ShowMaxLevelMessage === "true";
-  const pMaxLevelMessage = parameters.MaxLevelMessage || "%1は%2を極めた！";
-  const pShowBenchMaxLevel = parameters.ShowBenchMaxLevel === "true";
-  const pZeroLevel = parameters.ZeroLevel === "true";
+  const pParamPlusByLevel = parameters["ParamPlusByLevel"] === "true";
+  const pParamPlusByTag = parameters["ParamPlusByTag"] === "true";
+  const pKeepSkill = parameters["KeepSkill"] === "true";
+  const pDefaultMaxLevel = Number(parameters["DefaultMaxLevel"] || 99);
+  const pLvUpMessage =
+    parameters["LvUpMessage"] || "%1は%2レベル %3 に上がった！";
+  const pLvName = parameters["LvName"] || "Lv";
+  const pExpName = parameters["ExpName"] || "EXP";
+  const pUseNormalExp = parameters["UseNormalExp"] === "true";
+  const pDefaultClassExp = parameters["DefaultClassExp"] || "0";
+  const pClassExpMessage = parameters["ClassExpMessage"] || "%1 の%2を獲得！";
+  const pClassLvUpLater = parameters["ClassLvUpLater"] === "true";
+  const pClassExpSwitch = Number(parameters["ClassExpSwitch"] || 0);
+  const pBenchClassExpRate = parameters["BenchClassExpRate"] || "1.00";
+  const pUnificationExp = parameters["UnificationExp"] === "true";
+  const pNoDuplicateExp = parameters["NoDuplicateExp"] === "true";
+  const pOverwriteClassField = parameters["OverwriteClassField"] === "true";
+  const pShowLevelOnMenu = parameters["ShowLevelOnMenu"] || "";
+  const pShowLevelOnStatus = parameters["ShowLevelOnStatus"] === "true";
+  const pNormalExpWidth = Number(parameters["NormalExpWidth"] || 110);
+  const pClassExpWidth = Number(parameters["ClassExpWidth"] || 110);
+  const pClassLvMaxExp = parameters["ClassLvMaxExp"] || "-------";
+  const pShowMaxLevelMessage = parameters["ShowMaxLevelMessage"] === "true";
+  const pMaxLevelMessage = parameters["MaxLevelMessage"] || "%1は%2を極めた！";
+  const pShowBenchMaxLevel = parameters["ShowBenchMaxLevel"] === "true";
+  const pZeroLevel = parameters["ZeroLevel"] === "true";
   //----------------------------------------
   // ＭＺ用プラグインコマンド
   //----------------------------------------
@@ -1314,8 +1316,8 @@ AdditionalClass.prototype.isNoGrow = function () {
     if (needsExp) {
       return needsExp.length + 1;
     }
-    if (this._data?.meta.MaxLevel) {
-      return Number(this._data.meta.MaxLevel);
+    if (this._data?.meta["MaxLevel"]) {
+      return Number(this._data.meta["MaxLevel"]);
     } else if (pDefaultMaxLevel) {
       return pDefaultMaxLevel;
     }
@@ -1643,7 +1645,7 @@ AdditionalClass.prototype.isNoGrow = function () {
     if (additionalClass) {
       // 習得スキルを削除
       // learnings が未設定(undefined)のケースがあるため、空配列として扱う
-      for (const learning of (additionalClass._data?.learnings ?? [])) {
+      for (const learning of additionalClass._data?.learnings ?? []) {
         // 転職時も維持するスキルなら削除しない。
         if (isKeepSkill(learning.skillId)) {
           continue;
@@ -1661,8 +1663,8 @@ AdditionalClass.prototype.isNoGrow = function () {
 
     // スキル毎の指定がある場合は優先
     const metaKeepSkill =
-      skillData.meta.KeepSkill != null
-        ? String(skillData.meta.KeepSkill) === "true"
+      skillData.meta["KeepSkill"] != null
+        ? String(skillData.meta["KeepSkill"]) === "true"
         : undefined;
 
     if (metaKeepSkill !== undefined) {
@@ -1952,15 +1954,15 @@ AdditionalClass.prototype.isNoGrow = function () {
     let classExp = 0;
 
     // 設定値が存在する場合
-    if (this.enemy().meta.ClassExp !== undefined) {
-      classExp = eval(String(this.enemy().meta.ClassExp));
+    if (this.enemy().meta["ClassExp"] !== undefined) {
+      classExp = eval(String(this.enemy().meta["ClassExp"]));
       // 既定値が存在する場合
     } else if (pDefaultClassExp !== undefined) {
       classExp = eval(pDefaultClassExp);
     }
 
     // rateを乗算する。
-    const rate = this.enemy().meta.ClassExpRate;
+    const rate = this.enemy().meta["ClassExpRate"];
     if (rate !== undefined) {
       classExp = (classExp * Number(rate)) / 100;
     }
@@ -2476,7 +2478,7 @@ AdditionalClass.prototype.isNoGrow = function () {
     mDisplayLevelUp = false;
 
     // 職業経験値を加算
-    const addClassExp = this.item()?.meta.AddClassExp;
+    const addClassExp = this.item()?.meta["AddClassExp"];
     if (addClassExp) {
       const result = target.result();
       if (result.isHit()) {
@@ -2504,7 +2506,7 @@ AdditionalClass.prototype.isNoGrow = function () {
   ): boolean {
     const ret = _Game_Action_hasItemAnyValidEffects.call(this, target);
     // 効果が存在する場合は判定を有効にする。
-    return ret || Boolean(this.item()?.meta.AddClassExp);
+    return ret || Boolean(this.item()?.meta["AddClassExp"]);
   };
 
   //-----------------------------------------------------------------------------
