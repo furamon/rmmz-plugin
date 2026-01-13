@@ -22,5 +22,6 @@
     "tests",
     "node_modules",
     "@types/lib/lib.dom.d.ts",
-  ]
+  ],
+  "extends": ["@tsconfig/strictest"]
 }
